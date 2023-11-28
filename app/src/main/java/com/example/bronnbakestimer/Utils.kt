@@ -75,7 +75,7 @@ fun validateIntInput(value: String): String? {
     return when {
         intVal == null -> "Invalid number"
         intVal < 1 -> "Must be at least 1"
-        intVal > Constants.MaxUserInputNum -> "Must be at most 100"
+        intVal > Constants.MaxUserInputNum -> "Must be at most ${Constants.MaxUserInputNum}"
         else -> null // valid input
     }
 }

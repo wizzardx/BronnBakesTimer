@@ -125,9 +125,9 @@ object Constants {
     const val SmallDelay = 100
 
     /**
-     * For the sake of simplicity, we limit the user to inputting numbers between 1 and 100.
+     * For the sake of simplicity, we limit the user to inputting numbers between 1 and 500.
      */
-    const val MaxUserInputNum = 100
+    const val MaxUserInputNum = 500
 }
 
 /**
@@ -244,7 +244,7 @@ class BronnBakesTimerViewModel(
     /**
      * Input that we've received from the "Timer seconds" TextField.
      */
-    var timerSecondsInput by mutableStateOf("5")
+    var timerMinutesInput by mutableStateOf("5")
 
     /**
      * Error message for the "Timer Seconds" TextField.
@@ -275,7 +275,7 @@ class BronnBakesTimerViewModel(
     val textInputControlsEnabled: Boolean
         get() = runningState.value == null
 
-    private fun getTotalSeconds() = timerSecondsInput.toIntOrNull() ?: 0
+    private fun getTotalSeconds() = (timerMinutesInput.toIntOrNull() ?: 0) * Constants.SecondsPerMinute
 
     /**
      * Return a mm:ss-formatted string for the total time remaining for the entire workout.
@@ -304,14 +304,14 @@ class BronnBakesTimerViewModel(
             // First validate the inputs
 
             // Validate Work seconds user input
-            timerSecondsInputError = validateIntInput(timerSecondsInput)
+            timerSecondsInputError = validateIntInput(timerMinutesInput)
 
             // If all the validations passed then we can start up our main timer
             if (timerSecondsInputError == null) {
                 // Validations passed, so we can start up our running state.
                 runningState.value = RunningState(
                     coroutineScope = coroutineScope,
-                    duration = timerSecondsInput.toInt(),
+                    duration = timerMinutesInput.toInt() * Constants.SecondsPerMinute,
                     playBeep = ::playBeep,
                 )
             }
@@ -412,9 +412,9 @@ fun ConfigInputFields(viewModel: BronnBakesTimerViewModel, modifier: Modifier) {
     InputTextField(
         InputTextFieldParams(
             errorMessage = viewModel.timerSecondsInputError,
-            value = viewModel.timerSecondsInput,
-            onValueChange = { viewModel.timerSecondsInput = normaliseIntInput(it) },
-            labelText = "Work",
+            value = viewModel.timerMinutesInput,
+            onValueChange = { viewModel.timerMinutesInput = normaliseIntInput(it) },
+            labelText = "Work (Minutes)",
             modifier = modifier,
             enabled = viewModel.textInputControlsEnabled,
         )
