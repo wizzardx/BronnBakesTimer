@@ -1,0 +1,7 @@
+Sound effect licenses:
+
+- buzzer.mp3
+  - Creator: hypocore
+  - License: Creative Commons 0
+  - Source: https://freesound.org/people/hypocore/sounds/164090/
+  - Note: Edited further for use in this project.
