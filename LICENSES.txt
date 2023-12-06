@@ -5,3 +5,10 @@ Sound effect licenses:
   - License: Creative Commons 0
   - Source: https://freesound.org/people/hypocore/sounds/164090/
   - Note: Edited further for use in this project.
+
+Icon licenses:
+
+- ic_notification.xml
+  - Source: https://uxwing.com/timer-icon/
+  - Note: Free to use in personal and commercial projects without attribution or credit, as per UXWing's license terms.
+  - Note 2: Edited further for use in this project (I used Android Studio to convert from the original SVG, timer-icon.svg).

@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
+        android:name=".MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -23,6 +24,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Register the TimerService class as a service.
+             This tells the Android system that the app contains a service (background task)
+             that can perform long-running operations outside the user interface. -->
+        <service android:name=".TimerService"
+                 android:foregroundServiceType="mediaPlayback"
+                 android:exported="false"/>
+
     </application>
+
+    <!-- Declare the use of the FOREGROUND_SERVICE permission.
+         This permission is required for apps that want to use services running in the foreground.
+         It's necessary for Android versions 9 (API level 28) and above. This permission ensures
+         that the app can start a foreground service which shows a persistent notification,
+         keeping the app alive in the background under various system conditions. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
 </manifest>

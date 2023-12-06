@@ -1,5 +1,6 @@
 package com.example.bronnbakestimer
 
+import android.util.Log
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -18,14 +19,16 @@ import java.util.Locale
  * @param totalSeconds The total duration in seconds to be formatted.
  * @return A string formatted as MM:SS representing the input duration.
  */
-fun formatMinSec(totalSeconds: Int): String {
-    val minutes = totalSeconds / Constants.SecondsPerMinute
-    val seconds = totalSeconds % Constants.SecondsPerMinute
-    return String.format(Locale.ROOT, "%02d:%02d", minutes, seconds)
-}
+fun formatMinSec(totalSeconds: Long): String =
+    String.format(
+        Locale.ROOT,
+        "%02d:%02d",
+        totalSeconds / Constants.SecondsPerMinute,
+        totalSeconds % Constants.SecondsPerMinute
+    )
 
 /**
- * Normalizes a string input to remove non-numeric characters and leading zeros.
+ * Normalises a string input to remove non-numeric characters and leading zeros.
  *
  * This function processes a string input, typically representing a number, and
  * removes any non-digit characters. It also removes leading zeros while
@@ -34,26 +37,19 @@ fun formatMinSec(totalSeconds: Int): String {
  * useful for sanitizing and standardizing numerical user inputs, ensuring they
  * are in a format suitable for further processing or conversion to an integer.
  *
- * @param s The string input to be normalized.
- * @return A normalized string with non-numeric characters removed and leading zeros stripped.
+ * @param s The string input to be normalised.
+ * @return A normalised string with non-numeric characters removed and leading zeros stripped.
  */
 fun normaliseIntInput(s: String): String {
-    // Go through the string, and remove any non-numeric characters.
-    // Don't allow 0 at the start of the number. But if there is no number at the
-    // end, then our result is 0
-    var result = ""
-    var foundNonZero = false
-    for (c in s) {
-        if (c.isDigit()) {
-            if (c != '0') {
-                foundNonZero = true
-            }
-            if (foundNonZero) {
-                result += c
-            }
-        }
+    // Filter out non-digit characters
+    val numericPart = s.filter { it.isDigit() }
+
+    // Remove leading zeros while preserving at least one zero if the string is empty
+    val normalised = numericPart.dropWhile { it == '0' }.let {
+        it.ifEmpty { "0" }
     }
-    return result
+
+    return normalised
 }
 
 /**
@@ -71,9 +67,8 @@ fun normaliseIntInput(s: String): String {
  * @return A string containing an error message if the input is invalid, or null if the input is valid.
  */
 fun validateIntInput(value: String): String? {
-    val intVal = value.toIntOrNull()
+    val intVal = value.toIntOrNull() ?: return "Invalid number"
     return when {
-        intVal == null -> "Invalid number"
         intVal < 1 -> "Must be at least 1"
         intVal > Constants.MaxUserInputNum -> "Must be at most ${Constants.MaxUserInputNum}"
         else -> null // valid input
@@ -97,18 +92,60 @@ fun validateIntInput(value: String): String? {
  *         the presence of an error.
  */
 fun getErrorInfoFor(error: String?): Pair<(@Composable (() -> Unit))?, Boolean> {
-    return if (error == null) {
-        Pair(null, false)
-    } else {
+    return error?.let {
         Pair(
             {
                 Text(
-                    text = error,
+                    text = it,
                     color = Color.Red,
                     fontWeight = FontWeight.Bold
                 )
             },
             true
         )
-    }
+    } ?: Pair(null, false)
+}
+
+/**
+ * Return the version number of our app.
+ */
+fun getAppVersion(): String = BuildConfig.VERSION_NAME
+
+/**
+ * Return the text to display on the Start/Pause/Resume button.
+ */
+fun getStartPauseResumeButtonText(timerData: TimerData?): String {
+    return timerData?.let {
+        if (it.isPaused) "Resume" else "Pause"
+    } ?: "Start"
+}
+
+/**
+ * Reports an error to the ErrorRepository and logs it using Android's Log.e().
+ *
+ * This function takes an exception and updates the ErrorRepository with its error message.
+ * Additionally, it logs the error using the Android logging system with the "Error" level.
+ * The error message is tagged with "BronnBakesTimer" for easy identification in logs.
+ *
+ * @param exception The Exception containing information about the error.
+ */
+fun logException(exception: Throwable) {
+    ErrorRepository.updateData(exception.message)
+    val tag = "BronnBakesTimer"
+    Log.e(tag, "Error occurred: ", exception)
+}
+
+/**
+ * Logs an error message and reports it to the ErrorRepository.
+ *
+ * This function takes an error message as input and updates the ErrorRepository with the provided message.
+ * Additionally, it logs the error message using the Android logging system with the "Error" level.
+ * The error message is tagged with "BronnBakesTimer" for easy identification in logs.
+ *
+ * @param msg The error message to be logged and reported.
+ */
+fun logError(msg: String) {
+    ErrorRepository.updateData(msg)
+    val tag = "BronnBakesTimer"
+    Log.e(tag, msg)
 }

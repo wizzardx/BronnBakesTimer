@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">BronnBakes Timer</string>
+
+    <string name="channel_name">BronnBakes Timer Service Channel</string>
+    <string name="channel_description">Shows notifications for the BronnBakes Timer service</string>
+    <string name="notification_title">BronnBakes Timer Running</string>
+    <string name="notification_content">BronnBakes Timer is running in the background</string>
+
 </resources>
