@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -150,31 +153,99 @@ class MainActivity : ComponentActivity() {
 /**
  * Composable function for displaying the total time remaining in the BronnBakesTimer app.
  *
- * This function is responsible for rendering the total time remaining for the entire workout in the user interface.
- * It retrieves the time data from the provided [timerRepository] and formats it using the provided [viewModel].
+ * This function renders the total time remaining as a large text element on the user interface.
+ * It observes the time remaining from the provided [viewModel] and updates the UI accordingly.
  *
- * @param modifier Modifier for styling and layout of the total time remaining display.
- * @param viewModel The view model responsible for formatting the total time remaining string.
- * @param timerRepository The repository for timer data, used to retrieve the time remaining information.
- *
- * @see BronnBakesTimerViewModel
- * @see ITimerRepository
+ * @param modifier Modifier for styling and layout of the total time remaining view.
+ * @param viewModel The view model responsible for managing timer data and updates.
  */
 @Composable
 fun TotalTimeRemainingView(
     modifier: Modifier,
     viewModel: BronnBakesTimerViewModel = koinViewModel(),
-    timerRepository: ITimerRepository = koinInject(),
 ) {
-    val timerData by timerRepository.timerData.collectAsState()
-
+    val text by viewModel.totalTimeRemainingString.collectAsState()
     Text(
-        text = viewModel.formatTotalTimeRemainingString(timerData),
+        text = text,
         fontSize = 50.sp,
         modifier = modifier,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
     )
+}
+
+/**
+ * Composable function for displaying the time remaining for a single additional timer in the BronnBakesTimer app.
+ *
+ * This function renders the time remaining for an additional timer as a text element on the user interface.
+ * It observes the time remaining and the timer's name input from the provided [viewModel] and updates the UI
+ * accordingly.
+ *
+ * @param modifier Modifier for styling and layout of the additional time countdown view.
+ * @param timerData The data representing the additional timer.
+ * @param viewModel The view model responsible for managing timer data and updates.
+ */
+@Composable
+fun AdditionalTimeCountdown(
+    modifier: Modifier,
+    timerData: ExtraTimerData,
+    viewModel: BronnBakesTimerViewModel = koinViewModel(),
+) {
+    val timeRemaining by viewModel.extraTimerRemainingTime(timerData).collectAsState()
+    val currentTimerNameInput by timerData.inputs.timerNameInput.collectAsState()
+
+    // A column to contain our controls to follow:
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+    ) {
+        // A horizontally centered text field with the label for this additional timer:
+        Text(
+            text = currentTimerNameInput,
+            modifier = modifier.padding(bottom = 8.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        Text(
+            text = timeRemaining,
+            modifier = modifier.padding(bottom = 8.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        // Divider at the bottom for visual separation:
+        Divider(modifier = modifier.padding(bottom = 8.dp))
+    }
+}
+
+/**
+ * Composable function for displaying the time remaining for all additional timers in the BronnBakesTimer app.
+ *
+ * This function renders the time remaining for all additional timers as a list of text elements on the user interface.
+ * It observes the timer data for additional timers from the provided [extraTimersRepository] and updates the UI
+ * accordingly.
+ *
+ * @param modifier Modifier for styling and layout of the additional time countdowns view.
+ * @param extraTimersRepository The repository for managing additional timer data.
+ */
+@Composable
+fun AdditionalTimeCountdowns(modifier: Modifier, extraTimersRepository: IExtraTimersRepository = koinInject()) {
+    // Placeholder text
+
+    // A list containing tuples with these values in them: ("Check Rice", 10), ("Stir Soup", 15)
+    val timersData by extraTimersRepository.timerData.collectAsState()
+
+    // A dividing line from the control above, but only if there's at least one additional timer:
+    if (timersData.isNotEmpty()) {
+        Divider(modifier = modifier.padding(bottom = 8.dp))
+    }
+
+    // Render the additional countdowns:
+    timersData.forEach { timerData ->
+        // to the point where we're rendering AdditionalTimeCountdowns
+        AdditionalTimeCountdown(modifier, timerData)
+    }
 }
 
 /**
@@ -236,15 +307,19 @@ fun ConfigInputFields(
     timerRepository: ITimerRepository = koinInject(),
 ) {
     val timerData by timerRepository.timerData.collectAsState()
-    // Configure Work (minutes, eg 5):
+
+    // Use collectAsState to observe changes in timerMinutesInput
+    val currentTimerMinutesInput by viewModel.timerMinutesInput.collectAsState()
+
     InputTextField(
         InputTextFieldParams(
             errorMessage = viewModel.timerMinutesInputError,
-            value = viewModel.timerMinutesInput,
-            onValueChange = { viewModel.timerMinutesInput = normaliseIntInput(it) },
+            value = currentTimerMinutesInput,
+            onValueChange = { viewModel.updateTimerMinutesInput(normaliseIntInput(it)) },
             labelText = "Work (Minutes)",
             modifier = modifier,
-            enabled = viewModel.areTextInputControlsEnabled(timerData)
+            enabled = viewModel.areTextInputControlsEnabled(timerData),
+            keyboardType = KeyboardType.Number,
         )
     )
 }
@@ -265,7 +340,7 @@ fun ConfigInputFields(
  */
 @Composable
 fun BronnBakesTimer(modifier: Modifier = Modifier, errorRepository: IErrorRepository = koinInject()) {
-    // Observe changes in the error message and trigger recomposition when it changes
+    // Collect state for error message, so we can update our error label a bit later:
     val errorMessage by errorRepository.errorMessage.collectAsState()
 
     // Column of controls, centered:
@@ -273,9 +348,13 @@ fun BronnBakesTimer(modifier: Modifier = Modifier, errorRepository: IErrorReposi
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .padding(30.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         // Total time remaining
         TotalTimeRemainingView(modifier)
+
+        // Time remaining for the additional timers:
+        AdditionalTimeCountdowns(modifier)
 
         // Start/Pause and Reset buttons
         ControlButtons(modifier)
@@ -283,17 +362,24 @@ fun BronnBakesTimer(modifier: Modifier = Modifier, errorRepository: IErrorReposi
         // Configuration Input Fields
         ConfigInputFields(modifier)
 
+        // Controls for additional timer user inputs come here:
+        AdditionalTimerControls(modifier)
+
         // Padding so that everything after this point gets pushed to the bottom of the screen.
         Spacer(modifier = modifier.weight(1f))
 
         // Error message at the bottom of the screen, if applicable:
         if (errorMessage != null) {
-            Text(
-                text = "ERROR: $errorMessage",
-                color = Color.Red,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
+            Column(
+                modifier = modifier.padding(top = 8.dp)
+            ) {
+                Text(
+                    text = "ERROR: $errorMessage",
+                    color = Color.Red,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
 
         // Version number of our app:
@@ -303,6 +389,121 @@ fun BronnBakesTimer(modifier: Modifier = Modifier, errorRepository: IErrorReposi
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+/**
+ * Composable function for displaying controls for managing additional timers in the BronnBakesTimer app.
+ *
+ * This function provides UI components for adding and removing additional timers. It also renders the configuration
+ * inputs for additional timers. It observes the main timer's data and the data for additional timers to determine
+ * the state and behavior of these controls.
+ *
+ * @param modifier Modifier for styling and layout of the additional timer controls.
+ * @param extraTimersRepository The repository for managing additional timer data.
+ * @param timerRepository The repository for managing main timer data.
+ * @param viewModel The view model responsible for managing timer data and updates.
+ */
+@Composable
+fun AdditionalTimerControls(
+    modifier: Modifier,
+    extraTimersRepository: IExtraTimersRepository = koinInject(),
+    timerRepository: ITimerRepository = koinInject(),
+    viewModel: BronnBakesTimerViewModel = koinViewModel(),
+) {
+    val mainTimerData by timerRepository.timerData.collectAsState()
+    val timersData by extraTimersRepository.timerData.collectAsState()
+
+    // A column to contain the sub-controls:
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .padding(top = 8.dp)
+    ) {
+        Divider()
+
+        timersData.forEach { timerData ->
+            AdditionalTimerConfig(modifier, timerData)
+        }
+
+        // A horizontally centered button with the text "Add Timer"
+        Button(
+            onClick = { viewModel.onAddTimerClicked() },
+            modifier = modifier.padding(top = 3.dp),
+            enabled = viewModel.areTextInputControlsEnabled(mainTimerData)
+        ) {
+            Text(
+                text = "Add Timer",
+                modifier = modifier,
+            )
+        }
+    }
+}
+
+/**
+ * Composable function for configuring an additional timer in the BronnBakesTimer app.
+ *
+ * This function provides UI components for configuring an additional timer, including setting its label and minutes.
+ * It observes the main timer's data to determine whether the controls are enabled or disabled.
+ *
+ * @param modifier Modifier for styling and layout of the additional timer configuration.
+ * @param timerData The data representing the additional timer.
+ * @param viewModel The view model responsible for managing timer data and updates.
+ * @param timerRepository The repository for managing main timer data.
+ */
+@Composable
+fun AdditionalTimerConfig(
+    modifier: Modifier,
+    timerData: ExtraTimerData,
+    viewModel: BronnBakesTimerViewModel = koinViewModel(),
+    timerRepository: ITimerRepository = koinInject(),
+) {
+    val mainTimerData by timerRepository.timerData.collectAsState()
+    val enabled = viewModel.areTextInputControlsEnabled(mainTimerData)
+    val currentTimerNameInput by timerData.inputs.timerNameInput.collectAsState()
+    val currentTimerMinutesInput by timerData.inputs.timerMinutesInput.collectAsState()
+
+    // A column to contain our controls to follow:
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+    ) {
+        // An input field for the Label for this additional timer:
+        InputTextField(
+            InputTextFieldParams(
+                errorMessage = timerData.inputs.timerNameInputError,
+                value = currentTimerNameInput,
+                onValueChange = { timerData.inputs.updateTimerNameInput(it) },
+                labelText = "Label",
+                modifier = modifier,
+                enabled = enabled,
+                keyboardType = KeyboardType.Text,
+            )
+        )
+
+        // An input field for the minutes entry for this additional timer:\
+        InputTextField(
+            InputTextFieldParams(
+                errorMessage = timerData.inputs.timerMinutesInputError,
+                value = currentTimerMinutesInput,
+                onValueChange = { timerData.inputs.updateTimerMinutesInput(normaliseIntInput(it)) },
+                labelText = "Minutes",
+                modifier = modifier.padding(bottom = 8.dp),
+                enabled = enabled,
+                keyboardType = KeyboardType.Number,
+            )
+        )
+        // A button with the text "Remove" in it:
+        Button(
+            onClick = { viewModel.onRemoveTimerClicked(timerData.id) },
+            modifier = modifier.padding(bottom = 8.dp),
+            enabled = enabled,
+        ) {
+            Text(text = "Remove", modifier = modifier)
+        }
+
+        // Divider at the bottom for visual separation:
+        Divider()
     }
 }
 
@@ -319,6 +520,7 @@ fun BronnBakesTimer(modifier: Modifier = Modifier, errorRepository: IErrorReposi
  * @property labelText The label text to be displayed above the TextField.
  * @property modifier Modifier for styling and layout of the TextField.
  * @property enabled Flag to indicate whether the TextField is enabled or disabled.
+ * @property keyboardType The type of keyboard input expected for the TextField.
  */
 data class InputTextFieldParams(
     val errorMessage: String?,
@@ -326,7 +528,8 @@ data class InputTextFieldParams(
     val onValueChange: (String) -> Unit,
     val labelText: String,
     val modifier: Modifier = Modifier,
-    val enabled: Boolean
+    val enabled: Boolean,
+    val keyboardType: KeyboardType,
 )
 
 /**
@@ -346,10 +549,10 @@ fun InputTextField(params: InputTextFieldParams) {
     TextField(
         value = params.value,
         onValueChange = params.onValueChange,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        keyboardOptions = KeyboardOptions(keyboardType = params.keyboardType),
         singleLine = true,
         label = { Text(text = params.labelText) },
-        modifier = params.modifier.padding(top = 20.dp),
+        modifier = params.modifier.padding(top = 8.dp),
         enabled = params.enabled,
         supportingText = supportingText,
         isError = isError,
@@ -386,11 +589,14 @@ val testModule = module {
     // Provide a mock implementation of TimerRepository
     single<ITimerRepository> { MockTimerRepository() }
 
+    // Bind ExtraTimersRepository instance to IExtraTimersRepository
+    single<IExtraTimersRepository> { ExtraTimersRepository }
+
     // Provide a mock implementation of ErrorRepository
     single<IErrorRepository> { MockErrorRepository() }
 
     // Just use the original viewmodel here, it works fine in preview mode.
-    viewModel { BronnBakesTimerViewModel(get()) }
+    viewModel { BronnBakesTimerViewModel(get(), get()) }
 }
 
 /**

@@ -1,5 +1,8 @@
 package com.example.bronnbakestimer
 
+// TODO: Unify main timer and extra timer handling, so no special cases for main timer.
+// TODO: Optimize some of this code re the new timers. A lot of ugly looking things there.
+
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
@@ -23,8 +26,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
+import java.lang.System.nanoTime
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.math.min
 
 /**
  * A wrapper class that implements the [CoroutineScopeProvider] interface by delegating
@@ -71,6 +77,7 @@ class TimerService : Service() {
     // Injecting dependencies using Koin
     private val timerRepository: ITimerRepository by inject()
     private val mediaPlayerWrapper: IMediaPlayerWrapper by inject()
+    private val extraTimersRepository: IExtraTimersRepository by inject()
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
@@ -122,6 +129,8 @@ class TimerService : Service() {
             .setContentIntent(pendingIntent) // PendingIntent to be triggered on notification click
             .setOngoing(true) // This makes the notification non-dismissible
             .build()
+        // TODO: Make the above reactive on timer state, which we update as the main timer
+        //       progresses?
 
         // Launch the notification:
         launchForegroundNotification(notification)
@@ -138,11 +147,17 @@ class TimerService : Service() {
         }
     }
 
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught", "InstanceOfCheckForException")
     private fun startCountdown() {
         val delayProvider = RealDelayProvider()
         val coroutineScopeProvider = CoroutineScopeProviderWrapper(coroutineScope)
-        val countdownLogic = CountdownLogic(timerRepository, mediaPlayerWrapper, coroutineScopeProvider, delayProvider)
+        val countdownLogic = CountdownLogic(
+            timerRepository,
+            mediaPlayerWrapper,
+            coroutineScopeProvider,
+            delayProvider,
+            extraTimersRepository,
+        )
         val dispatcher = Dispatchers.Default
         coroutineScopeProvider.launch(dispatcher + CoroutineUtils.sharedExceptionHandler) {
             try {
@@ -280,7 +295,12 @@ class CountdownLogic(
     private val mediaPlayerWrapper: IMediaPlayerWrapper,
     private val coroutineScopeProvider: CoroutineScopeProvider,
     private val delayProvider: DelayProvider,
+
+    private val extraTimersRepository: IExtraTimersRepository, // = koinInject()
 ) {
+
+    private var tickCount = 0
+    private var totalElapsedTime = 0L
 
     /**
      * Executes the countdown logic for the timer. This method encapsulates the entire logic for managing
@@ -288,32 +308,67 @@ class CountdownLogic(
      * alerts when necessary. It loops until the coroutine scope is active.
      */
     suspend fun execute() {
+        var lastTickTimeNano = nanoTime()
+
+        val smallDelayMillis = Constants.SmallDelay
+        var accumulatedTimeMillis = 0L
+
         while (coroutineScopeProvider.isActive) {
-            tick()
+            val currentTimeNano = nanoTime()
+            val elapsedTimeNano = currentTimeNano - lastTickTimeNano
+
+            // Convert nanoseconds to milliseconds and accumulate
+            accumulatedTimeMillis += TimeUnit.NANOSECONDS.toMillis(elapsedTimeNano)
+
+            // Call tick for each whole and partial tick
+
+            // All the whole ticks:
+            while (accumulatedTimeMillis >= smallDelayMillis) {
+                tick(smallDelayMillis)
+                accumulatedTimeMillis -= smallDelayMillis
+            }
+
+            // Do any partial tick over here:
+            val remainingTime = accumulatedTimeMillis
+            if (remainingTime > 0) {
+                val timeForTick = min(remainingTime, smallDelayMillis)
+                tick(timeForTick)
+                accumulatedTimeMillis -= timeForTick
+            }
+
+            // Update lastTickTime after processing
+            val nTime = nanoTime()
+            lastTickTimeNano = nTime
+
+            // Calculate time taken for this iteration including the tick processing time
+            val iterationTimeMillis = TimeUnit.NANOSECONDS.toMillis(nTime - currentTimeNano)
+
+            // Calculate the delay needed to maintain the loop frequency
+            val delayTimeMillis = smallDelayMillis - iterationTimeMillis
+
+            // Sanity check for delayTime
+            check(delayTimeMillis <= smallDelayMillis) { "Delay time is out of range: $delayTimeMillis" }
+
+            // Delay for the remaining time of this iteration. Also handle the case that
+            // delayTimeMillis can sometimes be a very large negative value if for some
+            // reason (eg testing) the logic thinks that the most recent loop iteration
+            // took a very long time. In that case can just skip this delay.
+
+            if (delayTimeMillis > 0) {
+                delayProvider.delay(delayTimeMillis)
+            }
         }
     }
 
-    /**
-     * Represents a single tick in the countdown logic. This function is responsible for decrementing
-     * the timer, updating its state, and triggering alerts as necessary. It handles various states
-     * like paused, finished, and managing beep alerts.
-     *
-     * The method checks the timer state and performs actions accordingly. It adjusts the timer's
-     * milliseconds remaining, triggers the beep sound at appropriate times, and updates the timer
-     * state through the repository.
-     */
-    suspend fun tick() {
-        // Do nothing while timerData is not yet set, or it is set, but it's paused, or if we're
-        // currently finished with the timer.
-        var state = timerRepository.timerData.value
-        if (state == null || state.isPaused || state.isFinished) {
-            delayProvider.delay(Constants.SmallDelay.toLong())
-            return
-        }
-
+    private fun tickLogic(
+        elapsedTime: Long,
+        getValue: () -> TimerData,
+        setValue: (TimerData) -> Unit,
+    ) {
+        var state = getValue()
         val millisecondsRemaining: Long = state.millisecondsRemaining
 
-        val newMillisecondsRemaining = (millisecondsRemaining - Constants.SmallDelay).coerceAtLeast(0)
+        val newMillisecondsRemaining = (millisecondsRemaining - elapsedTime).coerceAtLeast(0)
 
         state = state.copy(millisecondsRemaining = newMillisecondsRemaining)
 
@@ -340,10 +395,62 @@ class CountdownLogic(
         }
 
         // Update the timer state:
-        timerRepository.updateData(state)
+        setValue(state)
+    }
 
-        // Delay for next tick:
-        delayProvider.delay(Constants.SmallDelay.toLong())
+    private fun getTimerLambdasSequence(
+        mainTimerGetSetLambda: Pair<() -> TimerData, (TimerData) -> Unit>,
+        extraTimersData: MutableList<ExtraTimerData>
+    ): Sequence<Pair<() -> TimerData, (TimerData) -> Unit>> = sequence {
+        yield(mainTimerGetSetLambda)
+
+        extraTimersRepository.timerData.value.forEach { timerData ->
+            val getter = { timerData.data }
+            val setter: (TimerData) -> Unit = { newTimerData ->
+                val index = extraTimersData.indexOfFirst { it.id == timerData.id }
+                check(index != -1) { "TimerData not found in extraTimersData" }
+                extraTimersData[index] = extraTimersData[index].copy(data = newTimerData)
+            }
+            yield(Pair(getter, setter))
+        }
+    }
+
+    /**
+     * Represents a single tick in the countdown logic. This function is responsible for decrementing
+     * the timer, updating its state, and triggering alerts as necessary. It handles various states
+     * like paused, finished, and managing beep alerts.
+     *
+     * The method checks the timer state and performs actions accordingly. It adjusts the timer's
+     * milliseconds remaining, triggers the beep sound at appropriate times, and updates the timer
+     * state through the repository.
+     */
+    fun tick(
+        elapsedTime: Long,
+    ) {
+        tickCount += 1
+        totalElapsedTime += elapsedTime
+
+        var mainTimerState = timerRepository.timerData.value
+        if (mainTimerState == null || mainTimerState.isPaused || mainTimerState.isFinished) {
+            return
+        }
+
+        val mainTimerGetSetLambda = Pair(
+            { mainTimerState!! },
+            { newState: TimerData -> mainTimerState = newState }
+        )
+        val extraTimersData = extraTimersRepository.timerData.value.toMutableList()
+        val timerLambdaSequence = getTimerLambdasSequence(mainTimerGetSetLambda, extraTimersData)
+
+        timerLambdaSequence.forEach { (getValue, setValue) ->
+            tickLogic(elapsedTime, getValue, setValue)
+        }
+
+        // Update the main timer repository if there were changes
+        timerRepository.updateData(mainTimerState)
+
+        // Update the extra timers repository if there were changes
+        extraTimersRepository.updateData(extraTimersData)
     }
 }
 

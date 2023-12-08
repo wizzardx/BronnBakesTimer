@@ -19,9 +19,12 @@ val appModule = module {
     // Bind TimerRepository instance to ITimerRepository
     single<ITimerRepository> { TimerRepository }
 
+    // Bind ExtraTimersRepository instance to IExtraTimersRepository
+    single<IExtraTimersRepository> { ExtraTimersRepository }
+
     // Bind ErrorRepository instance to IErrorRepository
     single<IErrorRepository> { ErrorRepository }
 
     // Define the ViewModel
-    viewModel { BronnBakesTimerViewModel(get()) }
+    viewModel { BronnBakesTimerViewModel(get(), get()) }
 }

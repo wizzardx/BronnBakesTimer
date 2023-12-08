@@ -1,1 +1,53 @@
-* Also it would be nice if there could be a time within a time, like say 20 minutes overall but a reminder to check/flip/stir whatever at 10 minutes
+
+* Handle the TODO tasks listed in the code.
+
+* Make editing of numbers in text fields less annoying. See how I did it in the Marshalls Metronome app?
+
+* Work out a hack/workaround for quickly putting code in a zip for the purpose of asking for ChatGPT4 codebase reviews.
+
+* Do global tidyups on the code, but be careful of upsetting existing lints.
+
+* Need to fix complexity/etc on BronnBakesTimerViewModel.onButtonClick
+
+* Move more tasks out of code, and into this TODO, rather than doing more refactoring. Need to do smaller updates and commits, ffs.
+
+* More unit tests.
+
+* Make the popup notification more informative/reactive/etc.
+
+* Try to get Release APK files working from download install (it seems to work fine from Android Studio on the devices).
+
+* Try setting these values in release mode in app/build.gradle.kts:
+    - isMinifyEnabled = true
+    - isShrinkResources = true
+    - Anc check for other things to do in release mode?
+
+* In release mode, scrolling is still a bit janky on device. Try profiling (somehow) the code again. Try also getting ChatGPT4 advice on the code I think might be causing this.
+
+* At the moment, it seems like sometimes, the extra timers and the main timers refresh on the screen at different intervals, up to around 1/3rd of a second?
+
+* Check that 1 minute, 2 minutes, etc wall clock time actually matches what the phone is reporting in the countdown.
+
+* After pressing Start (after a Reset), it looks like extra timers displayed time flickers a couple of times between eg 05:00 and 04:59, before finally settling at 04:59, then proceeding normally to 04:48, 04:57, etc.
+
+(above issues seen when I have 2 extra timers on the screen).
+
+* Add a "Seconds" debugging mode, to help me to change the timers - for debugging purposes - temporarily into debugging countdown units mode
+
+* For debugging, let there be 2 extra timers by default? Also, all (and main) populated with convenient values to test with.
+
+* For default values for controls, use constants (or maybe android resources?)
+
+* Reformat all the code in the project (but keep the builtin detekt/etc checks happy)
+
+* Detekt isn't working at the moment, check why?
+
+* Use a function for converting from user input, to seconds, according to the current timer units being used. Change timer units into input units.
+
+* Check unit test coverage again
+
+* Looks like Live Preview is broken again
+
+* Looks like reactivity between main timer minutes input, and the displayed time remaining, is broken again...
+
+* Looks like remaining time - when you click start for main timer, is different to the user input, even if you do nothing. eg at 6 minutes rather than 5 minute

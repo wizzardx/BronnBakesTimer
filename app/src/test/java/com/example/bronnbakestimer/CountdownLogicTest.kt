@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -19,6 +20,16 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.coroutines.CoroutineContext
 
+class MockExtraTimersRepository : IExtraTimersRepository {
+    override val timerData: StateFlow<List<ExtraTimerData>>
+        // Return an empty list
+        get() = MutableStateFlow(emptyList())
+
+    override fun updateData(newData: List<ExtraTimerData>) {
+        // Do nothing
+    }
+}
+
 @Suppress("FunctionMaxLength")
 @ExperimentalCoroutinesApi
 class CountdownLogicTest {
@@ -29,6 +40,7 @@ class CountdownLogicTest {
     private lateinit var testCoroutineScope: TestScope
     private lateinit var coroutineExceptionHandler: CoroutineExceptionHandler
     private lateinit var timerDataFlow: MutableStateFlow<TimerData?>
+    private lateinit var extraTimersRepository: IExtraTimersRepository
 
     @Before
     fun setup() {
@@ -40,9 +52,16 @@ class CountdownLogicTest {
             println("Coroutine Exception: $throwable")
         }
         testCoroutineScope = TestScope(StandardTestDispatcher())
+        extraTimersRepository = MockExtraTimersRepository()
         val delayProvider = TestDelayProvider()
         val coroutineScopeProvider = TestCoroutineScopeProvider(testCoroutineScope)
-        countdownLogic = CountdownLogic(timerRepository, mediaPlayerWrapper, coroutineScopeProvider, delayProvider)
+        countdownLogic = CountdownLogic(
+            timerRepository,
+            mediaPlayerWrapper,
+            coroutineScopeProvider,
+            delayProvider,
+            extraTimersRepository
+        )
     }
 
     @Test
@@ -58,7 +77,7 @@ class CountdownLogicTest {
         whenever(timerRepository.timerData).thenReturn(timerDataFlow)
 
         // Act
-        countdownLogic.tick() // Manually invoke tick
+        countdownLogic.tick(Constants.SmallDelay) // Manually invoke tick
 
         // Assert
         verify(mediaPlayerWrapper).playBeep()
@@ -78,7 +97,7 @@ class CountdownLogicTest {
         timerDataFlow.value = null
 
         // Act
-        countdownLogic.tick()
+        countdownLogic.tick(Constants.SmallDelay)
 
         // Assert
         verify(timerRepository, never()).updateData(any())
@@ -92,7 +111,7 @@ class CountdownLogicTest {
         timerDataFlow.value = pausedState
 
         // Act
-        countdownLogic.tick()
+        countdownLogic.tick(Constants.SmallDelay)
 
         // Assert
         verify(timerRepository, never()).updateData(any())
@@ -106,7 +125,7 @@ class CountdownLogicTest {
         timerDataFlow.value = finishedState
 
         // Act
-        countdownLogic.tick()
+        countdownLogic.tick(Constants.SmallDelay)
 
         // Assert
         verify(timerRepository, never()).updateData(any())
@@ -120,7 +139,7 @@ class CountdownLogicTest {
         timerDataFlow.value = beepTriggeredState
 
         // Act
-        countdownLogic.tick()
+        countdownLogic.tick(Constants.SmallDelay)
 
         // Assert
         verify(mediaPlayerWrapper, never()).playBeep()

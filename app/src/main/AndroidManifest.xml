@@ -2,6 +2,22 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Declare the use of the FOREGROUND_SERVICE permission.
+         This permission is required for apps that want to use services running in the foreground.
+         It's necessary for Android versions 9 (API level 28) and above. This permission ensures
+         that the app can start a foreground service which shows a persistent notification,
+         keeping the app alive in the background under various system conditions. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!-- Declare the use of the FOREGROUND_SERVICE_MEDIA_PLAYBACK permission.
+         This permission is required for foreground services related to media playback
+         on Android 14 (API level 33) and above. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <!-- Declare the use of the POST_NOTIFICATIONS permission.
+         This permission is used for requesting notification-related permissions on Android devices. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -16,7 +32,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.BronnBakesTimer">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,15 +47,8 @@
                  android:foregroundServiceType="mediaPlayback"
                  android:exported="false"/>
 
-    </application>
+        <profileable android:shell="true" />
 
-    <!-- Declare the use of the FOREGROUND_SERVICE permission.
-         This permission is required for apps that want to use services running in the foreground.
-         It's necessary for Android versions 9 (API level 28) and above. This permission ensures
-         that the app can start a foreground service which shows a persistent notification,
-         keeping the app alive in the background under various system conditions. -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    </application>
 
 </manifest>

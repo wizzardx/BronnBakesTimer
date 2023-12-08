@@ -149,3 +149,12 @@ fun logError(msg: String) {
     val tag = "BronnBakesTimer"
     Log.e(tag, msg)
 }
+
+fun userInputToSeconds(input: String): Long {
+    // TODO: Unit tests for this function
+    val i = input.toLongOrNull() ?: 0 // Empty (or none-numeric) user input gets converted to 0 by default
+    return when (Constants.UserInputTimeUnit) {
+        TimeUnit.MINUTES -> i * Constants.SecondsPerMinute
+        TimeUnit.SECONDS -> i
+    }
+}
