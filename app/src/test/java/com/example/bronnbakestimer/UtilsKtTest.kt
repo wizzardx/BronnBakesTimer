@@ -167,4 +167,31 @@ class UtilsKtTest {
         val result = getStartPauseResumeButtonText(timerData)
         assertEquals("Pause", result)
     }
+
+    // Tests for userInputToSeconds
+    @Test
+    fun `converts minutes to seconds correctly`() {
+        assertEquals(600, userInputToSeconds("10", TimeUnit.MINUTES))
+    }
+
+    @Test
+    fun `converts seconds to seconds correctly`() {
+        assertEquals(10, userInputToSeconds("10", TimeUnit.SECONDS))
+    }
+
+    @Test
+    fun `handles non-numeric input correctly`() {
+        assertEquals(0, userInputToSeconds("not a number"))
+    }
+
+    @Test
+    fun `handles empty input correctly`() {
+        assertEquals(0, userInputToSeconds(""))
+    }
+
+    @Test
+    @Suppress("UnderscoresInNumericLiterals")
+    fun `handles large numeric input correctly`() {
+        assertEquals(18000, userInputToSeconds("300", TimeUnit.MINUTES))
+    }
 }

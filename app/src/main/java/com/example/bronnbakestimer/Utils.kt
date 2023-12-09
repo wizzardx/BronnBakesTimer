@@ -150,10 +150,11 @@ fun logError(msg: String) {
     Log.e(tag, msg)
 }
 
-fun userInputToSeconds(input: String): Long {
+fun userInputToSeconds(input: String, units: TimeUnit = Constants.UserInputTimeUnit): Long {
     // TODO: Unit tests for this function
+    // TODO: Docstrings for this function
     val i = input.toLongOrNull() ?: 0 // Empty (or none-numeric) user input gets converted to 0 by default
-    return when (Constants.UserInputTimeUnit) {
+    return when (units) {
         TimeUnit.MINUTES -> i * Constants.SecondsPerMinute
         TimeUnit.SECONDS -> i
     }
