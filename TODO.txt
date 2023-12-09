@@ -1,15 +1,24 @@
 
+* TODO: Add high unit test coverage, and maintain it?
+
+* TODO: In validateAllInputs, clear out error flags on things that we're about to set flags on.
+
+* TODO: In validateAllInputs, set focus to the first control that has errors in the input. Also, scroll
+        the vertical column so that it's visible??
+
+* TODO: On timer completion, display a visible flag (temporarily?) next to the timer.
+
+* TODO: Make the phone vibrate as well as buzz?
+
+* TODO: Use what I'm learning from ChatGPT, to make the app more better?
+    - especially on the Composables for deleting, adding - pass into them the actual
+      functions for removing, deleting, etc, rather them them figuring it out?
+
 * Handle the TODO tasks listed in the code.
 
 * Make editing of numbers in text fields less annoying. See how I did it in the Marshalls Metronome app?
 
-* Work out a hack/workaround for quickly putting code in a zip for the purpose of asking for ChatGPT4 codebase reviews.
-
 * Do global tidyups on the code, but be careful of upsetting existing lints.
-
-* Need to fix complexity/etc on BronnBakesTimerViewModel.onButtonClick
-
-* Move more tasks out of code, and into this TODO, rather than doing more refactoring. Need to do smaller updates and commits, ffs.
 
 * More unit tests.
 

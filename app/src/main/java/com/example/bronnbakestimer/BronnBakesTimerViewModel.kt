@@ -16,7 +16,7 @@ import java.util.UUID
 /**
  * ViewModel to help separate business logic from UI logic.
  */
-class BronnBakesTimerViewModel(
+class BronnBakesTimerViewModel( // TODO: Simplify this as per the lint. Use AutoDev(Expert) carefully, step by step. After getting testing high?
     private val timerRepository: ITimerRepository,
     private val extraTimersRepository: IExtraTimersRepository,
 ) : ViewModel() {
@@ -96,97 +96,103 @@ class BronnBakesTimerViewModel(
     }
 
     /**
-     * Called when the user clicks the Start/Pause/Resume button.
+     * Handles the logic to be executed when the timer control button is clicked.
+     *
+     * This function performs different actions based on the current state of the main timer.
+     * It checks the state of the main timer and decides whether to pause, resume, or start the timers.
+     * The logic is as follows:
+     * - If the main timer is currently paused, it resumes the timer.
+     * - If the main timer is active (not paused and not null), it pauses the timer.
+     * - If there is no active main timer (timer data is null), it attempts to start the timers, but only if the
+     *   inputs are valid.
+     *
+     * In the case of exceptions during execution, the exception is caught and logged for troubleshooting.
+     *
+     * Note: This method should be linked to a UI button responsible for starting, pausing, and resuming timers.
+     *
+     * @throws Exception Captures and logs exceptions that occur within the method execution.
      */
     @Suppress("TooGenericExceptionCaught")
-    fun onButtonClick() {
+    fun onButtonClick() { // TODO: Unit test this function
         try {
-            // Extract the current value from timerMinutesInput StateFlow
-            val currentMainTimerMinutesInput = timerMinutesInput.value
-
             val timerData = timerRepository.timerData.value
-            if (timerData == null) {
-                // We're not running, so start up the timers.
-                // First validate the inputs
-                var errorsFound = false
-
-                // Validate Main Timer Work seconds user input
-                timerMinutesInputError = validateIntInput(currentMainTimerMinutesInput)
-                errorsFound = errorsFound || timerMinutesInputError != null
-
-                // Validate the Extra timers.
-                extraTimersRepository.timerData.value.forEach { timerData2 ->
-                    val inputs = timerData2.inputs
-                    val currentExtraTimerMinutesInput = inputs.timerMinutesInput.value
-                    inputs.timerMinutesInputError = validateIntInput(currentExtraTimerMinutesInput)
-
-                    // Additional check for the extra timers: make sure their total time is
-                    // less than or equal to the main timers:
-                    if (inputs.timerMinutesInputError == null) {
-                        val mainTimerSeconds = userInputToSeconds(currentMainTimerMinutesInput)
-                        val extraTimerSeconds = currentExtraTimerMinutesInput.toLong() * Constants.SecondsPerMinute
-                        if (extraTimerSeconds > mainTimerSeconds) {
-                            inputs.timerMinutesInputError = "Extra timer time cannot be greater than main timer time."
-                        }
-                    }
-
-                    errorsFound = errorsFound || inputs.timerMinutesInputError != null
-                }
-
-                // If all the validations passed then we can start up our timers.
-                if (!errorsFound) {
-                    // Start up the main timer:
-                    timerRepository.updateData(
-                        TimerData(
-                            millisecondsRemaining =
-                            userInputToSeconds(currentMainTimerMinutesInput) * Constants.MillisecondsPerSecond,
-                            isPaused = false,
-                            beepTriggered = false,
-                            isFinished = false,
-                        )
-                    )
-
-                    // And we can start up the regular timers, by setting their "remaining timer"
-                    // fields based on the user inputs:
-                    val extraTimers = extraTimersRepository.timerData.value.toMutableList()
-                    extraTimers.forEachIndexed { index, timerData2 ->
-                        val inputs = timerData2.inputs
-                        val currentExtraTimerMinutesInput = inputs.timerMinutesInput.value
-                        extraTimers[index] = timerData2.copy(
-                            data = TimerData(
-                                millisecondsRemaining =
-                                currentExtraTimerMinutesInput.toLong() *
-                                    Constants.MillisecondsPerSecond *
-                                    Constants.SecondsPerMinute,
-                                isPaused = false,
-                                beepTriggered = false,
-                                isFinished = false,
-                            )
-                        )
-                    }
-                    extraTimersRepository.updateData(extraTimers)
-                }
-            } else {
-                // We're running, but are we currently paused?
-                if (timerData.isPaused) {
-                    // We are paused, so resume.
-                    timerRepository.updateData(
-                        timerData.copy(
-                            isPaused = false,
-                        )
-                    )
-                } else {
-                    // We are not paused, so pause.
-                    timerRepository.updateData(
-                        timerData.copy(
-                            isPaused = true,
-                        )
-                    )
-                }
+            when {
+                timerData?.isPaused == true -> resumeTimers(timerData)
+                timerData != null -> pauseTimers(timerData)
+                else -> startTimersIfValid()
             }
         } catch (e: Exception) {
             logException(e)
         }
+    }
+
+    private fun resumeTimers(timerData: TimerData) { // TODO: Unit test this function
+        // Logic to resume timers
+        timerRepository.updateData(timerData.copy(isPaused = false))
+    }
+
+    private fun pauseTimers(timerData: TimerData) { // TODO: Unit test this function
+        // Logic to pause timers
+        timerRepository.updateData(timerData.copy(isPaused = true))
+    }
+
+    private fun startTimersIfValid() { // TODO: Unit test this function
+        if (validateAllInputs()) {
+            startTimers()
+        }
+    }
+
+    private fun validateAllInputs(): Boolean { // TODO: Unit test this function
+        // Returns true if there are no errors, otherwise false
+        val mainTimerError = validateIntInput(timerMinutesInput.value)?.also {
+            timerMinutesInputError = it
+        } != null
+
+        val mainTimerMinutes = timerMinutesInput.value.toIntOrNull() ?: 0
+        val extraTimerErrors = extraTimersRepository.timerData.value.map { extraTimer ->
+            extraTimer.inputs.timerMinutesInput.value.toIntOrNull()?.let {
+                if (!mainTimerError && it > mainTimerMinutes) {
+                    extraTimer.inputs.timerMinutesInputError = "Extra timer time cannot be " +
+                        "greater than main timer time."
+                    true
+                } else {
+                    validateIntInput(extraTimer.inputs.timerMinutesInput.value)?.also {
+                        extraTimer.inputs.timerMinutesInputError = it // TODO: Unit test here, then fix the lint.
+                    } != null
+                }
+            } ?: false
+        }
+
+        return !(mainTimerError || extraTimerErrors.any { it })
+    }
+
+    private fun userInputToMillis(input: String): Long { // TODO: Unit test this function
+        val seconds = userInputToSeconds(input)
+        return seconds * Constants.MillisecondsPerSecond
+    }
+
+    private fun startTimers() { // TODO: Unit test this function
+        // Logic to start main and extra timers
+        // Utilizes the validated inputs from validationResult
+        // Assuming validationResult is valid, as it should be checked before calling this method
+
+        val currentMainTimerMillis = userInputToMillis(timerMinutesInput.value)
+        timerRepository.updateData(
+            TimerData(
+                millisecondsRemaining = currentMainTimerMillis,
+                isPaused = false,
+                beepTriggered = false,
+                isFinished = false,
+            )
+        )
+
+        // Start all extra timers
+        val updatedExtraTimers = extraTimersRepository.timerData.value.map { extraTimer ->
+            val currentExtraTimerMillis = userInputToMillis(extraTimer.inputs.timerMinutesInput.value)
+            extraTimer.copy(data = extraTimer.data.copy(millisecondsRemaining = currentExtraTimerMillis))
+        }
+
+        extraTimersRepository.updateData(updatedExtraTimers)
     }
 
     /**
