@@ -45,6 +45,15 @@ object Constants {
 enum class UserInputTimeUnitType {
     MINUTES, SECONDS;
 
+    /**
+     * Retrieves the display name of the time unit.
+     *
+     * This function provides a user-friendly string representation of the time unit. For example,
+     * it returns "Minutes" for MINUTES and "Seconds" for SECONDS.
+     * This is useful for displaying time unit options in a user interface or for logging purposes.
+     *
+     * @return The display name of the time unit as a [String].
+     */
     fun getName(): String {
         return when (this) {
             MINUTES -> "Minutes"

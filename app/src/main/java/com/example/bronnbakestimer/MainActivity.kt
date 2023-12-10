@@ -2,6 +2,7 @@ package com.example.bronnbakestimer
 
 import android.Manifest
 import android.app.Application
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -50,6 +51,7 @@ import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
+import java.lang.ref.WeakReference
 
 /**
  * Custom Application class for the BronnBakesTimer application.
@@ -66,18 +68,41 @@ import org.koin.dsl.module
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        initializeKoin()
+    }
 
-        // Start Koin with the context
-        startKoin {
-            // Use the androidLogger if you want to use the default Koin Android logger
-            androidLogger()
+    /**
+     * Initializes Koin for dependency injection.
+     *
+     * @param isTest Indicates whether the initialization is for testing.
+     */
+    fun initializeKoin(isTest: Boolean = false) {
+        if (GlobalContext.getOrNull() == null) { // Check if Koin is already started
+            // Start Koin with the context
+            startKoin {
+                // Use the androidLogger if not in test mode
+                if (!isTest) {
+                    androidLogger()
+                }
 
-            // Inject Android context into Koin
-            androidContext(this@MyApplication)
+                // Get the Context from the WeakReference if it's not null, else use the application context
+                val context = mockContext?.get() ?: this@MyApplication
 
-            // Declare your Koin modules
-            modules(appModule)
+                // Use mockContext if in test mode, else use the application context
+                androidContext(context)
+
+                // Declare your Koin modules
+                modules(appModule)
+            }
         }
+    }
+
+    companion object {
+        /**
+         * A weak reference to a mock context, primarily for testing.
+         * Helps avoid memory leaks by not holding a strong reference.
+         */
+        var mockContext: WeakReference<Context>? = null
     }
 }
 
