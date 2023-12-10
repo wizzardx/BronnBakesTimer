@@ -1,7 +1,5 @@
 * Add high unit test coverage, and maintain it?
 
-* Convert getAppVersion() into Constants.AppVersion
-
 * Convert "user input mintes"-type functions and variables, to "user input duration". And then look in the code for where minutes still occur
 
 * Move Global Repositories into regular classes, eg TimerRepository, and then use dependency injection to get them to where they need to be, later on.

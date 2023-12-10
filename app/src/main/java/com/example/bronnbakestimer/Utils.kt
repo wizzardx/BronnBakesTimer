@@ -166,11 +166,6 @@ private val defaultErrorUiCreator = ErrorUiCreator { error ->
 }
 
 /**
- * Return the version number of our app.
- */
-fun getAppVersion(): String = BuildConfig.VERSION_NAME
-
-/**
  * Return the text to display on the Start/Pause/Resume button.
  */
 fun getStartPauseResumeButtonText(timerData: TimerData?): String {

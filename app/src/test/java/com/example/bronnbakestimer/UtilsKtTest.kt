@@ -94,14 +94,6 @@ class UtilsKtTest {
         assertTrue(hasError)
     }
 
-    // Tests for getAppVersion
-
-    @Test
-    fun `getAppVersion returns correct version`() {
-        val result = getAppVersion()
-        assertEquals(BuildConfig.VERSION_NAME, result)
-    }
-
     // Tests for formatMinSec
 
     @Test

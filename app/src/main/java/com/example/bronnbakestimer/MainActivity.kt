@@ -384,7 +384,7 @@ fun BronnBakesTimer(modifier: Modifier = Modifier, errorRepository: IErrorReposi
 
         // Version number of our app:
         Text(
-            text = "Version: ${getAppVersion()}",
+            text = "Version: ${Constants.AppVersion}",
             modifier = modifier,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
