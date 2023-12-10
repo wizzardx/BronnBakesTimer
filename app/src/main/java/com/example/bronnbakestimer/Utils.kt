@@ -76,34 +76,93 @@ fun validateIntInput(value: String): String? {
 }
 
 /**
+ * Functional interface for creating UI elements to display errors.
+ *
+ * This interface provides a way to abstract the creation of UI components
+ * that are used to display error messages. It allows for different
+ * implementations of error message display, which can be useful for testing
+ * or for changing the UI presentation in different contexts.
+ *
+ * The interface contains a single method `create` which takes an error
+ * message as a string and returns a Composable function. This Composable
+ * function, when invoked, displays the error message in the UI.
+ *
+ * Example Usage:
+ * ```
+ * val defaultErrorUiCreator = ErrorUiCreator { error ->
+ *     Text(
+ *         text = error,
+ *         color = Color.Red,
+ *         fontWeight = FontWeight.Bold
+ *     )
+ * }
+ * ```
+ */
+fun interface ErrorUiCreator {
+
+    /**
+     * Creates a Composable UI element for displaying an error message.
+     *
+     * This method is responsible for defining how an error message should be displayed in the UI.
+     * It is a part of the ErrorUiCreator functional interface and is intended to be implemented
+     * with a Composable function that takes an error message as input and displays it according
+     * to the desired UI specifications.
+     *
+     * The method takes a single String parameter, 'error', which is the error message to be displayed.
+     * It returns a Composable function. When this function is invoked, it will render the error message
+     * on the UI with the specified style and layout.
+     *
+     * Implementations of this method can vary based on the desired UI look and feel. For example, an
+     * implementation might display the error message in red text, with a bold font weight, indicating
+     * that it's an error.
+     *
+     * @param error The error message to be displayed in the UI. This should be a descriptive message
+     *              that can be easily understood by the user.
+     * @return A Composable function which, when invoked, displays the provided error message in the UI.
+     */
+    @Composable
+    fun Create(error: String)
+}
+
+/**
  * Generates a Composable function for displaying an error message and a flag indicating if there is an error.
  *
- * This function takes an optional error message string as input. If the error message is not null,
- * it returns a pair consisting of a Composable function that, when invoked, displays the error
- * message in a predefined style (e.g., red color, bold font), and a boolean flag set to true
- * indicating the presence of an error. If the error message is null, indicating no error,
- * it returns a pair with a null Composable function and a false flag. This function is useful
- * for UI components that need to conditionally display error messages based on various
- * states or validations in the app.
+ * This function takes an optional error message string as input and a UI creator interface.
+ * If the error message is not null, it returns a pair consisting of a Composable function and a true flag.
+ * The Composable function, when invoked, uses the provided UI creator interface to display the error
+ * message in a predefined style (e.g., red color, bold font). If the error message is null, indicating no error,
+ * it returns a pair with a null Composable function and a false flag.
+ *
+ * This approach allows for separation of the UI logic from the business logic, making the function
+ * more testable and flexible in terms of UI rendering.
  *
  * @param error An optional error message string. If null, indicates no error.
+ * @param uiCreator An instance of ErrorUiCreator used to create the UI element for displaying the error.
  * @return A Pair of a nullable Composable function and a boolean flag. The Composable function,
  *         when not null, can be used to display the error message. The boolean flag indicates
  *         the presence of an error.
  */
-fun getErrorInfoFor(error: String?): Pair<(@Composable (() -> Unit))?, Boolean> {
+// The refactored getErrorInfoFor function
+fun getErrorInfoFor(
+    error: String?,
+    uiCreator: ErrorUiCreator = defaultErrorUiCreator
+): Pair<(@Composable (() -> Unit))?, Boolean> {
     return error?.let {
         Pair(
-            {
-                Text(
-                    text = it,
-                    color = Color.Red,
-                    fontWeight = FontWeight.Bold
-                )
-            },
+            { uiCreator.Create(it) },
             true
         )
     } ?: Pair(null, false)
+}
+
+// Default implementation of the UI creation, used in the actual app
+// To manually check this, just get an error to show in the UI.
+private val defaultErrorUiCreator = ErrorUiCreator { error ->
+    Text(
+        text = error,
+        color = Color.Red,
+        fontWeight = FontWeight.Bold
+    )
 }
 
 /**
@@ -150,9 +209,23 @@ fun logError(msg: String) {
     Log.e(tag, msg)
 }
 
+/**
+ * Converts user input into seconds based on the specified time unit.
+ *
+ * This function processes a string input representing a time duration and converts it into
+ * an equivalent duration in seconds. It supports different units of time (minutes or seconds)
+ * and handles the conversion accordingly. The function is robust against non-numeric inputs,
+ * converting them to 0 by default.
+ *
+ * @param input The user input string representing the time duration. This should be a numeric
+ *              string. Non-numeric input is treated as 0.
+ * @param units An optional parameter of type UserInputTimeUnitType, which specifies the unit of
+ *              time represented by the input. It defaults to a standard unit defined in
+ *              Constants.UserInputTimeUnit (e.g., minutes or seconds).
+ * @return The equivalent duration in seconds as a Long. If the input is non-numeric or empty,
+ *         the function returns 0.
+ */
 fun userInputToSeconds(input: String, units: UserInputTimeUnitType = Constants.UserInputTimeUnit): Long {
-    // TODO: Unit tests for this function
-    // TODO: Docstrings for this function
     val i = input.toLongOrNull() ?: 0 // Empty (or none-numeric) user input gets converted to 0 by default
     return when (units) {
         UserInputTimeUnitType.MINUTES -> i * Constants.SecondsPerMinute

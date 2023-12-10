@@ -1,5 +1,9 @@
 package com.example.bronnbakestimer
 
+import android.util.Log
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.verify
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -169,6 +173,7 @@ class UtilsKtTest {
     }
 
     // Tests for userInputToSeconds
+
     @Test
     fun `converts minutes to seconds correctly`() {
         assertEquals(600, userInputToSeconds("10", UserInputTimeUnitType.MINUTES))
@@ -193,5 +198,35 @@ class UtilsKtTest {
     @Suppress("UnderscoresInNumericLiterals")
     fun `handles large numeric input correctly`() {
         assertEquals(18000, userInputToSeconds("300", UserInputTimeUnitType.MINUTES))
+    }
+
+    // Unit tests for logException
+
+    @Test
+    fun `logException reports to repository and logs`() {
+        mockkStatic(Log::class)
+        val exception = RuntimeException("Test Exception")
+
+        every { Log.e(any(), any(), any()) } returns 0
+
+        logException(exception)
+
+        verify { Log.e("BronnBakesTimer", "Error occurred: ", exception) }
+        assert(ErrorRepository.errorMessage.value == exception.message)
+    }
+
+    // Unit tests for logError
+
+    @Test
+    fun `logError reports to repository and logs`() {
+        mockkStatic(Log::class)
+        val errorMessage = "Test Error"
+
+        every { Log.e(any(), any()) } returns 0
+
+        logError(errorMessage)
+
+        verify { Log.e("BronnBakesTimer", errorMessage) }
+        assert(ErrorRepository.errorMessage.value == errorMessage)
     }
 }
