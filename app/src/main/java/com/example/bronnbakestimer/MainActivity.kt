@@ -308,15 +308,18 @@ fun ConfigInputFields(
 ) {
     val timerData by timerRepository.timerData.collectAsState()
 
-    // Use collectAsState to observe changes in timerMinutesInput
-    val currentTimerMinutesInput by viewModel.timerMinutesInput.collectAsState()
+    // Use collectAsState to observe changes in timerDurationInput
+    val currentTimerDurationInput by viewModel.timerDurationInput.collectAsState()
+
+    val unitsName = Constants.UserInputTimeUnit.getName()
+    val labelText = "Work ($unitsName)"
 
     InputTextField(
         InputTextFieldParams(
-            errorMessage = viewModel.timerMinutesInputError,
-            value = currentTimerMinutesInput,
-            onValueChange = { viewModel.updateTimerMinutesInput(normaliseIntInput(it)) },
-            labelText = "Work (Minutes)",
+            errorMessage = viewModel.timerDurationInputError,
+            value = currentTimerDurationInput,
+            onValueChange = { viewModel.updateTimerDurationInput(normaliseIntInput(it)) },
+            labelText = labelText,
             modifier = modifier,
             enabled = viewModel.areTextInputControlsEnabled(timerData),
             keyboardType = KeyboardType.Number,
@@ -461,7 +464,7 @@ fun AdditionalTimerConfig(
     val mainTimerData by timerRepository.timerData.collectAsState()
     val enabled = viewModel.areTextInputControlsEnabled(mainTimerData)
     val currentTimerNameInput by timerData.inputs.timerNameInput.collectAsState()
-    val currentTimerMinutesInput by timerData.inputs.timerMinutesInput.collectAsState()
+    val currentTimerDurationInput by timerData.inputs.timerDurationInput.collectAsState()
 
     // A column to contain our controls to follow:
     Column(
@@ -481,13 +484,14 @@ fun AdditionalTimerConfig(
             )
         )
 
-        // An input field for the minutes entry for this additional timer:\
+        // An input field for the duration entry for this additional timer:
+        val labelText = Constants.UserInputTimeUnit.getName()
         InputTextField(
             InputTextFieldParams(
-                errorMessage = timerData.inputs.timerMinutesInputError,
-                value = currentTimerMinutesInput,
-                onValueChange = { timerData.inputs.updateTimerMinutesInput(normaliseIntInput(it)) },
-                labelText = "Minutes",
+                errorMessage = timerData.inputs.timerDurationInputError,
+                value = currentTimerDurationInput,
+                onValueChange = { timerData.inputs.updateTimerDurationInput(normaliseIntInput(it)) },
+                labelText = labelText,
                 modifier = modifier.padding(bottom = 8.dp),
                 enabled = enabled,
                 keyboardType = KeyboardType.Number,

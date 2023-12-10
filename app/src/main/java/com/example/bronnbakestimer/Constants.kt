@@ -20,7 +20,7 @@ object Constants {
     const val SmallDelay = 100L
 
     /**
-     * For the sake of simplicity, we limit the user to inputting numbers (timer minutes) between 1 and 500.
+     * For the sake of simplicity, we limit the user to inputting numbers (timer duration) between 1 and 500.
      */
     const val MaxUserInputNum = 500
 
@@ -43,5 +43,12 @@ object Constants {
  * It includes [MINUTES] and [SECONDS] to specify the time unit.
  */
 enum class UserInputTimeUnitType {
-    MINUTES, SECONDS,
+    MINUTES, SECONDS;
+
+    fun getName(): String {
+        return when (this) {
+            MINUTES -> "Minutes"
+            SECONDS -> "Seconds"
+        }
+    }
 }

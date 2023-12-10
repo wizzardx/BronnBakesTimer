@@ -18,17 +18,17 @@ class ExtraTimerInputsDataTest {
 
     @Test
     fun `initial values are set correctly`() {
-        assertEquals("5", extraTimerInputsData.timerMinutesInput.value)
+        assertEquals("5", extraTimerInputsData.timerDurationInput.value)
         assertEquals("check/flip/stir", extraTimerInputsData.timerNameInput.value)
-        assertNull(extraTimerInputsData.timerMinutesInputError)
+        assertNull(extraTimerInputsData.timerDurationInputError)
         assertNull(extraTimerInputsData.timerNameInputError)
     }
 
     @Test
-    fun `updateTimerMinutesInput updates value correctly`() {
-        val newMinutes = "10"
-        extraTimerInputsData.updateTimerMinutesInput(newMinutes)
-        assertEquals(newMinutes, extraTimerInputsData.timerMinutesInput.value)
+    fun `updateTimerDurationInput updates value correctly`() {
+        val newDuration = "10"
+        extraTimerInputsData.updateTimerDurationInput(newDuration)
+        assertEquals(newDuration, extraTimerInputsData.timerDurationInput.value)
     }
 
     // Additional tests for updateTimerNameInput and error messages...
@@ -43,10 +43,10 @@ class ExtraTimerInputsDataTest {
     }
 
     @Test
-    fun `timerMinutesInputError updates correctly`() {
+    fun `timerDurationInputError updates correctly`() {
         val errorMessage = "Invalid input"
-        extraTimerInputsData.timerMinutesInputError = errorMessage
-        assertEquals(errorMessage, extraTimerInputsData.timerMinutesInputError)
+        extraTimerInputsData.timerDurationInputError = errorMessage
+        assertEquals(errorMessage, extraTimerInputsData.timerDurationInputError)
     }
 
     @Test
@@ -89,7 +89,7 @@ class ExtraTimerInputsDataTest {
 
     @Test
     fun `getTotalSeconds returns correct value for inactive main timer`() {
-        val extraTimerInputsData = ExtraTimerInputsData().apply { updateTimerMinutesInput("2") }
+        val extraTimerInputsData = ExtraTimerInputsData().apply { updateTimerDurationInput("2") }
         val extraTimerData = ExtraTimerData(
             TimerData(0, isPaused = false, isFinished = false, beepTriggered = false),
             extraTimerInputsData

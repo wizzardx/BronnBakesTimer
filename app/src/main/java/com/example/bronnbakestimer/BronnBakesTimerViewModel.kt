@@ -22,41 +22,41 @@ class BronnBakesTimerViewModel(
     private val extraTimersRepository: IExtraTimersRepository,
 ) : ViewModel() {
 
-    private val _timerMinutesInput = MutableStateFlow("5")
+    private val _timerDurationInput = MutableStateFlow("5")
 
     /**
-     * Input that we've received from the "Timer Minutes" TextField.
+     * Input that we've received from the "Timer Duration" TextField.
      */
-    val timerMinutesInput: StateFlow<String> = _timerMinutesInput.asStateFlow()
+    val timerDurationInput: StateFlow<String> = _timerDurationInput.asStateFlow()
 
     /**
-     * Error message for the "Timer Minutes" TextField.
+     * Error message for the "Timer Duration" TextField.
      */
-    var timerMinutesInputError by mutableStateOf<String?>(null)
+    var timerDurationInputError by mutableStateOf<String?>(null)
 
     /**
      * Represents the total time remaining as a state flow string. This property combines the timer data
-     * from the timer repository and the user-inputted timer minutes. It formats and updates the total
-     * time remaining, expressed as a string, whenever the timer data or the input minutes change.
+     * from the timer repository and the user-inputted timer duration. It formats and updates the total
+     * time remaining, expressed as a string, whenever the timer data or the input duration change.
      * The time is calculated and formatted using the formatTotalTimeRemainingString function.
      * Initially, the state is set to "Loading..." and will update as the timer data becomes available.
      */
     val totalTimeRemainingString: StateFlow<String> = timerRepository.timerData
-        .combine(timerMinutesInput) { timerData, timerMinutesInput ->
-            formatTotalTimeRemainingString(timerData, timerMinutesInput)
+        .combine(timerDurationInput) { timerData, timerDurationInput ->
+            formatTotalTimeRemainingString(timerData, timerDurationInput)
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, "Loading...")
 
     /**
-     * Updates the input value for the timer minutes.
+     * Updates the input value for the timer duration.
      *
-     * This function allows you to change the value of the timer minutes input. It takes a new value
+     * This function allows you to change the value of the timer duration input. It takes a new value
      * as a parameter and updates the internal state, which is then reflected in the UI.
      *
-     * @param newValue The new value for the timer minutes input, represented as a string.
+     * @param newValue The new value for the timer duration input, represented as a string.
      */
-    fun updateTimerMinutesInput(newValue: String) {
-        _timerMinutesInput.value = newValue
+    fun updateTimerDurationInput(newValue: String) {
+        _timerDurationInput.value = newValue
     }
 
     /**
@@ -64,9 +64,9 @@ class BronnBakesTimerViewModel(
      */
     fun areTextInputControlsEnabled(timerData: TimerData?): Boolean = timerData == null
 
-    private fun formatTotalTimeRemainingString(timerData: TimerData?, timerMinutesInput: String): String {
+    private fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: String): String {
         val secondsRemaining = if (timerData == null) {
-            userInputToSeconds(timerMinutesInput)
+            userInputToSeconds(timerDurationInput)
         } else {
             timerData.millisecondsRemaining / Constants.MillisecondsPerSecond
         }
@@ -84,7 +84,7 @@ class BronnBakesTimerViewModel(
      */
     fun extraTimerRemainingTime(timerData: ExtraTimerData): StateFlow<String> {
         return timerRepository.timerData
-            .combine(timerData.inputs.timerMinutesInput) { mainTimerData, _ ->
+            .combine(timerData.inputs.timerDurationInput) { mainTimerData, _ ->
                 formatTotalTimeRemainingString(timerData, mainTimerData?.millisecondsRemaining)
             }
             .stateIn(viewModelScope, SharingStarted.Eagerly, "Loading...")
@@ -145,20 +145,20 @@ class BronnBakesTimerViewModel(
 
     private fun validateAllInputs(): Boolean { // TODO: Unit test this function
         // Returns true if there are no errors, otherwise false
-        val mainTimerError = validateIntInput(timerMinutesInput.value)?.also {
-            timerMinutesInputError = it
+        val mainTimerError = validateIntInput(timerDurationInput.value)?.also {
+            timerDurationInputError = it
         } != null
 
-        val mainTimerMinutes = timerMinutesInput.value.toIntOrNull() ?: 0
+        val mainTimerDuration = timerDurationInput.value.toIntOrNull() ?: 0
         val extraTimerErrors = extraTimersRepository.timerData.value.map { extraTimer ->
-            extraTimer.inputs.timerMinutesInput.value.toIntOrNull()?.let {
-                if (!mainTimerError && it > mainTimerMinutes) {
-                    extraTimer.inputs.timerMinutesInputError = "Extra timer time cannot be " +
+            extraTimer.inputs.timerDurationInput.value.toIntOrNull()?.let {
+                if (!mainTimerError && it > mainTimerDuration) {
+                    extraTimer.inputs.timerDurationInputError = "Extra timer time cannot be " +
                         "greater than main timer time."
                     true
                 } else {
-                    validateIntInput(extraTimer.inputs.timerMinutesInput.value)?.also {
-                        extraTimer.inputs.timerMinutesInputError = it // TODO: Unit test here, then fix the lint.
+                    validateIntInput(extraTimer.inputs.timerDurationInput.value)?.also {
+                        extraTimer.inputs.timerDurationInputError = it // TODO: Unit test here, then fix the lint.
                     } != null
                 }
             } ?: false
@@ -177,7 +177,7 @@ class BronnBakesTimerViewModel(
         // Utilizes the validated inputs from validationResult
         // Assuming validationResult is valid, as it should be checked before calling this method
 
-        val currentMainTimerMillis = userInputToMillis(timerMinutesInput.value)
+        val currentMainTimerMillis = userInputToMillis(timerDurationInput.value)
         timerRepository.updateData(
             TimerData(
                 millisecondsRemaining = currentMainTimerMillis,
@@ -189,7 +189,7 @@ class BronnBakesTimerViewModel(
 
         // Start all extra timers
         val updatedExtraTimers = extraTimersRepository.timerData.value.map { extraTimer ->
-            val currentExtraTimerMillis = userInputToMillis(extraTimer.inputs.timerMinutesInput.value)
+            val currentExtraTimerMillis = userInputToMillis(extraTimer.inputs.timerDurationInput.value)
             extraTimer.copy(data = extraTimer.data.copy(millisecondsRemaining = currentExtraTimerMillis))
         }
 

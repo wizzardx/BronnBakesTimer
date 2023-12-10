@@ -13,17 +13,17 @@ import java.util.UUID
  */
 class ExtraTimerInputsData {
 
-    private val _timerMinutesInput = MutableStateFlow("5") // Initialize with default value
+    private val _timerDurationInput = MutableStateFlow("5") // Initialize with default value
 
     /**
-     * The input value for timer minutes, initialized to "5".
+     * The input value for timer duration, initialized to "5".
      */
-    val timerMinutesInput: StateFlow<String> = _timerMinutesInput.asStateFlow()
+    val timerDurationInput: StateFlow<String> = _timerDurationInput.asStateFlow()
 
     /**
-     * Error message for the timer minutes input, to be shown in the UI if there's an error.
+     * Error message for the timer duration input, to be shown in the UI if there's an error.
      */
-    var timerMinutesInputError by mutableStateOf<String?>(null)
+    var timerDurationInputError by mutableStateOf<String?>(null)
 
     // MutableStateFlow to hold the user input value for the timer name.
     // This state flow is initialized with the default value "check/flip/stir".
@@ -40,14 +40,14 @@ class ExtraTimerInputsData {
     var timerNameInputError by mutableStateOf<String?>(null)
 
     /**
-     * Updates the input value for timer minutes.
+     * Updates the input value for timer duration.
      *
-     * This function allows you to change the value of the timer minutes input.
+     * This function allows you to change the value of the timer duration input.
      *
-     * @param newValue The new value for the timer minutes input.
+     * @param newValue The new value for the timer duration input.
      */
-    fun updateTimerMinutesInput(newValue: String) {
-        _timerMinutesInput.value = newValue
+    fun updateTimerDurationInput(newValue: String) {
+        _timerDurationInput.value = newValue
     }
 
     /**
@@ -86,7 +86,7 @@ fun ExtraTimerData.getTotalSeconds(mainTimerActive: Boolean): Long {
         data.millisecondsRemaining / Constants.MillisecondsPerSecond
     } else {
         // Timer is not active, so use a value from the users input
-        val userInput = inputs.timerMinutesInput.value
+        val userInput = inputs.timerDurationInput.value
         userInputToSeconds(userInput)
     }
 }
