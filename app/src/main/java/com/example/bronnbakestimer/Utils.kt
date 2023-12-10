@@ -238,3 +238,45 @@ fun userInputToSeconds(input: String, units: UserInputTimeUnitType = Constants.U
         UserInputTimeUnitType.SECONDS -> i
     }
 }
+
+/**
+ * Formats the total time remaining as a string based on timer data and user-inputted timer duration.
+ *
+ * This function calculates and formats the total time remaining as a string, taking into account the timer data
+ * and the user-inputted timer duration. If timer data is available (not null), it uses the milliseconds remaining
+ * from the timer data. Otherwise, it calculates the total time remaining based on the user-inputted timer duration.
+ * The formatted string is in the format MM:SS (minutes:seconds), where MM and SS are padded with zeros if necessary.
+ *
+ * @param timerData The timer data representing the main timer. If null, the user-inputted timer duration will be used.
+ * @param timerDurationInput The user-inputted timer duration as a string.
+ * @return A string representing the total time remaining in MM:SS format.
+ */
+fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: String): String {
+    val secondsRemaining = if (timerData == null) {
+        userInputToSeconds(timerDurationInput)
+    } else {
+        timerData.millisecondsRemaining / Constants.MillisecondsPerSecond
+    }
+    return formatMinSec(secondsRemaining)
+}
+
+/**
+ * Converts a user-inputted time duration from a string to milliseconds.
+ *
+ * This function takes a string input representing a time duration and converts it into
+ * an equivalent duration in milliseconds. It first converts the input into seconds using
+ * the `userInputToSeconds` function, then multiplies the result by the number of milliseconds
+ * per second (defined in `Constants.MillisecondsPerSecond`) to get the duration in milliseconds.
+ *
+ * This function is useful for converting user-inputted time durations into a format suitable
+ * for use with timer functions or other operations that require time durations in milliseconds.
+ *
+ * @param input The user input string representing the time duration. This should be a numeric
+ *              string. Non-numeric input is treated as 0 by the `userInputToSeconds` function.
+ * @return The equivalent duration in milliseconds as a Long. If the input is non-numeric or empty,
+ *         the function returns 0.
+ */
+fun userInputToMillis(input: String): Long {
+    val seconds = userInputToSeconds(input)
+    return seconds * Constants.MillisecondsPerSecond
+}

@@ -242,6 +242,44 @@ class UtilsKtTest {
         assert(errorRepository.errorMessage.value == errorMessage)
     }
 
+    // Tests for formatTotalTimeRemainingString
+
+    @Test
+    fun `formatTotalTimeRemainingString returns correct format when timerData is null`() {
+        val result = formatTotalTimeRemainingString(null, "10")
+        assertEquals("10:00", result)
+    }
+
+    @Test
+    fun `formatTotalTimeRemainingString returns correct format when timerData is not null`() {
+        val timerData = TimerData(
+            isPaused = false,
+            beepTriggered = false,
+            isFinished = false,
+            millisecondsRemaining = 60_000
+        )
+        val result = formatTotalTimeRemainingString(timerData, "10")
+        assertEquals("01:00", result)
+    }
+
+    @Test
+    fun `formatTotalTimeRemainingString handles non-numeric input correctly`() {
+        val result = formatTotalTimeRemainingString(null, "not a number")
+        assertEquals("00:00", result)
+    }
+
+    @Test
+    fun `formatTotalTimeRemainingString handles empty input correctly`() {
+        val result = formatTotalTimeRemainingString(null, "")
+        assertEquals("00:00", result)
+    }
+
+    @Test
+    fun `formatTotalTimeRemainingString handles large numeric input correctly`() {
+        val result = formatTotalTimeRemainingString(null, "300")
+        assertEquals("300:00", result)
+    }
+
     companion object {
         val testModule = module {
             single<IErrorRepository> { DefaultErrorRepository() }

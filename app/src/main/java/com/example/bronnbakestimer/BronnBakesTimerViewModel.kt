@@ -16,9 +16,10 @@ import java.util.UUID
 /**
  * ViewModel to help separate business logic from UI logic.
  */
-// TODO: Simplify this as per the lint. Use AutoDev(Expert) carefully, step by step. After getting testing high?
 class BronnBakesTimerViewModel(
     private val timerRepository: ITimerRepository,
+    private val timerManager: ITimerManager,
+    private val inputValidator: IInputValidator,
     private val extraTimersRepository: IExtraTimersRepository,
     private val errorRepository: IErrorRepository,
 ) : ViewModel() {
@@ -65,15 +66,6 @@ class BronnBakesTimerViewModel(
      */
     fun areTextInputControlsEnabled(timerData: TimerData?): Boolean = timerData == null
 
-    private fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: String): String {
-        val secondsRemaining = if (timerData == null) {
-            userInputToSeconds(timerDurationInput)
-        } else {
-            timerData.millisecondsRemaining / Constants.MillisecondsPerSecond
-        }
-        return formatMinSec(secondsRemaining)
-    }
-
     /**
      * Computes and returns the total time remaining for an extra timer as a StateFlow of String.
      * This function maps the main timer data to calculate the remaining time for the extra timer.
@@ -115,12 +107,12 @@ class BronnBakesTimerViewModel(
      * @throws Exception Captures and logs exceptions that occur within the method execution.
      */
     @Suppress("TooGenericExceptionCaught")
-    fun onButtonClick() { // TODO: Unit test this function
+    fun onButtonClick() {
         try {
             val timerData = timerRepository.timerData.value
             when {
-                timerData?.isPaused == true -> resumeTimers(timerData)
-                timerData != null -> pauseTimers(timerData)
+                timerData?.isPaused == true -> timerManager.resumeTimers(timerRepository)
+                timerData != null -> timerManager.pauseTimers(timerRepository)
                 else -> startTimersIfValid()
             }
         } catch (e: Exception) {
@@ -128,52 +120,16 @@ class BronnBakesTimerViewModel(
         }
     }
 
-    private fun resumeTimers(timerData: TimerData) { // TODO: Unit test this function
-        // Logic to resume timers
-        timerRepository.updateData(timerData.copy(isPaused = false))
-    }
-
-    private fun pauseTimers(timerData: TimerData) { // TODO: Unit test this function
-        // Logic to pause timers
-        timerRepository.updateData(timerData.copy(isPaused = true))
-    }
-
-    private fun startTimersIfValid() { // TODO: Unit test this function
-        if (validateAllInputs()) {
+    private fun startTimersIfValid() {
+        val setTimerDurationInputError = { error: String ->
+            timerDurationInputError = error
+        }
+        if (inputValidator.validateAllInputs(timerDurationInput, setTimerDurationInputError, extraTimersRepository)) {
             startTimers()
         }
     }
 
-    private fun validateAllInputs(): Boolean { // TODO: Unit test this function
-        // Returns true if there are no errors, otherwise false
-        val mainTimerError = validateIntInput(timerDurationInput.value)?.also {
-            timerDurationInputError = it
-        } != null
-
-        val mainTimerDuration = timerDurationInput.value.toIntOrNull() ?: 0
-        val extraTimerErrors = extraTimersRepository.timerData.value.map { extraTimer ->
-            extraTimer.inputs.timerDurationInput.value.toIntOrNull()?.let {
-                if (!mainTimerError && it > mainTimerDuration) {
-                    extraTimer.inputs.timerDurationInputError = "Extra timer time cannot be " +
-                        "greater than main timer time."
-                    true
-                } else {
-                    validateIntInput(extraTimer.inputs.timerDurationInput.value)?.also {
-                        extraTimer.inputs.timerDurationInputError = it // TODO: Unit test here, then fix the lint.
-                    } != null
-                }
-            } ?: false
-        }
-
-        return !(mainTimerError || extraTimerErrors.any { it })
-    }
-
-    private fun userInputToMillis(input: String): Long { // TODO: Unit test this function
-        val seconds = userInputToSeconds(input)
-        return seconds * Constants.MillisecondsPerSecond
-    }
-
-    private fun startTimers() { // TODO: Unit test this function
+    private fun startTimers() {
         // Logic to start main and extra timers
         // Utilizes the validated inputs from validationResult
         // Assuming validationResult is valid, as it should be checked before calling this method
@@ -198,19 +154,17 @@ class BronnBakesTimerViewModel(
     }
 
     /**
-     * Called when the user clicks the Reset button.
+     * Handles the click event of the "Reset" button in the UI. This function is responsible for clearing
+     * and resetting the resources associated with the timers. It is used to reset the timers to their
+     * initial state, allowing the user to start over with fresh timer data.
      */
     @Suppress("TooGenericExceptionCaught")
     fun onResetClick() {
         try {
-            clearResources()
+            timerManager.clearResources(timerRepository)
         } catch (e: Exception) {
             logException(e, errorRepository)
         }
-    }
-
-    private fun clearResources() {
-        timerRepository.updateData(null)
     }
 
     /**

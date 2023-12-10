@@ -25,6 +25,12 @@ val appModule = module {
     // Bind DefaultRepository instance to IErrorRepository
     single<IErrorRepository> { DefaultErrorRepository() }
 
+    // Bind TimerManager instance to TimerManager
+    single<ITimerManager> { DefaultTimerManager() }
+
+    // Bind InputValidator instance to InputValidator
+    single<IInputValidator> { DefaultInputValidator() }
+
     // Define the ViewModel
-    viewModel { BronnBakesTimerViewModel(get(), get(), get()) }
+    viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get()) }
 }
