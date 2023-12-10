@@ -596,7 +596,7 @@ val testModule = module {
     single<ITimerRepository> { MockTimerRepository() }
 
     // Bind ExtraTimersRepository instance to IExtraTimersRepository
-    single<IExtraTimersRepository> { ExtraTimersRepository }
+    single<IExtraTimersRepository> { DefaultExtraTimersRepository() }
 
     // Provide a mock implementation of ErrorRepository
     single<IErrorRepository> { MockErrorRepository() }

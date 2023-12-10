@@ -17,10 +17,10 @@ val appModule = module {
     single<IMediaPlayerWrapper> { MediaPlayerWrapper(androidContext(), R.raw.buzzer) }
 
     // Bind TimerRepository instance to ITimerRepository
-    single<ITimerRepository> { TimerRepository }
+    single<ITimerRepository> { DefaultTimerRepository() }
 
     // Bind ExtraTimersRepository instance to IExtraTimersRepository
-    single<IExtraTimersRepository> { ExtraTimersRepository }
+    single<IExtraTimersRepository> { DefaultExtraTimersRepository() }
 
     // Bind DefaultRepository instance to IErrorRepository
     single<IErrorRepository> { DefaultErrorRepository() }

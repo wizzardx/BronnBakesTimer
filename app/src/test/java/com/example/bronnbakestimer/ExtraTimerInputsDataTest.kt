@@ -1,19 +1,33 @@
 package com.example.bronnbakestimer
 
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertEquals
+import org.koin.core.context.GlobalContext
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
 import kotlin.test.assertNotEquals
-import kotlin.test.assertNull
 
 @Suppress("FunctionMaxLength")
 class ExtraTimerInputsDataTest {
 
     private lateinit var extraTimerInputsData: ExtraTimerInputsData
+    private val extraTimersRepository: IExtraTimersRepository by lazy { GlobalContext.get().get() }
 
     @Before
     fun setup() {
+        startKoin {
+            modules(testModule)
+        }
         extraTimerInputsData = ExtraTimerInputsData()
+    }
+
+    @After
+    fun tearDown() {
+        stopKoin()
     }
 
     @Test
@@ -112,8 +126,8 @@ class ExtraTimerInputsDataTest {
                 ExtraTimerInputsData()
             )
         )
-        ExtraTimersRepository.updateData(newData)
-        assertEquals(newData, ExtraTimersRepository.timerData.value)
+        extraTimersRepository.updateData(newData)
+        assertEquals(newData, extraTimersRepository.timerData.value)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -129,6 +143,12 @@ class ExtraTimerInputsDataTest {
                 ExtraTimerInputsData()
             )
         )
-        ExtraTimersRepository.updateData(invalidData)
+        extraTimersRepository.updateData(invalidData)
+    }
+
+    companion object {
+        val testModule = module {
+            single<IExtraTimersRepository> { DefaultExtraTimersRepository() }
+        }
     }
 }
