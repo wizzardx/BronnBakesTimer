@@ -2,7 +2,7 @@ package com.example.bronnbakestimer
 
 import android.Manifest
 import android.app.Application
-import android.content.Context
+
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -51,7 +51,6 @@ import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
-import java.lang.ref.WeakReference
 
 /**
  * Custom Application class for the BronnBakesTimer application.
@@ -71,38 +70,19 @@ class MyApplication : Application() {
         initializeKoin()
     }
 
-    /**
-     * Initializes Koin for dependency injection.
-     *
-     * @param isTest Indicates whether the initialization is for testing.
-     */
-    fun initializeKoin(isTest: Boolean = false) {
-        if (GlobalContext.getOrNull() == null) { // Check if Koin is already started
-            // Start Koin with the context
-            startKoin {
-                // Use the androidLogger if not in test mode
-                if (!isTest) {
-                    androidLogger()
-                }
+    private fun initializeKoin() {
+        // Start Koin with the context
+        startKoin {
+            // Use the androidLogger
+            androidLogger()
 
-                // Get the Context from the WeakReference if it's not null, else use the application context
-                val context = mockContext?.get() ?: this@MyApplication
+            // Use the application context:
+            val context = this@MyApplication
+            androidContext(context)
 
-                // Use mockContext if in test mode, else use the application context
-                androidContext(context)
-
-                // Declare your Koin modules
-                modules(appModule)
-            }
+            // Declare your Koin modules
+            modules(appModule)
         }
-    }
-
-    companion object {
-        /**
-         * A weak reference to a mock context, primarily for testing.
-         * Helps avoid memory leaks by not holding a strong reference.
-         */
-        var mockContext: WeakReference<Context>? = null
     }
 }
 
@@ -131,10 +111,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(KoinExperimentalAPI::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        initializeActivity()
+    }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        cleanupActivity()
+    }
+
+    /**
+     * Initializes the main activity of the BronnBakesTimer app.
+     *
+     * This function sets up the user interface, requests necessary permissions, and starts the TimerService.
+     * It is called in the `onCreate` method of the MainActivity to initialize the app.
+     */
+    @OptIn(KoinExperimentalAPI::class)
+    fun initializeActivity() {
         setContent {
             BronnBakesTimerTheme {
                 // A surface container using the 'background' color from the theme
@@ -161,14 +155,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onDestroy() {
+    /**
+     * Performs cleanup tasks when the main activity of the BronnBakesTimer app is destroyed.
+     *
+     * This function is responsible for stopping the TimerService to ensure proper cleanup and resource management
+     * when the activity is no longer in use.
+     */
+    fun cleanupActivity() {
         // Stop the TimerService when the activity is destroyed
         stopService(Intent(this, TimerService::class.java))
-
-        super.onDestroy()
     }
 
-    private fun startYourService() {
+    internal fun startYourService() {
         // Intent to start the TimerService
         val serviceIntent = Intent(this, TimerService::class.java)
 
@@ -634,6 +632,7 @@ val testModule = module {
  * Mock implementation of the [ITimerRepository] interface for testing purposes.
  * This class provides a mock [timerData] and does not perform actual data updates.
  */
+// TODO: Use DefaultTimerRepository instead of this mock implementation?
 class MockTimerRepository : ITimerRepository {
 
     override val timerData: StateFlow<TimerData?>
@@ -648,6 +647,7 @@ class MockTimerRepository : ITimerRepository {
  * Mock implementation of the [IErrorRepository] interface for testing purposes.
  * This class provides a mock [errorMessage] and does not perform actual error message updates.
  */
+// TODO: Use DefaultErrorRepository instead of this mock implementation?
 class MockErrorRepository : IErrorRepository {
     override val errorMessage: StateFlow<String?>
         get() = MutableStateFlow("Mock Error Message")

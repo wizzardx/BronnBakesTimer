@@ -4,8 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestCoroutineDispatcher
-import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.TestCoroutineDispatcher // TODO: Use something that's not deprecated
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -16,16 +15,11 @@ import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.runTest
-import kotlin.test.assertEquals
-
 @ExperimentalCoroutinesApi
 class DefaultTimerRepositoryTest {
 
+    // TODO: Use something that's not deprecated
     private val testDispatcher = TestCoroutineDispatcher()
-    private val testScope = TestScope(testDispatcher)
 
     @Before
     fun setup() {
@@ -41,7 +35,7 @@ class DefaultTimerRepositoryTest {
     @Test
     fun `updateData updates state correctly with valid data`() {
         val timerRepository = DefaultTimerRepository()
-        val validTimerData = TimerData(60000, false, false, false)
+        val validTimerData = TimerData(60_000, isPaused = false, isFinished = false, beepTriggered = false)
 
         timerRepository.updateData(validTimerData)
 
@@ -60,7 +54,7 @@ class DefaultTimerRepositoryTest {
     @Test
     fun `updateData throws exception for negative milliseconds`() {
         val timerRepository = DefaultTimerRepository()
-        val invalidTimerData = TimerData(-1000, false, false, false)
+        val invalidTimerData = TimerData(-1000, isPaused = false, isFinished = false, beepTriggered = false)
 
         val exception = assertThrows(IllegalArgumentException::class.java) {
             timerRepository.updateData(invalidTimerData)
@@ -86,14 +80,14 @@ class DefaultTimerRepositoryTest {
         delay(100)
 
         // Update state and collect changes
-        val timerData1 = TimerData(60000, false, false, false)
+        val timerData1 = TimerData(60_000, isPaused = false, isFinished = false, beepTriggered = false)
         println("Updating to: $timerData1")
         timerRepository.updateData(timerData1)
 
         // Short delay to allow the update to be collected
         delay(100)
 
-        val timerData2 = TimerData(30000, true, false, false)
+        val timerData2 = TimerData(30_000, isPaused = true, isFinished = false, beepTriggered = false)
         println("Updating to: $timerData2")
         timerRepository.updateData(timerData2)
 
@@ -106,6 +100,4 @@ class DefaultTimerRepositoryTest {
         // Assert that the timer data list contains the expected values
         assertEquals(listOf(null, timerData1, timerData2), timerDataList)
     }
-
-
 }

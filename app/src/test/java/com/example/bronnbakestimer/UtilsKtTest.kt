@@ -4,20 +4,18 @@ import android.util.Log
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.verify
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.koin.core.context.GlobalContext
-
-import org.junit.Before
-import org.junit.After
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
-import org.koin.test.KoinTest
 
 @Suppress("FunctionMaxLength")
 class UtilsKtTest {

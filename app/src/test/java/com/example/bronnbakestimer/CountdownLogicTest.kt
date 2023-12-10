@@ -10,7 +10,6 @@ import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -72,11 +71,6 @@ class CountdownLogicTest {
     private lateinit var timerRepository: ITimerRepository
     private lateinit var testScope: CoroutineScope
     private lateinit var extraTimersRepository: IExtraTimersRepository
-
-    @Before
-    fun setup() {
-        // Initialization code for each test
-    }
 
     @After
     fun tearDown() {
@@ -220,7 +214,7 @@ class CountdownLogicTest {
         }
 
         // Set initial timer state with millisecondsRemaining slightly more than the increment amount
-        val incrementAmount: Long = 50L // Increment amount less than SmallDelay, as Long
+        val incrementAmount = 50L // Increment amount less than SmallDelay, as Long
         val initialMilliseconds: Long = incrementAmount + 10L // Slightly more than incrementAmount, as Long
         val timerData = TimerData(initialMilliseconds, isPaused = false, isFinished = false, beepTriggered = false)
         timerRepository.updateData(timerData)
@@ -239,7 +233,7 @@ class CountdownLogicTest {
 
         // Assert that the partial tick logic is executed
         val expectedMillisRemaining = initialMilliseconds - incrementAmount
-        assertEquals<Long>(expectedMillisRemaining, timerRepository.timerData.value!!.millisecondsRemaining)
+        assertEquals(expectedMillisRemaining, timerRepository.timerData.value!!.millisecondsRemaining)
 
         // Clean up
         job.cancel()

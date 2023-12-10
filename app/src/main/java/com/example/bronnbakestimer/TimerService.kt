@@ -22,7 +22,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import org.koin.android.ext.android.inject
-import org.koin.core.context.GlobalContext
 
 /**
  * `TimerService` is a foreground service in the "BronnBakes Timer" app, designed to manage a

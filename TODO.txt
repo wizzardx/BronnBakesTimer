@@ -1,3 +1,9 @@
+* Make modules more testable that currently aren't so testable..
+
+* Fix these compile warnings:
+  w: file:///home/david/AndroidStudioProjects/BronnBakesTimer/app/src/test/java/com/example/bronnbakestimer/DefaultTimerRepositoryTest.kt:7:32 'TestCoroutineDispatcher' is deprecated. The execution order of `TestCoroutineDispatcher` can be confusing, and the mechanism of pausing is typically misunderstood. Please use `StandardTestDispatcher` or `UnconfinedTestDispatcher` instead.
+w: file:///home/david/AndroidStudioProjects/BronnBakesTimer/app/src/test/java/com/example/bronnbakestimer/DefaultTimerRepositoryTest.kt:22:34 'TestCoroutineDispatcher' is deprecated. The execution order of `TestCoroutineDispatcher` can be confusing, and the mechanism of pausing is typically misunderstood. Please use `StandardTestDispatcher` or `UnconfinedTestDispatcher` instead.
+
 * Add high unit test coverage, and maintain it?
 
 * In validateAllInputs, clear out error flags on things that we're about to set flags on.
@@ -17,7 +23,7 @@
 
 * Make editing of numbers in text fields less annoying. See how I did it in the Marshalls Metronome app?
 
-* Do global tidyups on the code, but be careful of upsetting existing lints.
+* Do global tidy-ups on the code, but be careful of upsetting existing lints.
 
 * Make the popup notification more informative/reactive/etc.
 
@@ -43,3 +49,4 @@
 * For default values for controls, use constants (or maybe android resources?)
 
 * Reformat all the code in the project (but keep the builtin detekt/etc checks happy)
+
