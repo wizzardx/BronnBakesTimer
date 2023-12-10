@@ -16,7 +16,8 @@ import java.util.UUID
 /**
  * ViewModel to help separate business logic from UI logic.
  */
-class BronnBakesTimerViewModel( // TODO: Simplify this as per the lint. Use AutoDev(Expert) carefully, step by step. After getting testing high?
+// TODO: Simplify this as per the lint. Use AutoDev(Expert) carefully, step by step. After getting testing high?
+class BronnBakesTimerViewModel(
     private val timerRepository: ITimerRepository,
     private val extraTimersRepository: IExtraTimersRepository,
 ) : ViewModel() {

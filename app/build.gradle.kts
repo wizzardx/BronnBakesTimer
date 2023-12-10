@@ -74,8 +74,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
 
     // Unit testing dependencies
+    testImplementation("io.mockk:mockk:1.13.8")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.20") // Replace with your Kotlin version
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 

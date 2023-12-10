@@ -25,16 +25,16 @@ object Constants {
     const val MaxUserInputNum = 500
 
     /**
-     * A constant value representing the default time unit for user input, which is [TimeUnit.MINUTES].
+     * A constant value representing the default time unit for user input, which is [UserInputTimeUnitType.MINUTES].
      * User input values are typically provided in minutes.
      */
-    val UserInputTimeUnit = TimeUnit.MINUTES
+    val UserInputTimeUnit = UserInputTimeUnitType.MINUTES
 }
 
 /**
  * Enumeration representing time units for user input.
  * It includes [MINUTES] and [SECONDS] to specify the time unit.
  */
-enum class TimeUnit {
+enum class UserInputTimeUnitType {
     MINUTES, SECONDS,
 }

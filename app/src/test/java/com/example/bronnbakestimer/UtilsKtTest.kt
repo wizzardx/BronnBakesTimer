@@ -171,12 +171,12 @@ class UtilsKtTest {
     // Tests for userInputToSeconds
     @Test
     fun `converts minutes to seconds correctly`() {
-        assertEquals(600, userInputToSeconds("10", TimeUnit.MINUTES))
+        assertEquals(600, userInputToSeconds("10", UserInputTimeUnitType.MINUTES))
     }
 
     @Test
     fun `converts seconds to seconds correctly`() {
-        assertEquals(10, userInputToSeconds("10", TimeUnit.SECONDS))
+        assertEquals(10, userInputToSeconds("10", UserInputTimeUnitType.SECONDS))
     }
 
     @Test
@@ -192,6 +192,6 @@ class UtilsKtTest {
     @Test
     @Suppress("UnderscoresInNumericLiterals")
     fun `handles large numeric input correctly`() {
-        assertEquals(18000, userInputToSeconds("300", TimeUnit.MINUTES))
+        assertEquals(18000, userInputToSeconds("300", UserInputTimeUnitType.MINUTES))
     }
 }
