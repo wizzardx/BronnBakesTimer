@@ -10,9 +10,31 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.koin.core.context.GlobalContext
+
+import org.junit.Before
+import org.junit.After
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
+import org.koin.test.KoinTest
 
 @Suppress("FunctionMaxLength")
 class UtilsKtTest {
+
+    private val errorRepository: IErrorRepository by lazy { GlobalContext.get().get() }
+
+    @Before
+    fun setup() {
+        startKoin {
+            modules(testModule)
+        }
+    }
+
+    @After
+    fun tearDown() {
+        stopKoin()
+    }
 
     // Tests for normaliseIntInput
 
@@ -201,10 +223,10 @@ class UtilsKtTest {
 
         every { Log.e(any(), any(), any()) } returns 0
 
-        logException(exception)
+        logException(exception, errorRepository)
 
         verify { Log.e("BronnBakesTimer", "Error occurred: ", exception) }
-        assert(ErrorRepository.errorMessage.value == exception.message)
+        assert(errorRepository.errorMessage.value == exception.message)
     }
 
     // Unit tests for logError
@@ -216,9 +238,15 @@ class UtilsKtTest {
 
         every { Log.e(any(), any()) } returns 0
 
-        logError(errorMessage)
+        logError(errorMessage, errorRepository)
 
         verify { Log.e("BronnBakesTimer", errorMessage) }
-        assert(ErrorRepository.errorMessage.value == errorMessage)
+        assert(errorRepository.errorMessage.value == errorMessage)
+    }
+
+    companion object {
+        val testModule = module {
+            single<IErrorRepository> { DefaultErrorRepository() }
+        }
     }
 }

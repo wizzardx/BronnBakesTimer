@@ -47,6 +47,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.compose.koinInject
 import org.koin.core.annotation.KoinExperimentalAPI
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 
@@ -91,6 +92,7 @@ class MyApplication : Application() {
  * @see TimerService
  */
 class MainActivity : ComponentActivity() {
+    private val errorRepository: IErrorRepository = GlobalContext.get().get()
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -100,7 +102,7 @@ class MainActivity : ComponentActivity() {
             startYourService()
         } else {
             // Explain to the user that the feature is unavailable
-            logError("Notification Permissions not granted. The Timer countdown will not work.")
+            logError("Notification Permissions not granted. The Timer countdown will not work.", errorRepository)
         }
     }
 
@@ -600,7 +602,7 @@ val testModule = module {
     single<IErrorRepository> { MockErrorRepository() }
 
     // Just use the original viewmodel here, it works fine in preview mode.
-    viewModel { BronnBakesTimerViewModel(get(), get()) }
+    viewModel { BronnBakesTimerViewModel(get(), get(), get()) }
 }
 
 /**

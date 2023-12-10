@@ -31,7 +31,6 @@ class MyApplicationTest : KoinTest {
 
     @Before
     fun setup() {
-        // Updated to use openMocks
         MockitoAnnotations.openMocks(this)
         startKoin {
             androidContext(mockContext)

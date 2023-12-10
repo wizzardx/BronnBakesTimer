@@ -20,6 +20,7 @@ import java.util.UUID
 class BronnBakesTimerViewModel(
     private val timerRepository: ITimerRepository,
     private val extraTimersRepository: IExtraTimersRepository,
+    private val errorRepository: IErrorRepository,
 ) : ViewModel() {
 
     private val _timerDurationInput = MutableStateFlow("5")
@@ -123,7 +124,7 @@ class BronnBakesTimerViewModel(
                 else -> startTimersIfValid()
             }
         } catch (e: Exception) {
-            logException(e)
+            logException(e, errorRepository)
         }
     }
 
@@ -204,7 +205,7 @@ class BronnBakesTimerViewModel(
         try {
             clearResources()
         } catch (e: Exception) {
-            logException(e)
+            logException(e, errorRepository)
         }
     }
 

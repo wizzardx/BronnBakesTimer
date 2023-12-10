@@ -175,16 +175,21 @@ fun getStartPauseResumeButtonText(timerData: TimerData?): String {
 }
 
 /**
- * Reports an error to the ErrorRepository and logs it using Android's Log.e().
+ * Reports an exception to the ErrorRepository and logs its details using Android's Log.e().
  *
- * This function takes an exception and updates the ErrorRepository with its error message.
- * Additionally, it logs the error using the Android logging system with the "Error" level.
- * The error message is tagged with "BronnBakesTimer" for easy identification in logs.
+ * This function is designed to handle exceptions by performing two key actions:
+ * 1. Updating the ErrorRepository with the exception's message, thus making it available for observation and response.
+ * 2. Logging the exception using Android's logging system at the "Error" level for diagnostics. The log is tagged with
+ *    "BronnBakesTimer" for easy tracking in the log system.
  *
- * @param exception The Exception containing information about the error.
+ * Usage of this function ensures consistent handling of exceptions throughout the application, aiding in both
+ * debugging and user feedback mechanisms.
+ *
+ * @param exception The Throwable exception containing details about the error encountered.
+ * @param errorRepository The IErrorRepository instance where the error message will be reported.
  */
-fun logException(exception: Throwable) {
-    ErrorRepository.updateData(exception.message)
+fun logException(exception: Throwable, errorRepository: IErrorRepository) {
+    errorRepository.updateData(exception.message)
     val tag = "BronnBakesTimer"
     Log.e(tag, "Error occurred: ", exception)
 }
@@ -192,14 +197,20 @@ fun logException(exception: Throwable) {
 /**
  * Logs an error message and reports it to the ErrorRepository.
  *
- * This function takes an error message as input and updates the ErrorRepository with the provided message.
- * Additionally, it logs the error message using the Android logging system with the "Error" level.
- * The error message is tagged with "BronnBakesTimer" for easy identification in logs.
+ * This function simplifies error handling by:
+ * 1. Reporting the provided error message to the ErrorRepository. This enables other components of the application
+ *    to react to the error state as needed.
+ * 2. Logging the error message at the "Error" level using Android's Log.e(), aiding in troubleshooting. The log
+ *    is tagged with "BronnBakesTimer" to distinguish it in the application's log output.
  *
- * @param msg The error message to be logged and reported.
+ * It's a useful utility for uniform error reporting and logging across the application, promoting consistency and ease
+ * of debugging.
+ *
+ * @param msg The string containing the error message to be logged and reported.
+ * @param errorRepository The IErrorRepository instance where the error message will be reported.
  */
-fun logError(msg: String) {
-    ErrorRepository.updateData(msg)
+fun logError(msg: String, errorRepository: IErrorRepository) {
+    errorRepository.updateData(msg)
     val tag = "BronnBakesTimer"
     Log.e(tag, msg)
 }

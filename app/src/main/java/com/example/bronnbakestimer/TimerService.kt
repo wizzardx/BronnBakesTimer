@@ -22,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import org.koin.android.ext.android.inject
+import org.koin.core.context.GlobalContext
 
 /**
  * `TimerService` is a foreground service in the "BronnBakes Timer" app, designed to manage a
@@ -49,6 +50,7 @@ class TimerService : Service() {
     private val timerRepository: ITimerRepository by inject()
     private val mediaPlayerWrapper: IMediaPlayerWrapper by inject()
     private val extraTimersRepository: IExtraTimersRepository by inject()
+    private val errorRepository: IErrorRepository by inject()
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
@@ -140,7 +142,7 @@ class TimerService : Service() {
                     throw e
                 } else {
                     // Handle other exceptions
-                    logException(e)
+                    logException(e, errorRepository)
                 }
             }
         }

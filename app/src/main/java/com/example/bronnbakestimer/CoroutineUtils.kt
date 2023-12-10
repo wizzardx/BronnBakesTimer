@@ -1,12 +1,15 @@
 package com.example.bronnbakestimer
 
 import kotlinx.coroutines.CoroutineExceptionHandler
+import org.koin.core.context.GlobalContext
 import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Utility object containing shared elements for coroutine handling.
  */
 object CoroutineUtils {
+    private val errorRepository: IErrorRepository = GlobalContext.get().get()
+
     /**
      * A CoroutineExceptionHandler for handling uncaught exceptions in coroutines.
      * Logs the exception and terminates the application.
@@ -21,7 +24,7 @@ object CoroutineUtils {
         CoroutineExceptionHandler { _, exception ->
             if (exception !is CancellationException) {
                 // Log the exception
-                logException(exception)
+                logException(exception, errorRepository)
             }
         }
 }
