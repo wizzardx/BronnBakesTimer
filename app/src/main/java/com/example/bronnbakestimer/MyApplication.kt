@@ -29,23 +29,3 @@ class MyApplication : Application() {
         }
     }
 }
-
-/**
- * Koin module used for providing mock implementations of dependencies during testing.
- * This module is intended for use in unit testing scenarios to replace real implementations with mocks.
- */
-val testModule = module {
-    // Provide mock implementations for your dependencies
-
-    // Provide a mock implementation of TimerRepository
-    single<ITimerRepository> { MockTimerRepository() }
-
-    // Bind ExtraTimersRepository instance to IExtraTimersRepository
-    single<IExtraTimersRepository> { DefaultExtraTimersRepository() }
-
-    // Provide a mock implementation of ErrorRepository
-    single<IErrorRepository> { MockErrorRepository() }
-
-    // Just use the original viewmodel here, it works fine in preview mode.
-    viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get()) }
-}

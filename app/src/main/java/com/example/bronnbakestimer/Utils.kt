@@ -188,10 +188,9 @@ fun getStartPauseResumeButtonText(timerData: TimerData?): String {
  * @param exception The Throwable exception containing details about the error encountered.
  * @param errorRepository The IErrorRepository instance where the error message will be reported.
  */
-fun logException(exception: Throwable, errorRepository: IErrorRepository) {
+fun logException(exception: Throwable, errorRepository: IErrorRepository, logger: ErrorLoggerProvider) {
     errorRepository.updateData(exception.message)
-    val tag = "BronnBakesTimer"
-    Log.e(tag, "Error occurred: ", exception)
+    logger.logError("BronnBakesTimer", "Error occurred: ", exception)
 }
 
 /**
@@ -209,10 +208,9 @@ fun logException(exception: Throwable, errorRepository: IErrorRepository) {
  * @param msg The string containing the error message to be logged and reported.
  * @param errorRepository The IErrorRepository instance where the error message will be reported.
  */
-fun logError(msg: String, errorRepository: IErrorRepository) {
+fun logError(msg: String, errorRepository: IErrorRepository, logger: ErrorLoggerProvider) {
     errorRepository.updateData(msg)
-    val tag = "BronnBakesTimer"
-    Log.e(tag, msg)
+    logger.logError("BronnBakesTimer", msg)
 }
 
 /**
@@ -279,4 +277,13 @@ fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: St
 fun userInputToMillis(input: String): Long {
     val seconds = userInputToSeconds(input)
     return seconds * Constants.MillisecondsPerSecond
+}
+
+val runtimeErrorLoggerProvider = ErrorLoggerProvider { tag, message, throwable ->
+    Log.e(tag, message, throwable)
+}
+
+val testErrorLoggerProvider = ErrorLoggerProvider { tag, message, throwable ->
+    // Custom implementation for testing, e.g., print to console or use a mock logger
+    println("[$tag] $message - ${throwable?.message}")
 }

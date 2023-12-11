@@ -9,6 +9,7 @@ import kotlin.coroutines.cancellation.CancellationException
  */
 object CoroutineUtils {
     private val errorRepository: IErrorRepository = GlobalContext.get().get()
+    private val errorLoggerProvider: ErrorLoggerProvider = GlobalContext.get().get()
 
     /**
      * A CoroutineExceptionHandler for handling uncaught exceptions in coroutines.
@@ -24,7 +25,7 @@ object CoroutineUtils {
         CoroutineExceptionHandler { _, exception ->
             if (exception !is CancellationException) {
                 // Log the exception
-                logException(exception, errorRepository)
+                logException(exception, errorRepository, errorLoggerProvider)
             }
         }
 }

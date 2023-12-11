@@ -1,3 +1,13 @@
+* Rename ErrorLoggerProvider to IErrorLoggerProvider
+
+* Get help with simplifiying DiModule.kt
+
+* Check this and fix?
+  -----------
+  david@david-G3-3779:~/AndroidStudioProjects/BronnBakesTimer$ ./gradlew --info app:testDebugUnitTest --tests com.example.bronnbakestimer.BronnBakesTimerViewModelTest.testInitializationAndDefaultValues
+    - See the output of it for what warnigs etc I'm getting.
+  -----------
+
 * Make modules more testable that currently aren't so testable..
 
 * Fix these compile warnings:
@@ -50,3 +60,14 @@ w: file:///home/david/AndroidStudioProjects/BronnBakesTimer/app/src/test/java/co
 
 * Reformat all the code in the project (but keep the builtin detekt/etc checks happy)
 
+* Get Junit5 working on my project.. also try out a new android studio project, see how that works, adapt that to junit5, and then see if I can apply that to this project.
+  - Also watch this for more info:
+    ----------
+    KotlinConf 2018 - Best Practices for Unit Testing in Kotlin by Philipp Hauer - YouTube
+    https://www.youtube.com/watch?v=RX_g65J14H0
+    ----------
+      - And see this too: https://github.com/mannodermaus/android-junit5
+
+* Get dependencies ordered and grouped nicely again?
+
+* Update version from 1.2-dev to 1.2 just before releasing, after I have tested everything...

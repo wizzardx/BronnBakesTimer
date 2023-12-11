@@ -8,7 +8,6 @@ import org.junit.Test
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 import kotlin.test.assertNotEquals
 
 @Suppress("FunctionMaxLength")
@@ -144,11 +143,5 @@ class ExtraTimerInputsDataTest {
             )
         )
         extraTimersRepository.updateData(invalidData)
-    }
-
-    companion object {
-        val testModule = module {
-            single<IExtraTimersRepository> { DefaultExtraTimersRepository() }
-        }
     }
 }

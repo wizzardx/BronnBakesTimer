@@ -4,7 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.TestCoroutineDispatcher // TODO: Use something that's not deprecated
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -15,11 +15,10 @@ import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 
+@Suppress("FunctionMaxLength")
 @ExperimentalCoroutinesApi
 class DefaultTimerRepositoryTest {
-
-    // TODO: Use something that's not deprecated
-    private val testDispatcher = TestCoroutineDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
 
     @Before
     fun setup() {
@@ -29,7 +28,6 @@ class DefaultTimerRepositoryTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain() // Reset the main dispatcher to the original Main dispatcher
-        testDispatcher.cleanupTestCoroutines()
     }
 
     @Test

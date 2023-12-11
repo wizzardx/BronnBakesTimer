@@ -50,6 +50,7 @@ class TimerService : Service() {
     private val mediaPlayerWrapper: IMediaPlayerWrapper by inject()
     private val extraTimersRepository: IExtraTimersRepository by inject()
     private val errorRepository: IErrorRepository by inject()
+    private val errorLoggerProvider: ErrorLoggerProvider by inject()
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
@@ -141,7 +142,7 @@ class TimerService : Service() {
                     throw e
                 } else {
                     // Handle other exceptions
-                    logException(e, errorRepository)
+                    logException(e, errorRepository, errorLoggerProvider)
                 }
             }
         }

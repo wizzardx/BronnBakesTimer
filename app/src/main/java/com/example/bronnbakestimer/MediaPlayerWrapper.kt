@@ -13,6 +13,7 @@ class MediaPlayerWrapper(
     private val soundResId: Int
 ) : IMediaPlayerWrapper {
     private val errorRepository: IErrorRepository = GlobalContext.get().get()
+    private val errorLoggerProvider: ErrorLoggerProvider = GlobalContext.get().get()
 
     private var mediaPlayer: MediaPlayer? = null
 
@@ -27,11 +28,11 @@ class MediaPlayerWrapper(
             mediaPlayer = MediaPlayer.create(context, soundResId)
             if (mediaPlayer == null) {
                 // Handle MediaPlayer creation failure
-                logError("Error creating MediaPlayer instance.", errorRepository)
+                logError("Error creating MediaPlayer instance.", errorRepository, errorLoggerProvider)
             }
         } catch (e: Exception) {
             // Handle exceptions
-            logException(e, errorRepository)
+            logException(e, errorRepository, errorLoggerProvider)
         }
     }
 
@@ -44,7 +45,7 @@ class MediaPlayerWrapper(
             it.start()
         } ?: run {
             // Handle case where MediaPlayer is null
-            logError("MediaPlayer is null.", errorRepository)
+            logError("MediaPlayer is null.", errorRepository, errorLoggerProvider)
         }
     }
 

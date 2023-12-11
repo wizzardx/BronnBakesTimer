@@ -44,7 +44,9 @@ class DefaultInputValidator : IInputValidator {
                 }
             } ?: false
         }
-
-        return !(mainTimerError || extraTimerErrors.any { it })
+        // TODO: Check why (it looks like) returning the result directly (not using result variable)
+        //       can cause the opposite boolean value to be returned.
+        val result = !(mainTimerError || extraTimerErrors.any { it })
+        return result
     }
 }

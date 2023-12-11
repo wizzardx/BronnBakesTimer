@@ -1,9 +1,5 @@
 package com.example.bronnbakestimer
 
-import android.util.Log
-import io.mockk.every
-import io.mockk.mockkStatic
-import io.mockk.verify
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,7 +11,6 @@ import org.junit.Test
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 
 @Suppress("FunctionMaxLength")
 class UtilsKtTest {
@@ -216,30 +211,35 @@ class UtilsKtTest {
 
     @Test
     fun `logException reports to repository and logs`() {
-        mockkStatic(Log::class)
+        val testLogger = TestErrorLoggerProvider()
         val exception = RuntimeException("Test Exception")
 
-        every { Log.e(any(), any(), any()) } returns 0
+        // Call logException with the test logger
+        logException(exception, errorRepository, testLogger)
 
-        logException(exception, errorRepository)
+        // Verify that the test logger received the correct log information
+        assertEquals("BronnBakesTimer", testLogger.lastLogTag)
+        assertEquals("Error occurred: ", testLogger.lastLogMessage)
+        assertEquals(exception, testLogger.lastThrowable)
 
-        verify { Log.e("BronnBakesTimer", "Error occurred: ", exception) }
-        assert(errorRepository.errorMessage.value == exception.message)
+        // Verify that the error repository was updated
+        assertEquals(exception.message, errorRepository.errorMessage.value)
     }
 
     // Unit tests for logError
 
     @Test
     fun `logError reports to repository and logs`() {
-        mockkStatic(Log::class)
+        val testLogger = TestErrorLoggerProvider()
         val errorMessage = "Test Error"
 
-        every { Log.e(any(), any()) } returns 0
+        logError(errorMessage, errorRepository, testLogger)
 
-        logError(errorMessage, errorRepository)
+        assertEquals("BronnBakesTimer", testLogger.lastLogTag)
+        assertEquals(errorMessage, testLogger.lastLogMessage)
+        assertNull(testLogger.lastThrowable) // Now correctly asserts null
 
-        verify { Log.e("BronnBakesTimer", errorMessage) }
-        assert(errorRepository.errorMessage.value == errorMessage)
+        assertEquals(errorMessage, errorRepository.errorMessage.value)
     }
 
     // Tests for formatTotalTimeRemainingString
@@ -279,10 +279,22 @@ class UtilsKtTest {
         val result = formatTotalTimeRemainingString(null, "300")
         assertEquals("300:00", result)
     }
+}
 
-    companion object {
-        val testModule = module {
-            single<IErrorRepository> { DefaultErrorRepository() }
-        }
+class TestErrorLoggerProvider : ErrorLoggerProvider {
+    var lastLogTag: String? = null
+    var lastLogMessage: String? = null
+    var lastThrowable: Throwable? = null
+
+    override fun logError(tag: String, message: String, throwable: Throwable) {
+        lastLogTag = tag
+        lastLogMessage = message
+        lastThrowable = throwable
+    }
+
+    override fun logError(tag: String, message: String) {
+        lastLogTag = tag
+        lastLogMessage = message
+        lastThrowable = null // Indicate that no Throwable was provided
     }
 }

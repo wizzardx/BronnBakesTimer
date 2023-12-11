@@ -52,7 +52,7 @@ interface ITimerRepository {
     fun resumeTimer() {
         val timerData = timerData.value
         check(timerData != null) { "Timer data must not be null" }
-        check(!timerData.isPaused) { "Timer must not be paused" }
+        check(timerData.isPaused) { "Timer must be paused" }
         updateData(timerData.copy(isPaused = false))
     }
 }

@@ -22,6 +22,7 @@ class BronnBakesTimerViewModel(
     private val inputValidator: IInputValidator,
     private val extraTimersRepository: IExtraTimersRepository,
     private val errorRepository: IErrorRepository,
+    private val errorLoggerProvider: ErrorLoggerProvider,
 ) : ViewModel() {
 
     private val _timerDurationInput = MutableStateFlow("5")
@@ -116,7 +117,7 @@ class BronnBakesTimerViewModel(
                 else -> startTimersIfValid()
             }
         } catch (e: Exception) {
-            logException(e, errorRepository)
+            logException(e, errorRepository, errorLoggerProvider)
         }
     }
 
@@ -163,7 +164,7 @@ class BronnBakesTimerViewModel(
         try {
             timerManager.clearResources(timerRepository)
         } catch (e: Exception) {
-            logException(e, errorRepository)
+            logException(e, errorRepository, errorLoggerProvider)
         }
     }
 
