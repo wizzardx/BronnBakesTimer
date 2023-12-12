@@ -4,10 +4,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
-import androidx.compose.runtime.getValue
 
 /**
  * Composable function for displaying the time remaining for all additional timers in the BronnBakesTimer app.

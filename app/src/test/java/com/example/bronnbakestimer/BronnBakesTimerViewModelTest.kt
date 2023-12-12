@@ -17,7 +17,6 @@ import org.junit.Before
 import org.junit.Test
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.mockito.Mock
 import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
@@ -229,6 +228,7 @@ class BronnBakesTimerViewModelTest {
         assertNotNull(errorMessage)
         assertEquals("Simulated Reset Exception", errorMessage)
     }
+
     @Test
     fun testStartTimersWithValidInput() = runTest {
         // Set a valid timer duration input
@@ -259,7 +259,7 @@ class BronnBakesTimerViewModelTest {
     @Test
     fun testTimerResetFunctionality() = runTest {
         // Setup and start timers
-        val timerData = TimerData(10000, false, false, false)
+        val timerData = TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false)
         timerRepository.updateData(timerData)
 
         // Call onResetClick to reset timers

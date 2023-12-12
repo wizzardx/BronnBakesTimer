@@ -39,4 +39,7 @@ val appModule = module {
 
     // Provide CoroutineScope for TimerService
     single<CoroutineScopeProvider> { ProductionCoroutineScopeProvider() }
+
+    // Provide NotificationHelper for TimerService
+    single<NotificationHelper> { NotificationHelper(androidContext()) }
 }
