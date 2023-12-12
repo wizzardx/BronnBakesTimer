@@ -23,7 +23,7 @@ class BronnBakesTimerViewModel(
     private val inputValidator: IInputValidator,
     private val extraTimersRepository: IExtraTimersRepository,
     private val errorRepository: IErrorRepository,
-    private val errorLoggerProvider: ErrorLoggerProvider,
+    private val errorLoggerProvider: IErrorLoggerProvider,
 ) : ViewModel() {
 
     private val _timerDurationInput = MutableStateFlow("5")

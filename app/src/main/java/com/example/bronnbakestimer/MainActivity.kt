@@ -29,7 +29,7 @@ import org.koin.core.context.GlobalContext
  */
 class MainActivity : ComponentActivity() {
     private val errorRepository: IErrorRepository = GlobalContext.get().get()
-    private val errorLoggerProvider: ErrorLoggerProvider = GlobalContext.get().get()
+    private val errorLoggerProvider: IErrorLoggerProvider = GlobalContext.get().get()
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()

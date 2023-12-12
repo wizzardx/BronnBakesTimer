@@ -13,7 +13,7 @@ class MediaPlayerWrapper(
     private val soundResId: Int
 ) : IMediaPlayerWrapper {
     private val errorRepository: IErrorRepository = GlobalContext.get().get()
-    private val errorLoggerProvider: ErrorLoggerProvider = GlobalContext.get().get()
+    private val errorLoggerProvider: IErrorLoggerProvider = GlobalContext.get().get()
 
     private var mediaPlayer: MediaPlayer? = null
 

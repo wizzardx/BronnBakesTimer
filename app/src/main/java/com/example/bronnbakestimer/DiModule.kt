@@ -32,7 +32,7 @@ val appModule = module {
     single<IInputValidator> { DefaultInputValidator() }
 
     // Bind ErrorLoggerProvider instance to runtimeErrorLoggerProvider
-    single<ErrorLoggerProvider> { runtimeErrorLoggerProvider }
+    single<IErrorLoggerProvider> { runtimeErrorLoggerProvider }
 
     // Define the ViewModel
     viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get()) }

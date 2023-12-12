@@ -193,7 +193,7 @@ fun getStartPauseResumeButtonText(timerData: TimerData?): String {
  * @param errorRepository The IErrorRepository instance where the exception message will be reported.
  * @param logger The ErrorLoggerProvider used for logging the exception.
  */
-fun logException(exception: Throwable, errorRepository: IErrorRepository, logger: ErrorLoggerProvider) {
+fun logException(exception: Throwable, errorRepository: IErrorRepository, logger: IErrorLoggerProvider) {
     errorRepository.updateData(exception.message)
     logger.logError("BronnBakesTimer", "Error occurred: ", exception)
 }
@@ -214,7 +214,7 @@ fun logException(exception: Throwable, errorRepository: IErrorRepository, logger
  * @param errorRepository The IErrorRepository instance where the error message will be reported.
  * @param logger The ErrorLoggerProvider used for logging the error.
  */
-fun logError(msg: String, errorRepository: IErrorRepository, logger: ErrorLoggerProvider) {
+fun logError(msg: String, errorRepository: IErrorRepository, logger: IErrorLoggerProvider) {
     errorRepository.updateData(msg)
     logger.logError("BronnBakesTimer", msg)
 }
@@ -298,7 +298,7 @@ fun userInputToMillis(input: String): Long {
  * In this implementation, the tag, message, and Throwable are passed directly to Log.e. This writes an error
  * message to the Android log output, which can be viewed and filtered in the Logcat window in Android Studio.
  */
-val runtimeErrorLoggerProvider = ErrorLoggerProvider { tag, message, throwable ->
+val runtimeErrorLoggerProvider = IErrorLoggerProvider { tag, message, throwable ->
     Log.e(tag, message, throwable)
 }
 
@@ -315,7 +315,7 @@ val runtimeErrorLoggerProvider = ErrorLoggerProvider { tag, message, throwable -
  * In this implementation, the tag, message, and Throwable are passed directly to Log.e. This writes an error
  * message to the Android log output, which can be viewed and filtered in the Logcat window in Android Studio.
  */
-val testErrorLoggerProvider = ErrorLoggerProvider { tag, message, throwable ->
+val testErrorLoggerProvider = IErrorLoggerProvider { tag, message, throwable ->
     // Custom implementation for testing, e.g., print to console or use a mock logger
     println("[$tag] $message - ${throwable.message}")
 }

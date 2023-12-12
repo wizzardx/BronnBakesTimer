@@ -40,7 +40,7 @@ class BronnBakesTimerViewModelTest {
     private lateinit var errorRepository: DefaultErrorRepository
     private lateinit var timerManager: DefaultTimerManager
     private lateinit var inputValidator: DefaultInputValidator
-    private lateinit var errorLoggerProvider: ErrorLoggerProvider
+    private lateinit var errorLoggerProvider: IErrorLoggerProvider
 
     @Before
     fun setUp() {

@@ -39,7 +39,7 @@ class TimerService : Service() {
     private val mediaPlayerWrapper: IMediaPlayerWrapper by inject()
     private val extraTimersRepository: IExtraTimersRepository by inject()
     private val errorRepository: IErrorRepository by inject()
-    private val errorLoggerProvider: ErrorLoggerProvider by inject()
+    private val errorLoggerProvider: IErrorLoggerProvider by inject()
     private val coroutineScopeProvider: CoroutineScopeProvider by inject()
     private val notificationHelper: NotificationHelper by inject()
 

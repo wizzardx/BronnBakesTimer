@@ -21,7 +21,7 @@ val testModule = module {
     viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get()) }
 
     // Provide a test implementation of ErrorLoggerProvider
-    single<ErrorLoggerProvider> { testErrorLoggerProvider }
+    single<IErrorLoggerProvider> { testErrorLoggerProvider }
 
     // Provide a Test CoroutineScope using TestScope
     single<CoroutineScopeProvider> { TestCoroutineScopeProvider() }

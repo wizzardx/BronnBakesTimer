@@ -285,7 +285,7 @@ class UtilsKtTest {
     }
 }
 
-class TestErrorLoggerProvider : ErrorLoggerProvider {
+class TestErrorLoggerProvider : IErrorLoggerProvider {
     var lastLogTag: String? = null
     var lastLogMessage: String? = null
     var lastThrowable: Throwable? = null

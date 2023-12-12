@@ -1,4 +1,3 @@
-* Rename ErrorLoggerProvider to IErrorLoggerProvider
 
 * In validateAllInputs, clear out error flags on things that we're about to set flags on.
 

@@ -6,7 +6,7 @@ package com.example.bronnbakestimer
  * This interface allows for different implementations of error logging,
  * facilitating testing and custom logging strategies.
  */
-fun interface ErrorLoggerProvider {
+fun interface IErrorLoggerProvider {
     /**
      * Logs an error with an associated throwable.
      *
