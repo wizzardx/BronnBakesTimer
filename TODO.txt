@@ -10,8 +10,6 @@
 
 * Make editing of numbers in text fields less annoying. See how I did it in the Marshalls Metronome app?
 
-* Do global tidy-ups on the code, but be careful of upsetting existing lints.
-
 * Make the popup notification more informative/reactive/etc.
 
 * Try to get Release APK files working from download install (it seems to work fine from Android Studio on the devices).
@@ -36,7 +34,5 @@
 * For default values for controls, use constants (or maybe android resources?)
 
 * Reformat all the code in the project (but keep the builtin detekt/etc checks happy)
-
-* Get dependencies ordered and grouped nicely again?
 
 * Update version from 1.2-dev to 1.2 just before releasing, after I have tested everything...
