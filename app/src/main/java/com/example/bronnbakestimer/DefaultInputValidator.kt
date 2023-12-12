@@ -8,45 +8,53 @@ import kotlinx.coroutines.flow.StateFlow
  */
 class DefaultInputValidator : IInputValidator {
     /**
-     * Validates all input fields related to timers and returns true if there are no errors.
+     * Validates all input fields related to timers and returns ValidationResult.Valid if there are no errors.
      *
      * This function performs validation on various input fields related to timers, including the main timer duration
      * input and extra timers' duration inputs. It checks for errors in each input field and updates error messages
-     * accordingly. If any validation error is found, it returns false, indicating that there are errors. Otherwise,
-     * it returns true.
+     * accordingly. If any validation error is found, it returns ValidationResult.Invalid, indicating that there are
+     * errors. Otherwise, it returns ValidationResult.Valid.
      *
      * @param timerDurationInput The state flow representing the main timer duration input.
      * @param setTimerDurationInputError A function to set an error message for the main timer duration input.
      * @param extraTimersRepository The repository containing data for extra timers.
-     * @return True if all inputs are valid; false if there are validation errors.
+     * @return ValidationResult.Valid if all inputs are valid; ValidationResult.Invalid if there are validation errors.
      */
     override fun validateAllInputs(
         timerDurationInput: StateFlow<String>,
         setTimerDurationInputError: (String) -> Unit,
         extraTimersRepository: IExtraTimersRepository,
-    ): Boolean {
-        // Returns true if there are no errors, otherwise false
-        val mainTimerError = validateIntInput(timerDurationInput.value)?.also {
-            setTimerDurationInputError(it)
-        } != null
-
+    ): ValidationResult {
         val mainTimerDuration = timerDurationInput.value.toIntOrNull() ?: 0
-        val extraTimerErrors = extraTimersRepository.timerData.value.map { extraTimer ->
-            extraTimer.inputs.timerDurationInput.value.toIntOrNull()?.let {
-                if (!mainTimerError && it > mainTimerDuration) {
-                    extraTimer.inputs.timerDurationInputError = "Extra timer time cannot be " +
-                        "greater than main timer time."
-                    true
-                } else {
-                    validateIntInput(extraTimer.inputs.timerDurationInput.value)?.also { it2 ->
-                        extraTimer.inputs.timerDurationInputError = it2
-                    } != null
-                }
-            } ?: false
+
+        // Validate the main timer input and set the error message if invalid
+        val mainTimerValidationResult = validateIntInput(timerDurationInput.value)
+        if (mainTimerValidationResult is ValidationResult.Invalid) {
+            setTimerDurationInputError(mainTimerValidationResult.reason)
         }
-        // TODO: Check why (it looks like) returning the result directly (not using result variable)
-        //       can cause the opposite boolean value to be returned.
-        val result = !(mainTimerError || extraTimerErrors.any { it })
-        return result
+
+        val extraTimerValidationResults = extraTimersRepository.timerData.value.map { extraTimer ->
+            val extraTimerDuration = extraTimer.inputs.timerDurationInput.value.toIntOrNull() ?: 0
+            val extraTimerValidationResult = validateIntInput(extraTimer.inputs.timerDurationInput.value)
+
+            if (!mainTimerValidationResult.isInvalid && extraTimerDuration > mainTimerDuration) {
+                extraTimer.inputs.timerDurationInputError = "Extra timer time cannot be " +
+                    "greater than main timer time."
+                ValidationResult.Invalid("Extra timer time cannot be greater than main timer time.")
+            } else if (extraTimerValidationResult is ValidationResult.Invalid) {
+                extraTimer.inputs.timerDurationInputError = extraTimerValidationResult.reason
+                ValidationResult.Invalid(extraTimerValidationResult.reason)
+            } else {
+                ValidationResult.Valid
+            }
+        }
+
+        val allValidationResults = listOfNotNull(mainTimerValidationResult) + extraTimerValidationResults
+
+        return if (allValidationResults.any { it is ValidationResult.Invalid }) {
+            ValidationResult.Invalid("Validation failed")
+        } else {
+            ValidationResult.Valid
+        }
     }
 }

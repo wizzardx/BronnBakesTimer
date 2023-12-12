@@ -26,9 +26,7 @@ abstract class BaseTimeController {
         scope: CoroutineScope,
     ) {
         // Error out if the lambda is not set for this coroutine scope.
-        check(_delayLambdas.containsKey(scope)) {
-            "Delay lambda not set for this scope. Call setDelayLambda() first."
-        }
+        check(_delayLambdas.containsKey(scope)) { "Delay lambda not set for this scope. Call setDelayLambda() first." }
         val lambda = _delayLambdas.getValue(scope)
         lambda.invoke(delayTimeMillis)
     }

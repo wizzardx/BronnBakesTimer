@@ -3,26 +3,41 @@ package com.example.bronnbakestimer
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Default implementation of the IInputValidator interface.
- * This class provides the functionality to validate inputs related to timers.
+ * An interface for validating user inputs.
+ *
+ * This interface defines a single method, validateAllInputs, which is responsible for validating
+ * the user's inputs for the timer duration and extra timers. The method takes three parameters:
+ * a StateFlow representing the user's input for the timer duration, a function for setting the error
+ * message for the timer duration input, and an IExtraTimersRepository instance for accessing extra timer data.
+ *
+ * The validateAllInputs method returns a ValidationResult, which can be either ValidationResult.Valid if the inputs
+ * are valid, or ValidationResult.Invalid with a reason for the invalidity if the inputs are invalid.
+ *
+ * Implementations of this interface should provide specific validation logic for the inputs.
  */
-interface IInputValidator {
+fun interface IInputValidator {
+
     /**
-     * Validates all input fields related to timers and returns true if there are no errors.
+     * Validates all inputs related to timers and returns a ValidationResult.
      *
-     * This function performs validation on various input fields related to timers, including the main timer duration
-     * input and extra timers' duration inputs. It checks for errors in each input field and updates error messages
-     * accordingly. If any validation error is found, it returns false, indicating that there are errors. Otherwise,
-     * it returns true.
+     * This method validates the main timer duration input and all extra timer duration inputs. It uses the provided
+     * `setTimerDurationInputError` function to set an error message for the main timer duration input if it's invalid.
+     * It also sets an error message for each invalid extra timer duration input.
      *
-     * @param timerDurationInput The state flow representing the main timer duration input.
-     * @param setTimerDurationInputError A function to set an error message for the main timer duration input.
-     * @param extraTimersRepository The repository containing data for extra timers.
-     * @return True if all inputs are valid; false if there are validation errors.
+     * The method returns a ValidationResult. If all inputs are valid, it returns ValidationResult.Valid. If any input
+     * is invalid, it returns ValidationResult.Invalid with a reason for the invalidity.
+     *
+     * @param timerDurationInput A StateFlow representing the user's input for the main timer duration.
+     * @param setTimerDurationInputError A function that takes a string and sets it as the error message for the main
+     *                                   timer duration input.
+     * @param extraTimersRepository An IExtraTimersRepository instance for accessing extra timer data.
+     * @return A ValidationResult representing the result of the validation. If all inputs are valid, it returns
+     *         ValidationResult.Valid. If any input is invalid, it returns ValidationResult.Invalid with a reason for
+     *         the invalidity.
      */
     fun validateAllInputs(
         timerDurationInput: StateFlow<String>,
         setTimerDurationInputError: (String) -> Unit,
         extraTimersRepository: IExtraTimersRepository,
-    ): Boolean
+    ): ValidationResult
 }

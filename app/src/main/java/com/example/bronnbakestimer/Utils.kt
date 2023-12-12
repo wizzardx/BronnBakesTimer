@@ -53,25 +53,28 @@ fun normaliseIntInput(s: String): String {
 }
 
 /**
- * Validates a string input to ensure it represents a valid integer within specified bounds.
+ * Validates a string input as an integer within a specified range.
  *
- * This function checks if the input string can be converted to an integer and
- * whether it falls within the predefined bounds of 1 and `Constants.MaxUserInputNum`
- * (inclusive). It is primarily used to validate user inputs for settings like
- * cycle duration, work intervals, or rest intervals in the application. If the
- * input is not a valid integer or falls outside the acceptable range, an
- * appropriate error message is returned. Otherwise, the function returns null,
- * indicating a valid input.
+ * This function takes a string input and attempts to convert it to an integer. If the conversion is successful,
+ * it checks whether the integer is within a specified range (1 to Constants.MaxUserInputNum, inclusive).
+ *
+ * The function returns a ValidationResult object. If the input is valid, it returns ValidationResult.Valid.
+ * If the input is invalid, it returns ValidationResult.Invalid with a reason for the invalidity.
+ *
+ * This function is useful for validating user inputs in scenarios where an integer within a specific range is expected.
  *
  * @param value The string input to be validated.
- * @return A string containing an error message if the input is invalid, or null if the input is valid.
+ * @return A ValidationResult object representing the result of the validation. If the input is valid, it returns
+ * ValidationResult.Valid. If the input is invalid, it returns ValidationResult.Invalid with a reason for the
+ * invalidity.
  */
-fun validateIntInput(value: String): String? {
-    val intVal = value.toIntOrNull() ?: return "Invalid number"
+fun validateIntInput(value: String): ValidationResult {
+    val intVal = value.toIntOrNull()
     return when {
-        intVal < 1 -> "Must be at least 1"
-        intVal > Constants.MaxUserInputNum -> "Must be at most ${Constants.MaxUserInputNum}"
-        else -> null // valid input
+        intVal == null -> ValidationResult.Invalid("Invalid number")
+        intVal < 1 -> ValidationResult.Invalid("Must be at least 1")
+        intVal > Constants.MaxUserInputNum -> ValidationResult.Invalid("Must be at most ${Constants.MaxUserInputNum}")
+        else -> ValidationResult.Valid
     }
 }
 
@@ -175,18 +178,20 @@ fun getStartPauseResumeButtonText(timerData: TimerData?): String {
 }
 
 /**
- * Reports an exception to the ErrorRepository and logs its details using Android's Log.e().
+ * Logs an exception and reports its message to the ErrorRepository.
  *
- * This function is designed to handle exceptions by performing two key actions:
- * 1. Updating the ErrorRepository with the exception's message, thus making it available for observation and response.
- * 2. Logging the exception using Android's logging system at the "Error" level for diagnostics. The log is tagged with
- *    "BronnBakesTimer" for easy tracking in the log system.
+ * This function takes an exception as input and performs two actions:
+ * 1. It updates the ErrorRepository with the message of the exception. This allows other components of the application
+ *    to react to the error state as needed.
+ * 2. It logs the exception at the "Error" level using the provided ErrorLoggerProvider. The log is tagged with
+ *    "BronnBakesTimer" and prefixed with "Error occurred: " to distinguish it in the application's log output.
  *
- * Usage of this function ensures consistent handling of exceptions throughout the application, aiding in both
- * debugging and user feedback mechanisms.
+ * This function is a useful utility for uniform exception handling across the application, promoting consistency and
+ * ease of debugging.
  *
- * @param exception The Throwable exception containing details about the error encountered.
- * @param errorRepository The IErrorRepository instance where the error message will be reported.
+ * @param exception The exception to be logged and reported.
+ * @param errorRepository The IErrorRepository instance where the exception message will be reported.
+ * @param logger The ErrorLoggerProvider used for logging the exception.
  */
 fun logException(exception: Throwable, errorRepository: IErrorRepository, logger: ErrorLoggerProvider) {
     errorRepository.updateData(exception.message)
@@ -196,17 +201,18 @@ fun logException(exception: Throwable, errorRepository: IErrorRepository, logger
 /**
  * Logs an error message and reports it to the ErrorRepository.
  *
- * This function simplifies error handling by:
- * 1. Reporting the provided error message to the ErrorRepository. This enables other components of the application
+ * This function takes an error message as input and performs two actions:
+ * 1. It updates the ErrorRepository with the error message. This allows other components of the application
  *    to react to the error state as needed.
- * 2. Logging the error message at the "Error" level using Android's Log.e(), aiding in troubleshooting. The log
- *    is tagged with "BronnBakesTimer" to distinguish it in the application's log output.
+ * 2. It logs the error message at the "Error" level using the provided ErrorLoggerProvider. The log is tagged with
+ *    "BronnBakesTimer" and the error message is used as the log message.
  *
- * It's a useful utility for uniform error reporting and logging across the application, promoting consistency and ease
- * of debugging.
+ * This function is a useful utility for uniform error handling across the application, promoting consistency and
+ * ease of debugging.
  *
- * @param msg The string containing the error message to be logged and reported.
+ * @param msg The error message to be logged and reported.
  * @param errorRepository The IErrorRepository instance where the error message will be reported.
+ * @param logger The ErrorLoggerProvider used for logging the error.
  */
 fun logError(msg: String, errorRepository: IErrorRepository, logger: ErrorLoggerProvider) {
     errorRepository.updateData(msg)
@@ -279,11 +285,37 @@ fun userInputToMillis(input: String): Long {
     return seconds * Constants.MillisecondsPerSecond
 }
 
+/**
+ * Provides a runtime implementation of the ErrorLoggerProvider interface.
+ *
+ * This variable is an instance of ErrorLoggerProvider that uses Android's Log.e method to log error messages.
+ * It is intended to be used in a runtime environment, where logs are written to the Android log output.
+ *
+ * The ErrorLoggerProvider interface takes three parameters: a tag, a message, and a Throwable. The tag is used
+ * to identify the source of the log message. The message is the actual content to be logged. The Throwable is
+ * the exception that caused the error.
+ *
+ * In this implementation, the tag, message, and Throwable are passed directly to Log.e. This writes an error
+ * message to the Android log output, which can be viewed and filtered in the Logcat window in Android Studio.
+ */
 val runtimeErrorLoggerProvider = ErrorLoggerProvider { tag, message, throwable ->
     Log.e(tag, message, throwable)
 }
 
+/**
+ * Provides a runtime implementation of the ErrorLoggerProvider interface.
+ *
+ * This variable is an instance of ErrorLoggerProvider that uses Android's Log.e method to log error messages.
+ * It is intended to be used in a runtime environment, where logs are written to the Android log output.
+ *
+ * The ErrorLoggerProvider interface takes three parameters: a tag, a message, and a Throwable. The tag is used
+ * to identify the source of the log message. The message is the actual content to be logged. The Throwable is
+ * the exception that caused the error.
+ *
+ * In this implementation, the tag, message, and Throwable are passed directly to Log.e. This writes an error
+ * message to the Android log output, which can be viewed and filtered in the Logcat window in Android Studio.
+ */
 val testErrorLoggerProvider = ErrorLoggerProvider { tag, message, throwable ->
     // Custom implementation for testing, e.g., print to console or use a mock logger
-    println("[$tag] $message - ${throwable?.message}")
+    println("[$tag] $message - ${throwable.message}")
 }

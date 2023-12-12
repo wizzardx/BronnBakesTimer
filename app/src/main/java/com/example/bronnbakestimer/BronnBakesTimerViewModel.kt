@@ -1,5 +1,6 @@
 package com.example.bronnbakestimer
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -77,17 +78,25 @@ class BronnBakesTimerViewModel(
      * @return StateFlow<String> representing the remaining time for the extra timer.
      */
     fun extraTimerRemainingTime(timerData: ExtraTimerData): StateFlow<String> {
+        // Lambda for formatting total time remaining
+        val formatTime: (TimerData?) -> String = { mainTimerData ->
+            formatTotalTimeRemainingString(timerData, mainTimerData?.millisecondsRemaining)
+        }
+
+        // Compute the initial state
+        val initialState = formatTime(timerRepository.timerData.value)
+
         return timerRepository.timerData
             .combine(timerData.inputs.timerDurationInput) { mainTimerData, _ ->
-                formatTotalTimeRemainingString(timerData, mainTimerData?.millisecondsRemaining)
+                formatTime(mainTimerData)
             }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, "Loading...")
+            .stateIn(viewModelScope, SharingStarted.Eagerly, initialState)
     }
 
     private fun formatTotalTimeRemainingString(extraTimerData: ExtraTimerData, mainTimerMillis: Long?): String {
         val mainTimerActive = mainTimerMillis != null
         val secondsRemaining = extraTimerData.getTotalSeconds(mainTimerActive)
-        return formatMinSec(secondsRemaining)
+        return formatMinSec(secondsRemaining) // Crash happens here for some reason?
     }
 
     /**
@@ -121,11 +130,17 @@ class BronnBakesTimerViewModel(
         }
     }
 
-    private fun startTimersIfValid() {
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun startTimersIfValid() {
         val setTimerDurationInputError = { error: String ->
             timerDurationInputError = error
         }
-        if (inputValidator.validateAllInputs(timerDurationInput, setTimerDurationInputError, extraTimersRepository)) {
+        if (inputValidator.validateAllInputs(
+                timerDurationInput,
+                setTimerDurationInputError,
+                extraTimersRepository
+            ) is ValidationResult.Valid
+        ) {
             startTimers()
         }
     }

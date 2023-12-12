@@ -46,7 +46,7 @@ val testModule = module {
     // Provide mock implementations for your dependencies
 
     // Provide a mock implementation of TimerRepository
-    single<ITimerRepository> { MockTimerRepository() }
+    single<ITimerRepository> { DefaultTimerRepository() }
 
     // Bind ExtraTimersRepository instance to IExtraTimersRepository
     single<IExtraTimersRepository> { DefaultExtraTimersRepository() }

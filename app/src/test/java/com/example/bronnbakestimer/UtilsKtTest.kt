@@ -11,6 +11,7 @@ import org.junit.Test
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import kotlin.test.assertIs
 
 @Suppress("FunctionMaxLength")
 class UtilsKtTest {
@@ -72,25 +73,28 @@ class UtilsKtTest {
     @Test
     fun `validateIntInput returns error for non-numeric input`() {
         val result = validateIntInput("abc")
-        assertEquals("Invalid number", result)
+        assertTrue(result is ValidationResult.Invalid) // Check if the result is Invalid
+        assertEquals("Invalid number", (result as ValidationResult.Invalid).reason)
     }
 
     @Test
     fun `validateIntInput returns error for input less than 1`() {
         val result = validateIntInput("0")
-        assertEquals("Must be at least 1", result)
+        assertTrue(result is ValidationResult.Invalid) // Check if the result is Invalid
+        assertEquals("Must be at least 1", (result as ValidationResult.Invalid).reason)
     }
 
     @Test
     fun `validateIntInput returns error for input greater than MaxUserInputNum`() {
         val result = validateIntInput((Constants.MaxUserInputNum + 1).toString())
-        assertEquals("Must be at most ${Constants.MaxUserInputNum}", result)
+        assertTrue(result is ValidationResult.Invalid) // Check if the result is Invalid
+        assertEquals("Must be at most ${Constants.MaxUserInputNum}", (result as ValidationResult.Invalid).reason)
     }
 
     @Test
-    fun `validateIntInput returns null for valid input`() {
+    fun `validateIntInput returns Valid for valid input`() {
         val result = validateIntInput("1")
-        assertNull(result)
+        assertIs<ValidationResult.Valid>(result)
     }
 
     // Tests for getErrorInfoFor
