@@ -61,7 +61,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.activity:activity-compose:1.8.1")
 
-    // Compose libraries
+    // Jetpack Compose UI libraries
     implementation(platform("androidx.compose:compose-bom:2023.10.01"))
     implementation("androidx.compose.ui:ui:1.5.4")
     implementation("androidx.compose.ui:ui-graphics:1.5.4")
@@ -69,32 +69,34 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.1.2")
     implementation("androidx.compose.runtime:runtime-livedata:1.5.4")
 
-    // ViewModel and LiveData
+    // ViewModel and LiveData for lifecycle management
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+
+    // Kotlin Standard Library
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-    // Unit testing dependencies
+    // Unit Testing Libraries
     testImplementation("io.insert-koin:koin-test:3.5.0")
     testImplementation("io.mockk:mockk:1.13.8")
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.21") // Replace with your Kotlin version
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.21") // Kotlin version
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 
-    // Android UI testing dependencies
+    // Android UI Testing Libraries
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2023.10.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.5.4")
 
-    // Debug dependencies
+    // Debugging Dependencies
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.4")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.5.4")
 
-    // Dependency Injection - Koin
+    // Dependency Injection with Koin
     implementation("io.insert-koin:koin-android:3.5.0")
     implementation("io.insert-koin:koin-androidx-compose:3.5.0")
 }
