@@ -79,8 +79,8 @@ class BronnBakesTimerViewModel(
      */
     fun extraTimerRemainingTime(timerData: ExtraTimerData): StateFlow<String> {
         // Lambda for formatting total time remaining
-        val formatTime: (TimerData?) -> String = { mainTimerData ->
-            formatTotalTimeRemainingString(timerData, mainTimerData?.millisecondsRemaining)
+        val formatTime: (TimerData?) -> String = { extraTimerData ->
+            formatTotalTimeRemainingString(timerData, extraTimerData?.millisecondsRemaining)
         }
 
         // Compute the initial state
