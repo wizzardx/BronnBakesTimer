@@ -1,4 +1,9 @@
 
+* Check what's causing such massively fast recompose calls on the UI according to the
+  inspector, I thought that shouldn't be happening based on the source data not changing so much?
+  - I think it's the milliseconds-remaining, coming through from the main timer.
+    - Let's try maing a seconds-remaining too, and see if that helps the performance?
+
 * In validateAllInputs, clear out error flags on things that we're about to set flags on.
 
 * In validateAllInputs, set focus to the first control that has errors in the input. Also, scroll
