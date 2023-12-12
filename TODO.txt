@@ -1,20 +1,10 @@
 * Rename ErrorLoggerProvider to IErrorLoggerProvider
 
-* Get help with simplifiying DiModule.kt
-
 * Check this and fix?
   -----------
   david@david-G3-3779:~/AndroidStudioProjects/BronnBakesTimer$ ./gradlew --info app:testDebugUnitTest --tests com.example.bronnbakestimer.BronnBakesTimerViewModelTest.testInitializationAndDefaultValues
     - See the output of it for what warnigs etc I'm getting.
   -----------
-
-* Make modules more testable that currently aren't so testable..
-
-* Fix these compile warnings:
-  w: file:///home/david/AndroidStudioProjects/BronnBakesTimer/app/src/test/java/com/example/bronnbakestimer/DefaultTimerRepositoryTest.kt:7:32 'TestCoroutineDispatcher' is deprecated. The execution order of `TestCoroutineDispatcher` can be confusing, and the mechanism of pausing is typically misunderstood. Please use `StandardTestDispatcher` or `UnconfinedTestDispatcher` instead.
-w: file:///home/david/AndroidStudioProjects/BronnBakesTimer/app/src/test/java/com/example/bronnbakestimer/DefaultTimerRepositoryTest.kt:22:34 'TestCoroutineDispatcher' is deprecated. The execution order of `TestCoroutineDispatcher` can be confusing, and the mechanism of pausing is typically misunderstood. Please use `StandardTestDispatcher` or `UnconfinedTestDispatcher` instead.
-
-* Add high unit test coverage, and maintain it?
 
 * In validateAllInputs, clear out error flags on things that we're about to set flags on.
 
@@ -22,11 +12,6 @@ w: file:///home/david/AndroidStudioProjects/BronnBakesTimer/app/src/test/java/co
   the vertical column so that it's visible??
 
 * On timer completion, display a visible flag (temporarily?) next to the timer.
-
-
-* Use what I'm learning from ChatGPT, to make the app more better?
-    - especially on the Composables for deleting, adding - pass into them the actual
-      functions for removing, deleting, etc, rather them them figuring it out?
 
 * Handle the TODO tasks listed in the code.
 
@@ -58,14 +43,6 @@ w: file:///home/david/AndroidStudioProjects/BronnBakesTimer/app/src/test/java/co
 * For default values for controls, use constants (or maybe android resources?)
 
 * Reformat all the code in the project (but keep the builtin detekt/etc checks happy)
-
-* Get Junit5 working on my project.. also try out a new android studio project, see how that works, adapt that to junit5, and then see if I can apply that to this project.
-  - Also watch this for more info:
-    ----------
-    KotlinConf 2018 - Best Practices for Unit Testing in Kotlin by Philipp Hauer - YouTube
-    https://www.youtube.com/watch?v=RX_g65J14H0
-    ----------
-      - And see this too: https://github.com/mannodermaus/android-junit5
 
 * Get dependencies ordered and grouped nicely again?
 
