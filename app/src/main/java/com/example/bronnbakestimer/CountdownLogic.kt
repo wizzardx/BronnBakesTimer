@@ -17,8 +17,8 @@ class CountdownLogic(
     private val coroutineScopeProvider: CoroutineScopeProvider,
     private val timeController: BaseTimeController,
     private val extraTimersRepository: IExtraTimersRepository,
+    private val phoneVibrator: IPhoneVibrator,
 ) {
-
     private var tickCount = 0
     private var totalElapsedTime = 0L
 
@@ -106,6 +106,8 @@ class CountdownLogic(
             !state.beepTriggered
         ) {
             mediaPlayerWrapper.playBeep()
+            // Vibrate the phone too:
+            phoneVibrator.vibrate()
             // Update state to reflect that we've triggered the beep:
             state = state.copy(beepTriggered = true)
         }

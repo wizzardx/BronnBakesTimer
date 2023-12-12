@@ -18,6 +18,9 @@
          This permission is used for requesting notification-related permissions on Android devices. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- Permissions for vibrating the phone -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"

@@ -23,7 +23,6 @@ w: file:///home/david/AndroidStudioProjects/BronnBakesTimer/app/src/test/java/co
 
 * On timer completion, display a visible flag (temporarily?) next to the timer.
 
-* Make the phone vibrate as well as buzz?
 
 * Use what I'm learning from ChatGPT, to make the app more better?
     - especially on the Composables for deleting, adding - pass into them the actual

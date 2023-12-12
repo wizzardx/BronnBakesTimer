@@ -43,6 +43,10 @@ class TimerService : Service() {
     private val coroutineScopeProvider: CoroutineScopeProvider by inject()
     private val notificationHelper: NotificationHelper by inject()
 
+    private val phoneVibrator: PhoneVibrator by lazy {
+        PhoneVibrator(applicationContext)
+    }
+
     override fun onBind(intent: Intent): IBinder? = null
 
     override fun onCreate() {
@@ -61,7 +65,8 @@ class TimerService : Service() {
             mediaPlayerWrapper,
             coroutineScopeProvider,
             timeController,
-            extraTimersRepository
+            extraTimersRepository,
+            phoneVibrator,
         )
         val dispatcher = Dispatchers.Default
         coroutineScopeProvider.launch(dispatcher + CoroutineUtils.sharedExceptionHandler) {

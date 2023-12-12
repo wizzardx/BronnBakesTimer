@@ -93,6 +93,12 @@ class CountdownLogicTest {
         extraTimersRepository = DefaultExtraTimersRepository()
         val coroutineScopeProvider = CoroutineScopeProviderWrapper(testScope)
 
+        class TestPhoneVibrator : IPhoneVibrator {
+            override fun vibrate() {
+                // Do nothing
+            }
+        }
+
         // Create the CountdownLogic instance
         countdownLogic = CountdownLogic(
             timerRepository,
@@ -100,6 +106,7 @@ class CountdownLogicTest {
             coroutineScopeProvider,
             timeController,
             extraTimersRepository,
+            phoneVibrator = TestPhoneVibrator()
         )
     }
 
