@@ -1,11 +1,5 @@
 * Rename ErrorLoggerProvider to IErrorLoggerProvider
 
-* Check this and fix?
-  -----------
-  david@david-G3-3779:~/AndroidStudioProjects/BronnBakesTimer$ ./gradlew --info app:testDebugUnitTest --tests com.example.bronnbakestimer.BronnBakesTimerViewModelTest.testInitializationAndDefaultValues
-    - See the output of it for what warnigs etc I'm getting.
-  -----------
-
 * In validateAllInputs, clear out error flags on things that we're about to set flags on.
 
 * In validateAllInputs, set focus to the first control that has errors in the input. Also, scroll
