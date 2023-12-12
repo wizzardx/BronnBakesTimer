@@ -122,4 +122,33 @@ class DefaultInputValidatorTest {
         // Assert that no error message was set for the main timer's input
         assert(mainTimerErrorMessage.isEmpty())
     }
+
+    @Test
+    fun validateAllInputsShouldReturnValidResultWhenAllInputsAreCorrect() = runTest {
+        val timerDurationInput = MutableStateFlow("30") // Valid input for main timer
+        val setTimerDurationInputError: (String) -> Unit = {}
+
+        val extraTimer = ExtraTimerData(
+            data = TimerData(
+                millisecondsRemaining = 0,
+                isPaused = false,
+                isFinished = false,
+                beepTriggered = false
+            ),
+            inputs = ExtraTimerInputsData().apply {
+                updateTimerDurationInput("20") // Valid input for extra timer
+            }
+        )
+
+        `when`(extraTimersRepository.timerData).thenReturn(MutableStateFlow(listOf(extraTimer)))
+
+        val result = defaultInputValidator.validateAllInputs(
+            timerDurationInput,
+            setTimerDurationInputError,
+            extraTimersRepository
+        )
+
+        // Check that the result is Valid using isValid
+        assert(result.isValid)
+    }
 }

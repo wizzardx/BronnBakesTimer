@@ -14,6 +14,9 @@ import kotlin.coroutines.CoroutineContext
  * @param scope The underlying [CoroutineScope] to be wrapped.
  */
 class CoroutineScopeProviderWrapper(private val scope: CoroutineScope) : CoroutineScopeProvider {
+    override val coroutineScope: CoroutineScope
+        get() = scope
+
     override val isActive: Boolean
         get() = scope.isActive
 

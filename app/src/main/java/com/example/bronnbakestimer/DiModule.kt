@@ -36,27 +36,7 @@ val appModule = module {
 
     // Define the ViewModel
     viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get()) }
-}
 
-/**
- * Koin module used for providing mock implementations of dependencies during testing.
- * This module is intended for use in unit testing scenarios to replace real implementations with mocks.
- */
-val testModule = module {
-    // Provide mock implementations for your dependencies
-
-    // Provide a mock implementation of TimerRepository
-    single<ITimerRepository> { DefaultTimerRepository() }
-
-    // Bind ExtraTimersRepository instance to IExtraTimersRepository
-    single<IExtraTimersRepository> { DefaultExtraTimersRepository() }
-
-    // Provide a mock implementation of ErrorRepository
-    single<IErrorRepository> { DefaultErrorRepository() }
-
-    // Just use the original viewmodel here, it works fine in preview mode.
-    viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get()) }
-
-    // Provide a mock implementation of ErrorLoggerProvider
-    single<ErrorLoggerProvider> { testErrorLoggerProvider }
+    // Provide CoroutineScope for TimerService
+    single<CoroutineScopeProvider> { ProductionCoroutineScopeProvider() }
 }

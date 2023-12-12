@@ -17,7 +17,7 @@ import org.koin.core.context.startKoin
 @Composable
 fun BronnBakesTimerPreview() {
     startKoin {
-        modules(testModule)
+        modules(appModule)
     }
 
     BronnBakesTimerTheme {

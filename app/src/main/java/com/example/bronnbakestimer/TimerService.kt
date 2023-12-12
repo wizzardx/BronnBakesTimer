@@ -17,7 +17,6 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -51,15 +50,12 @@ class TimerService : Service() {
     private val extraTimersRepository: IExtraTimersRepository by inject()
     private val errorRepository: IErrorRepository by inject()
     private val errorLoggerProvider: ErrorLoggerProvider by inject()
-
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private val coroutineScopeProvider: CoroutineScopeProvider by inject()
 
     override fun onBind(intent: Intent): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
-
-        // Initialization logic that should only run once
         launchNotification()
         startCountdown()
     }
@@ -71,41 +67,9 @@ class TimerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     private fun launchNotification() {
-        // Create a notification channel if the Android version is Oreo or higher
-        // Android Oreo (API level 26) introduced Notification Channels, requiring channels for notifications
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Name and description for the notification channel
-            val name = getString(R.string.channel_name)
-            val descriptionText = getString(R.string.channel_description)
-            // Define the importance level of the notifications
-            val importance = NotificationManager.IMPORTANCE_LOW // IMPORTANCE_LOW is silent
-            // Create the NotificationChannel object
-            val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-            }
-            // Get NotificationManager and create the notification channel
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        // Build the notification for the foreground service
-        val notificationIntent = Intent(this, MainActivity::class.java)
-        // PendingIntent to launch the MainActivity when the notification is tapped
-        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
-
-        // Building the notification with various properties
-        val notification = NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setContentTitle(getString(R.string.notification_title)) // Title for the notification
-            .setContentText(getString(R.string.notification_content)) // Content text for the notification
-            .setSmallIcon(R.drawable.ic_notification) // Notification icon
-            .setContentIntent(pendingIntent) // PendingIntent to be triggered on notification click
-            .setOngoing(true) // This makes the notification non-dismissible
-            .build()
-        // TODO: Make the above reactive on timer state, which we update as the main timer
-        //       progresses?
-
-        // Launch the notification:
+        val notificationManager = getNotificationManager()
+        createNotificationChannel(notificationManager)
+        val notification = buildNotification()
         launchForegroundNotification(notification)
     }
 
@@ -123,7 +87,6 @@ class TimerService : Service() {
     @Suppress("TooGenericExceptionCaught", "InstanceOfCheckForException")
     private fun startCountdown() {
         val timeController = RealTimeController()
-        val coroutineScopeProvider = CoroutineScopeProviderWrapper(coroutineScope)
         val countdownLogic = CountdownLogic(
             timerRepository,
             mediaPlayerWrapper,
@@ -152,7 +115,7 @@ class TimerService : Service() {
         super.onDestroy()
         // Release resources when the service is destroyed
         mediaPlayerWrapper.release()
-        coroutineScope.cancel()
+        coroutineScopeProvider.coroutineScope.cancel()
 
         // Use the newer stopForeground method
         // STOP_FOREGROUND_REMOVE = 1 or STOP_FOREGROUND_DETACH = 2
@@ -163,6 +126,33 @@ class TimerService : Service() {
         super.onTaskRemoved(rootIntent)
         // Stop the service when the app is removed from recent apps
         stopSelf()
+    }
+
+    private fun getNotificationManager(): NotificationManager =
+        getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+    private fun createNotificationChannel(notificationManager: NotificationManager) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.channel_name)
+            val descriptionText = getString(R.string.channel_description)
+            val importance = NotificationManager.IMPORTANCE_LOW
+            val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {
+                description = descriptionText
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun buildNotification(): Notification {
+        val notificationIntent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setContentTitle(getString(R.string.notification_title))
+            .setContentText(getString(R.string.notification_content))
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
+            .build()
     }
 
     companion object {
