@@ -1,6 +1,4 @@
 
-* Search for !! uses and then replace with slightly safer logic?
-
 * In validateAllInputs, clear out error flags on things that we're about to set flags on.
 
 * In validateAllInputs, set focus to the first control that has errors in the input. Also, scroll

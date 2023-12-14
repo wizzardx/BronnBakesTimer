@@ -2,8 +2,8 @@ package com.example.bronnbakestimer.repository
 
 import com.example.bronnbakestimer.logic.Constants
 import com.example.bronnbakestimer.service.SingleTimerCountdownData
-import com.example.bronnbakestimer.util.TimerUserInputDataId
 import com.example.bronnbakestimer.util.Seconds
+import com.example.bronnbakestimer.util.TimerUserInputDataId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.ConcurrentHashMap
@@ -75,8 +75,13 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
             val msInt = timer.value.data.millisecondsRemaining
             val secondsInt = msInt / Constants.MILLISECONDS_PER_SECOND
             val seconds = Seconds(secondsInt)
-            val maybeStateFlow = _secondsRemaining[timer.value.useInputTimerId]!!
-            maybeStateFlow.value = seconds
+            val maybeStateFlow = _secondsRemaining[timer.value.useInputTimerId]
+            if (maybeStateFlow != null) {
+                maybeStateFlow.value = seconds
+            } else {
+                // Logic can never reach here, so we can't get test coverage:
+                error("StateFlow for timer id ${timer.value.useInputTimerId} is missing in _secondsRemaining map")
+            }
         }
     }
 

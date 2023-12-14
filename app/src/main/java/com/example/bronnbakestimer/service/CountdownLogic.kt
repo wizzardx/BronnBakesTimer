@@ -3,11 +3,11 @@ package com.example.bronnbakestimer.service
 import androidx.annotation.VisibleForTesting
 import com.example.bronnbakestimer.logic.Constants
 import com.example.bronnbakestimer.provider.CoroutineScopeProvider
-import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
 import com.example.bronnbakestimer.provider.IMediaPlayerWrapper
+import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
 import com.example.bronnbakestimer.repository.ITimerRepository
-import com.example.bronnbakestimer.util.TimerUserInputDataId
 import com.example.bronnbakestimer.util.IPhoneVibrator
+import com.example.bronnbakestimer.util.TimerUserInputDataId
 import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -156,12 +156,12 @@ class CountdownLogic(
 
         extraTimersData.forEach { (id, _) ->
             val getter = {
-                extraTimersData[id]?.data!! // Refer to the current state in the map
+                extraTimersData[id]?.data ?: error("Timer data for id $id is missing")
             }
             val setter: (TimerData) -> Unit = { newTimerData ->
                 extraTimersData.computeIfPresent(id) { _, existingTimerData ->
                     existingTimerData.copy(data = newTimerData)
-                }
+                } ?: error("Failed to update timer data for id $id")
             }
             yield(Pair(getter, setter))
         }
@@ -176,9 +176,7 @@ class CountdownLogic(
      * milliseconds remaining, triggers the beep sound at appropriate times, and updates the timer
      * state through the repository.
      */
-    fun tick(
-        elapsedTime: Int,
-    ) {
+    fun tick(elapsedTime: Int) {
         tickCount += 1
         totalElapsedTime += elapsedTime
 
@@ -188,7 +186,7 @@ class CountdownLogic(
         }
 
         val mainTimerGetSetLambda = Pair(
-            { mainTimerState!! },
+            { checkNotNull(mainTimerState) { "Main timer state is unexpectedly null" } },
             { newState: TimerData -> mainTimerState = newState }
         )
         val extraTimersData = extraTimersCountdownRepository.timerData.value
@@ -199,7 +197,7 @@ class CountdownLogic(
         }
 
         // Update the main timer repository if there were changes
-        timerRepository.updateData(mainTimerState)
+        mainTimerState?.let { timerRepository.updateData(it) }
 
         // Update the extra timers repository if there were changes
         extraTimersCountdownRepository.updateData(extraTimersData)
