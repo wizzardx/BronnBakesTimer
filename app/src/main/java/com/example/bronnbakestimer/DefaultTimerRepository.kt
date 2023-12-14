@@ -36,11 +36,15 @@ class DefaultTimerRepository : ITimerRepository {
     // MutableStateFlow for internal updates
     private val _timerData = MutableStateFlow<TimerData?>(null)
 
+    private val _secondsRemaining = MutableStateFlow<Seconds?>(null)
+
     /**
      * A read-only [StateFlow] that emits the current state of the timer.
      * It can be `null` if the timer state has not been initialized.
      */
     override val timerData: StateFlow<TimerData?> = _timerData
+
+    override val secondsRemaining: StateFlow<Seconds?> = _secondsRemaining
 
     /**
      * Updates the current state of the timer.
@@ -58,6 +62,13 @@ class DefaultTimerRepository : ITimerRepository {
             "Time remaining cannot be negative"
         }
 
+        // Update the main data:
         _timerData.value = newData // Atomic and thread-safe update
+
+        // Also update _secondsRemaining, based on data in newData.
+        val newValue = newData?.let { Seconds(it.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND) }
+        if (newValue != _secondsRemaining.value) {
+            _secondsRemaining.value = newValue
+        }
     }
 }

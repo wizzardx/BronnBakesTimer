@@ -12,26 +12,47 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 /**
- * Composable function for displaying the time remaining for a single additional timer in the BronnBakesTimer app.
+ * Displays the countdown for an additional timer in the BronnBakesTimer app.
  *
- * This function renders the time remaining for an additional timer as a text element on the user interface.
- * It observes the time remaining and the timer's name input from the provided [viewModel] and updates the UI
- * accordingly.
+ * This function creates a Composable UI element that shows the remaining time for an additional timer.
+ * It utilizes a [viewModel] to observe and reflect changes in the time and the timer's name. The layout
+ * and style are customizable through the [modifier] parameter. The timer's name and remaining time
+ * are displayed in a column layout with a divider for visual separation.
  *
- * @param modifier Modifier for styling and layout of the additional time countdown view.
- * @param timerData The data representing the additional timer.
- * @param viewModel The view model responsible for managing timer data and updates.
+ * @param modifier Modifier for customizing the UI's layout and styling.
+ * @param extraTimerUserInputData Data model containing user input for the extra timer.
+ * @param extraTimersCountdownRepo Repository interface for the countdown logic of extra timers.
+ *                                 Default is injected by Koin.
+ * @param viewModel ViewModel that manages timer data and state updates. Default is provided by Koin.
+ * @param mainTimerRepo Repository interface for the main timer's countdown logic. Default is injected by Koin.
  */
+
 @Composable
 fun AdditionalTimeCountdown(
     modifier: Modifier,
-    timerData: ExtraTimerData,
+    extraTimerUserInputData: ExtraTimerUserInputData,
+    extraTimersCountdownRepo: IExtraTimersCountdownRepository = koinInject(),
     viewModel: BronnBakesTimerViewModel = koinViewModel(),
+    mainTimerRepo: ITimerRepository = koinInject(),
 ) {
-    val timeRemaining by viewModel.extraTimerRemainingTime(timerData).collectAsState()
-    val currentTimerNameInput by timerData.inputs.timerNameInput.collectAsState()
+    val mainTimerSecondsRemaining = mainTimerRepo.secondsRemaining.collectAsState().value
+
+    val timerDurationInput = extraTimerUserInputData.inputs.timerDurationInput
+    val extraTimerRemainingSecondsStateFlow =
+        extraTimersCountdownRepo
+            .extraTimerSecsFlow(extraTimerUserInputData.id)
+
+    val timeRemaining by viewModel.extraTimerRemainingTime(
+        extraTimerUserInputData = extraTimerUserInputData,
+        extraTimerRemainingSeconds = extraTimerRemainingSecondsStateFlow,
+        timerDurationInput = timerDurationInput,
+        mainTimerSecondsRemaining = mainTimerSecondsRemaining,
+    ).collectAsState()
+
+    val currentTimerNameInput by extraTimerUserInputData.inputs.timerNameInput.collectAsState()
 
     // A column to contain our controls to follow:
     Column(

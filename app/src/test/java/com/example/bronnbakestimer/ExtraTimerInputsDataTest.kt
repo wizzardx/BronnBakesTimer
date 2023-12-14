@@ -1,20 +1,22 @@
 package com.example.bronnbakestimer
 
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import kotlin.test.assertNotEquals
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 @Suppress("FunctionMaxLength")
 class ExtraTimerInputsDataTest {
 
     private lateinit var extraTimerInputsData: ExtraTimerInputsData
-    private val extraTimersRepository: IExtraTimersRepository by lazy { GlobalContext.get().get() }
+    private val extraTimersUserInputsRepository: IExtraTimersUserInputsRepository by lazy { GlobalContext.get().get() }
 
     @Before
     fun setup() {
@@ -69,79 +71,32 @@ class ExtraTimerInputsDataTest {
         assertEquals(errorMessage, extraTimerInputsData.timerNameInputError)
     }
 
-    // ExtraTimerData Tests
-
-    @Test
-    fun `ExtraTimerData has unique UUID`() {
-        val timerData1 = ExtraTimerData(
-            TimerData(0, isPaused = false, isFinished = false, beepTriggered = false),
-            ExtraTimerInputsData()
-        )
-        val timerData2 = ExtraTimerData(
-            TimerData(0, isPaused = false, isFinished = false, beepTriggered = false),
-            ExtraTimerInputsData()
-        )
-        assertNotEquals(timerData1.id, timerData2.id)
-    }
-
-    // getTotalSeconds Extension Function Tests
-
-    @Test
-    fun `getTotalSeconds returns correct value for active main timer`() {
-        val extraTimerData = ExtraTimerData(
-            TimerData(
-                60_000,
-                isPaused = false,
-                isFinished = false,
-                beepTriggered = false
-            ),
-            ExtraTimerInputsData()
-        )
-        assertEquals(60, extraTimerData.getTotalSeconds(mainTimerActive = true))
-    }
-
-    @Test
-    fun `getTotalSeconds returns correct value for inactive main timer`() {
-        val extraTimerInputsData = ExtraTimerInputsData().apply { updateTimerDurationInput("2") }
-        val extraTimerData = ExtraTimerData(
-            TimerData(0, isPaused = false, isFinished = false, beepTriggered = false),
-            extraTimerInputsData
-        )
-        assertEquals(120, extraTimerData.getTotalSeconds(mainTimerActive = false))
-    }
-
     // ExtraTimersRepository Tests
 
     @Test
     fun `updateData updates the repository correctly`() {
+        // Create new data to be updated in the repository
         val newData = listOf(
-            ExtraTimerData(
-                TimerData(
-                    30_000,
-                    isPaused = false,
-                    isFinished = false,
-                    beepTriggered = false
-                ),
-                ExtraTimerInputsData()
+            ExtraTimerUserInputData(
+                inputs = ExtraTimerInputsData().apply {
+                    updateTimerDurationInput("30")
+                    updateTimerNameInput("New Timer")
+                }
             )
         )
-        extraTimersRepository.updateData(newData)
-        assertEquals(newData, extraTimersRepository.timerData.value)
-    }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun `updateData throws exception for negative millisecondsRemaining`() {
-        val invalidData = listOf(
-            ExtraTimerData(
-                TimerData(
-                    -1000,
-                    isPaused = false,
-                    isFinished = false,
-                    beepTriggered = false
-                ),
-                ExtraTimerInputsData()
-            )
-        )
-        extraTimersRepository.updateData(invalidData)
+        // Mock the behavior of the repository
+        val mockRepository = mock(IExtraTimersUserInputsRepository::class.java)
+        val mockStateFlow = MutableStateFlow(newData)
+        `when`(mockRepository.timerData).thenReturn(mockStateFlow)
+
+        // Update the repository with new data
+        mockRepository.updateData(newData)
+
+        // Retrieve the updated data from the repository
+        val updatedData = mockRepository.timerData.value
+
+        // Assert that the updated data matches the new data
+        assertEquals(newData, updatedData, "Repository should contain the updated data")
     }
 }

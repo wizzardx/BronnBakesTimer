@@ -4,7 +4,6 @@ package com.example.bronnbakestimer
  * Default implementation of the ITimerManager interface.
  * This class provides the functionality to manage timers.
  */
-
 class DefaultTimerManager : ITimerManager {
 
     /**

@@ -16,6 +16,17 @@ interface ITimerRepository {
     val timerData: StateFlow<TimerData?>
 
     /**
+     * A read-only [StateFlow] of [Seconds] representing the remaining time of the timer.
+     *
+     * This property emits the latest remaining time in seconds for the current timer. It is continuously
+     * updated to reflect the countdown of the timer in real-time. The flow can emit `null` if the timer's
+     * remaining time has not been initialized or if the timer is reset. This property is part of the
+     * [ITimerRepository] interface and is essential for any UI components or logic that require tracking
+     * the timer's countdown.
+     */
+    val secondsRemaining: StateFlow<Seconds?>
+
+    /**
      * Updates the current state of the timer with the provided [newData].
      * If [newData] is `null`, it signifies that the timer state is not initialized.
      *

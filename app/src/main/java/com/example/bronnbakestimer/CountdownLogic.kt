@@ -2,6 +2,7 @@ package com.example.bronnbakestimer
 
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineScope
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.math.min
 
@@ -16,7 +17,7 @@ class CountdownLogic(
     private val mediaPlayerWrapper: IMediaPlayerWrapper,
     private val coroutineScopeProvider: CoroutineScopeProvider,
     private val timeController: BaseTimeController,
-    private val extraTimersRepository: IExtraTimersRepository,
+    private val extraTimersCountdownRepository: IExtraTimersCountdownRepository,
     private val phoneVibrator: IPhoneVibrator,
 ) {
     private var tickCount = 0
@@ -30,15 +31,15 @@ class CountdownLogic(
     suspend fun execute(scope: CoroutineScope) {
         var lastTickTimeNano = timeController.nanoTime()
 
-        val smallDelayMillis = Constants.SmallDelay
-        var accumulatedTimeMillis = 0L
+        val smallDelayMillis = Constants.SMALL_DELAY
+        var accumulatedTimeMillis = 0
 
         while (coroutineScopeProvider.isActive) {
             val currentTimeNano = timeController.nanoTime()
             val elapsedTimeNano = currentTimeNano - lastTickTimeNano
 
             // Convert nanoseconds to milliseconds and accumulate
-            accumulatedTimeMillis += TimeUnit.NANOSECONDS.toMillis(elapsedTimeNano)
+            accumulatedTimeMillis += TimeUnit.NANOSECONDS.toMillis(elapsedTimeNano).toInt()
 
             // Call tick for each whole and partial tick
 
@@ -82,12 +83,12 @@ class CountdownLogic(
     }
 
     private fun tickLogic(
-        elapsedTime: Long,
+        elapsedTime: Int,
         getValue: () -> TimerData,
         setValue: (TimerData) -> Unit,
     ) {
         var state = getValue()
-        val millisecondsRemaining: Long = state.millisecondsRemaining
+        val millisecondsRemaining: Int = state.millisecondsRemaining
 
         val newMillisecondsRemaining = (millisecondsRemaining - elapsedTime).coerceAtLeast(0)
 
@@ -102,7 +103,7 @@ class CountdownLogic(
         // less than 1000 milliseconds, and we haven't triggered the beep yet, then trigger
         // the beep now:
         if (
-            newMillisecondsRemaining < Constants.MillisecondsPerSecond &&
+            newMillisecondsRemaining < Constants.MILLISECONDS_PER_SECOND &&
             !state.beepTriggered
         ) {
             mediaPlayerWrapper.playBeep()
@@ -124,16 +125,18 @@ class CountdownLogic(
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun getTimerLambdasSequence(
         mainTimerGetSetLambda: Pair<() -> TimerData, (TimerData) -> Unit>,
-        extraTimersData: MutableList<ExtraTimerData>
+        extraTimersData: ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>
     ): Sequence<Pair<() -> TimerData, (TimerData) -> Unit>> = sequence {
         yield(mainTimerGetSetLambda)
 
-        extraTimersRepository.timerData.value.forEach { timerData ->
-            val getter = { timerData.data }
+        extraTimersData.forEach { (id, _) ->
+            val getter = {
+                extraTimersData[id]?.data!! // Refer to the current state in the map
+            }
             val setter: (TimerData) -> Unit = { newTimerData ->
-                val index = extraTimersData.indexOfFirst { it.id == timerData.id }
-                check(index != -1) { "TimerData not found in extraTimersData" }
-                extraTimersData[index] = extraTimersData[index].copy(data = newTimerData)
+                extraTimersData.computeIfPresent(id) { _, existingTimerData ->
+                    existingTimerData.copy(data = newTimerData)
+                }
             }
             yield(Pair(getter, setter))
         }
@@ -149,7 +152,7 @@ class CountdownLogic(
      * state through the repository.
      */
     fun tick(
-        elapsedTime: Long,
+        elapsedTime: Int,
     ) {
         tickCount += 1
         totalElapsedTime += elapsedTime
@@ -163,7 +166,7 @@ class CountdownLogic(
             { mainTimerState!! },
             { newState: TimerData -> mainTimerState = newState }
         )
-        val extraTimersData = extraTimersRepository.timerData.value.toMutableList()
+        val extraTimersData = extraTimersCountdownRepository.timerData.value
         val timerLambdaSequence = getTimerLambdasSequence(mainTimerGetSetLambda, extraTimersData)
 
         timerLambdaSequence.forEach { (getValue, setValue) ->
@@ -174,6 +177,6 @@ class CountdownLogic(
         timerRepository.updateData(mainTimerState)
 
         // Update the extra timers repository if there were changes
-        extraTimersRepository.updateData(extraTimersData)
+        extraTimersCountdownRepository.updateData(extraTimersData)
     }
 }

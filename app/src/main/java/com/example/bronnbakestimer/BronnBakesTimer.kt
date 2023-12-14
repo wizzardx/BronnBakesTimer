@@ -8,6 +8,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,7 +17,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
-import androidx.compose.runtime.getValue
 
 /**
  * Composable function representing the main user interface of the BronnBakesTimer app.
@@ -78,7 +78,7 @@ fun BronnBakesTimer(modifier: Modifier = Modifier, errorRepository: IErrorReposi
 
         // Version number of our app:
         Text(
-            text = "Version: ${Constants.AppVersion}",
+            text = "Version: ${Constants.APP_VERSION}",
             modifier = modifier,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

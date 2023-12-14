@@ -11,14 +11,14 @@ val testModule = module {
     // Provide a test implementation of TimerRepository
     single<ITimerRepository> { DefaultTimerRepository() }
 
-    // Bind ExtraTimersRepository instance to IExtraTimersRepository
-    single<IExtraTimersRepository> { DefaultExtraTimersRepository() }
+    // Provide DefaultExtraTimersCountdownRepository for IExtraTimersCountdownRepository
+    single<IExtraTimersCountdownRepository> { DefaultExtraTimersCountdownRepository() }
 
     // Provide a test implementation of ErrorRepository
     single<IErrorRepository> { DefaultErrorRepository() }
 
     // Just use the original viewmodel here, it works fine in preview mode.
-    viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get(), get()) }
 
     // Provide a test implementation of ErrorLoggerProvider
     single<IErrorLoggerProvider> { testErrorLoggerProvider }

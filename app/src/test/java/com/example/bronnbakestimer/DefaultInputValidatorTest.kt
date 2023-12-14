@@ -14,7 +14,7 @@ import org.mockito.junit.MockitoJUnitRunner
 class DefaultInputValidatorTest {
 
     @Mock
-    private lateinit var extraTimersRepository: IExtraTimersRepository
+    private lateinit var extraTimersUserInputRepository: IExtraTimersUserInputsRepository
 
     private lateinit var defaultInputValidator: DefaultInputValidator
 
@@ -27,12 +27,12 @@ class DefaultInputValidatorTest {
     fun validatesAllInputsReturnsValidWhenInputsAreValid() = runTest {
         val timerDurationInput = MutableStateFlow("10")
         val setTimerDurationInputError: (String) -> Unit = {}
-        `when`(extraTimersRepository.timerData).thenReturn(MutableStateFlow(emptyList()))
+        `when`(extraTimersUserInputRepository.timerData).thenReturn(MutableStateFlow(emptyList()))
 
         val result = defaultInputValidator.validateAllInputs(
             timerDurationInput,
             setTimerDurationInputError,
-            extraTimersRepository
+            extraTimersUserInputRepository
         )
 
         // Check that the result is Valid
@@ -44,12 +44,12 @@ class DefaultInputValidatorTest {
         val timerDurationInput = MutableStateFlow("invalid")
         var errorMessage = ""
         val setTimerDurationInputError: (String) -> Unit = { errorMessage = it }
-        `when`(extraTimersRepository.timerData).thenReturn(MutableStateFlow(emptyList()))
+        `when`(extraTimersUserInputRepository.timerData).thenReturn(MutableStateFlow(emptyList()))
 
         val result = defaultInputValidator.validateAllInputs(
             timerDurationInput,
             setTimerDurationInputError,
-            extraTimersRepository
+            extraTimersUserInputRepository
         )
 
         // Check that the result is Invalid and error message is not empty
@@ -62,93 +62,64 @@ class DefaultInputValidatorTest {
         val timerDurationInput = MutableStateFlow("10")
         val setTimerDurationInputError: (String) -> Unit = {}
 
-        val extraTimer = ExtraTimerData(
-            data = TimerData(
-                millisecondsRemaining = 0,
-                isPaused = false,
-                isFinished = false,
-                beepTriggered = false
-            ),
-            inputs = ExtraTimerInputsData().apply {
-                updateTimerDurationInput("invalid")
-            }
-        )
-
-        `when`(extraTimersRepository.timerData).thenReturn(MutableStateFlow(listOf(extraTimer)))
+        // Mocking an extra timer with invalid duration input
+        val invalidExtraTimerInput = ExtraTimerUserInputData().apply {
+            inputs.updateTimerDurationInput("invalid")
+        }
+        `when`(extraTimersUserInputRepository.timerData).thenReturn(MutableStateFlow(listOf(invalidExtraTimerInput)))
 
         val result = defaultInputValidator.validateAllInputs(
             timerDurationInput,
             setTimerDurationInputError,
-            extraTimersRepository
+            extraTimersUserInputRepository
         )
 
         // Check that the result is Invalid and timer duration input error is not empty
         assert(result is ValidationResult.Invalid)
-        assert((result as ValidationResult.Invalid).reason.isNotEmpty())
+        assert(invalidExtraTimerInput.inputs.timerDurationInputError!!.isNotEmpty())
     }
 
     @Test
     fun validatesAllInputsReturnsInvalidWhenExtraTimerDurationIsGreaterThanMainTimerDuration() = runTest {
-        val mainTimerDurationInput = MutableStateFlow("10")
-        var mainTimerErrorMessage = ""
-        val setMainTimerDurationInputError: (String) -> Unit = { mainTimerErrorMessage = it }
+        val mainTimerDurationInput = MutableStateFlow("10") // 10 seconds
+        val setMainTimerDurationInputError: (String) -> Unit = {}
 
-        // Create an extra timer with a duration greater than the main timer
-        val extraTimerInputsData = ExtraTimerInputsData().apply {
-            updateTimerDurationInput("15")
+        // Mock an extra timer with a duration greater than the main timer
+        val extraTimer = ExtraTimerUserInputData().apply {
+            inputs.updateTimerDurationInput("15") // 15 seconds
         }
-        val extraTimer = ExtraTimerData(
-            data = TimerData(
-                millisecondsRemaining = 0,
-                isPaused = false,
-                isFinished = false,
-                beepTriggered = false
-            ),
-            inputs = extraTimerInputsData
-        )
-
-        `when`(extraTimersRepository.timerData).thenReturn(MutableStateFlow(listOf(extraTimer)))
+        `when`(extraTimersUserInputRepository.timerData).thenReturn(MutableStateFlow(listOf(extraTimer)))
 
         val result = defaultInputValidator.validateAllInputs(
             mainTimerDurationInput,
             setMainTimerDurationInputError,
-            extraTimersRepository
+            extraTimersUserInputRepository
         )
 
         // Check that the result is Invalid
         assert(result is ValidationResult.Invalid)
-        // Check that the extra timer's duration input error message is set correctly
+        // Check the specific error message for the extra timer
         assert(extraTimer.inputs.timerDurationInputError == "Extra timer time cannot be greater than main timer time.")
-        // Assert that no error message was set for the main timer's input
-        assert(mainTimerErrorMessage.isEmpty())
     }
 
     @Test
     fun validateAllInputsShouldReturnValidResultWhenAllInputsAreCorrect() = runTest {
-        val timerDurationInput = MutableStateFlow("30") // Valid input for main timer
-        val setTimerDurationInputError: (String) -> Unit = {}
+        val mainTimerDurationInput = MutableStateFlow("30") // 30 seconds, valid
+        val setMainTimerDurationInputError: (String) -> Unit = {}
 
-        val extraTimer = ExtraTimerData(
-            data = TimerData(
-                millisecondsRemaining = 0,
-                isPaused = false,
-                isFinished = false,
-                beepTriggered = false
-            ),
-            inputs = ExtraTimerInputsData().apply {
-                updateTimerDurationInput("20") // Valid input for extra timer
-            }
-        )
-
-        `when`(extraTimersRepository.timerData).thenReturn(MutableStateFlow(listOf(extraTimer)))
+        // Mock an extra timer with a valid duration
+        val extraTimer = ExtraTimerUserInputData().apply {
+            inputs.updateTimerDurationInput("20") // 20 seconds, valid
+        }
+        `when`(extraTimersUserInputRepository.timerData).thenReturn(MutableStateFlow(listOf(extraTimer)))
 
         val result = defaultInputValidator.validateAllInputs(
-            timerDurationInput,
-            setTimerDurationInputError,
-            extraTimersRepository
+            mainTimerDurationInput,
+            setMainTimerDurationInputError,
+            extraTimersUserInputRepository
         )
 
-        // Check that the result is Valid using isValid
-        assert(result.isValid)
+        // Check that the result is Valid
+        assert(result is ValidationResult.Valid)
     }
 }

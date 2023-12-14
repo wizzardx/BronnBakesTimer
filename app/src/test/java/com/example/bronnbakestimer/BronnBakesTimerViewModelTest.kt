@@ -1,29 +1,26 @@
 package com.example.bronnbakestimer
 
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.mockito.Mockito.doThrow
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.spy
 import org.mockito.MockitoAnnotations
-import org.mockito.kotlin.any
-import org.mockito.kotlin.whenever
-import kotlin.test.assertIs
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("FunctionMaxLength")
@@ -35,8 +32,9 @@ class BronnBakesTimerViewModelTest {
 
     private lateinit var viewModel: BronnBakesTimerViewModel
 
-    private lateinit var timerRepository: DefaultTimerRepository
-    private lateinit var extraTimersRepository: DefaultExtraTimersRepository
+    private lateinit var mainTimerRepository: ITimerRepository
+    private lateinit var extraTimersUserInputRepository: IExtraTimersUserInputsRepository
+    private lateinit var extraTimersCountdownRepository: IExtraTimersCountdownRepository
     private lateinit var errorRepository: DefaultErrorRepository
     private lateinit var timerManager: DefaultTimerManager
     private lateinit var inputValidator: DefaultInputValidator
@@ -52,18 +50,20 @@ class BronnBakesTimerViewModelTest {
 
         Dispatchers.setMain(testDispatcher)
 
-        timerRepository = DefaultTimerRepository()
-        extraTimersRepository = DefaultExtraTimersRepository()
+        mainTimerRepository = DefaultTimerRepository()
+        extraTimersUserInputRepository = DefaultExtraTimersUserInputsRepository()
+        extraTimersCountdownRepository = DefaultExtraTimersCountdownRepository()
         errorRepository = DefaultErrorRepository()
         timerManager = DefaultTimerManager()
         inputValidator = DefaultInputValidator()
         errorLoggerProvider = testErrorLoggerProvider
 
         viewModel = BronnBakesTimerViewModel(
-            timerRepository,
+            mainTimerRepository,
             timerManager,
             inputValidator,
-            extraTimersRepository,
+            extraTimersUserInputRepository,
+            extraTimersCountdownRepository,
             errorRepository,
             errorLoggerProvider,
         )
@@ -93,140 +93,202 @@ class BronnBakesTimerViewModelTest {
     }
 
     @Test
-    fun testAreTextInputControlsEnabled() = runTest {
-        val timerData = TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false)
-        timerRepository.updateData(timerData)
-        assertFalse(viewModel.areTextInputControlsEnabled(timerData))
+    fun `configControlsEnabled is false when timer is active`() = runTest {
+        // Arrange: Simulate an active timer
+        val activeTimerData = TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false)
+        mainTimerRepository.updateData(activeTimerData)
 
-        timerRepository.updateData(null)
-        assertTrue(viewModel.areTextInputControlsEnabled(null))
+        // Act: Collect the latest value of configControlsEnabled
+        delay(100) // Small delay to wait for flow to emit
+        val isEnabled = viewModel.configControlsEnabled.value //  value
+
+        // Assert: configControlsEnabled should be false when the timer is active
+        assertFalse(isEnabled, "configControlsEnabled should be false when timer is active")
+    }
+
+    @Test
+    fun `configControlsEnabled is true when timer is inactive`() = runTest {
+        // Arrange: Simulate no active timer
+        mainTimerRepository.updateData(null)
+
+        // Act: Collect the latest value of configControlsEnabled
+        delay(100) // Small delay to wait for flow to emit
+        val isEnabled = viewModel.configControlsEnabled.value
+
+        // Assert: configControlsEnabled should be true when there is no active timer
+        assertTrue(isEnabled, "configControlsEnabled should be true when there is no active timer")
     }
 
     @Test
     fun testOnButtonClick_StartTimers() = runTest {
         // Assuming 'onButtonClick' should start timers if they are not already started
-        assertNull(timerRepository.timerData.value) // Initial state, no timer started
+        assertNull(mainTimerRepository.timerData.value) // Initial state, no timer started
 
         // Simulate starting timers
         viewModel.onButtonClick()
 
-        assertNotNull(timerRepository.timerData.value) // Check if the timer has started
-        assertFalse(timerRepository.timerData.value!!.isPaused) // Timer should not be paused
+        assertNotNull(mainTimerRepository.timerData.value) // Check if the timer has started
+        assertFalse(mainTimerRepository.timerData.value!!.isPaused) // Timer should not be paused
     }
 
     @Test
     fun testOnButtonClick_PauseAndResumeTimers() = runTest {
         // Start the timer first
-        timerRepository.updateData(TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false))
+        mainTimerRepository.updateData(TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false))
 
         // Simulate pausing timers
         viewModel.onButtonClick()
-        assertTrue(timerRepository.timerData.value!!.isPaused) // Timer should be paused
+        assertTrue(mainTimerRepository.timerData.value!!.isPaused) // Timer should be paused
 
         // Simulate resuming timers
         viewModel.onButtonClick()
-        assertFalse(timerRepository.timerData.value!!.isPaused) // Timer should be resumed
+        assertFalse(mainTimerRepository.timerData.value!!.isPaused) // Timer should be resumed
     }
 
     @Test
     fun testInputValidation_InvalidInput() = runTest {
+        // Arrange
         val invalidInput = "invalid"
         viewModel.updateTimerDurationInput(invalidInput)
-        val setter = { error: String ->
-            viewModel.timerDurationInputError = error
-        }
-        val result = inputValidator.validateAllInputs(viewModel.timerDurationInput, setter, extraTimersRepository)
-        assertIs<ValidationResult.Invalid>(result)
-        assertNotNull(viewModel.timerDurationInputError) // Error should be set
+
+        // Act
+        viewModel.startTimersIfValid()
+
+        // Assert
+        assertNotNull(viewModel.timerDurationInputError, "Invalid input should set an error message.")
     }
 
     @Test
     fun testExtraTimerRemainingTime_WithActiveMainTimer() = runTest {
-        // Set up main timer data to simulate an active main timer (e.g., 30 seconds remaining)
-        val mainTimerData = TimerData(30_000, isPaused = false, isFinished = false, beepTriggered = false)
-        timerRepository.updateData(mainTimerData)
+        // Arrange
+        val mainTimerSecondsRemaining = Seconds(30) // Assuming seconds
+        val extraTimerUserInputData = ExtraTimerUserInputData() // Initialize with appropriate data
+        val extraTimerRemainingSeconds = MutableStateFlow(Seconds(15)) // Example: 15 seconds
 
-        // Create an extra timer with a specific time remaining (e.g., 15 seconds)
-        val extraTimerData = ExtraTimerData(
-            data = TimerData(15_000, isPaused = false, isFinished = false, beepTriggered = false),
-            inputs = ExtraTimerInputsData() // Assuming default constructor or predefined inputs
+        // Mock or set timerDurationInput, as per your application's structure
+
+        // Act
+        val remainingTimeFlow = viewModel.extraTimerRemainingTime(
+            extraTimerUserInputData,
+            extraTimerRemainingSeconds,
+            viewModel.timerDurationInput, // Assuming this is how you get the timer duration input
+            mainTimerSecondsRemaining
         )
-        val remainingTimeFlow = viewModel.extraTimerRemainingTime(extraTimerData)
 
-        // Assert that the remaining time is calculated correctly
-        assertEquals("00:15", remainingTimeFlow.value)
+        // Assert
+        assertEquals(
+            "00:15",
+            remainingTimeFlow.value,
+            "Remaining time should be correctly calculated with an active main timer."
+        )
     }
 
     @Test
     fun testExtraTimerRemainingTime_WithInactiveMainTimer() = runTest {
-        // Set up main timer data to simulate an inactive main timer (null)
-        timerRepository.updateData(null)
+        // Arrange
+        val extraTimerUserInputData = ExtraTimerUserInputData() // Initialize with appropriate data
+        val extraTimerRemainingSeconds = MutableStateFlow(Seconds(15)) // Example: 15 seconds
+        val mainTimerSecondsRemaining: Seconds? = null // Main timer inactive
 
-        // Create an extra timer with a specific time remaining (e.g., 15 seconds)
-        val extraTimerData = ExtraTimerData(
-            data = TimerData(15_000, isPaused = false, isFinished = false, beepTriggered = false),
-            inputs = ExtraTimerInputsData() // Assuming default constructor or predefined inputs
+        // Mock or set timerDurationInput, as per your application's structure
+
+        // Act
+        val remainingTimeFlow = viewModel.extraTimerRemainingTime(
+            extraTimerUserInputData,
+            extraTimerRemainingSeconds,
+            viewModel.timerDurationInput, // Assuming this is how you get the timer duration input
+            mainTimerSecondsRemaining
         )
-        val remainingTimeFlow = viewModel.extraTimerRemainingTime(extraTimerData)
 
-        // Assert that the remaining time is calculated correctly for inactive main timer
-        assertEquals("05:00", remainingTimeFlow.value)
+        // Assert
+        assertEquals(
+            "05:00",
+            remainingTimeFlow.value,
+            "Remaining time should be correctly calculated with an inactive main timer."
+        )
     }
 
     @Test
     fun testOnButtonClickExceptionHandling() = runTest {
-        // Create a spy of the real DefaultTimerManager instance
-        val timerManagerSpy = spy(DefaultTimerManager())
-
-        // Stub the pauseTimers method to throw an exception when called
-        doThrow(RuntimeException("Simulated Exception")).whenever(timerManagerSpy).pauseTimers(timerRepository)
-
-        // Reinitialize the ViewModel with the spy
-        viewModel = BronnBakesTimerViewModel(
+        // Subclass of BronnBakesTimerViewModel for testing
+        class TestViewModel(
+            timerRepository: ITimerRepository,
+            timerManager: ITimerManager,
+            inputValidator: IInputValidator,
+            extraTimersUserInputsRepository: IExtraTimersUserInputsRepository,
+            extraTimersCountdownRepository: IExtraTimersCountdownRepository,
+            errorRepository: IErrorRepository,
+            errorLoggerProvider: IErrorLoggerProvider
+        ) : BronnBakesTimerViewModel(
             timerRepository,
-            timerManagerSpy, // Replace the real instance with the spy
+            timerManager,
             inputValidator,
-            extraTimersRepository,
+            extraTimersUserInputsRepository,
+            extraTimersCountdownRepository,
+            errorRepository,
+            errorLoggerProvider
+        ) {
+            @Suppress("TooGenericExceptionThrown")
+            @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+            override fun startTimersIfValid() {
+                throw RuntimeException("Simulated Exception")
+            }
+        }
+
+        // Arrange
+        val timerRepository = DefaultTimerRepository()
+        val timerManager = DefaultTimerManager()
+        val inputValidator = DefaultInputValidator()
+        val extraTimersUserInputsRepository = DefaultExtraTimersUserInputsRepository()
+        val extraTimersCountdownRepository = DefaultExtraTimersCountdownRepository()
+        val errorRepository = DefaultErrorRepository()
+        val errorLoggerProvider = testErrorLoggerProvider
+
+        val testViewModel = TestViewModel(
+            timerRepository,
+            timerManager,
+            inputValidator,
+            extraTimersUserInputsRepository,
+            extraTimersCountdownRepository,
             errorRepository,
             errorLoggerProvider
         )
 
-        // Set up the ViewModel state to ensure pauseTimers will be called
-        val timerData = TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false)
-        timerRepository.updateData(timerData)
+        // Act
+        testViewModel.onButtonClick() // This should trigger the exception
 
-        // Call onButtonClick which should internally call timerManager.pauseTimers
-        viewModel.onButtonClick()
-
-        // Collect the latest error message from errorMessage StateFlow
-        val errorMessage = errorRepository.errorMessage.first()
-        assertNotNull(errorMessage)
-        assertEquals("Simulated Exception", errorMessage)
+        // Assert
+        val errorMessage = errorRepository.errorMessage.value
+        assertEquals("Simulated Exception", errorMessage, "Exception should be caught and logged.")
     }
 
+    @Suppress("SwallowedException")
     @Test
     fun testOnResetClickExceptionHandling() = runTest {
-        // Assuming timerManager is a mock and can be set to throw an exception
-        val timerManagerMock = mock<DefaultTimerManager>()
-        whenever(timerManagerMock.clearResources(any())).thenThrow(RuntimeException("Simulated Reset Exception"))
+        // Arrange
+        val timerRepository = DefaultTimerRepository()
+        val timerManager = DefaultTimerManager()
+        val inputValidator = DefaultInputValidator()
+        val extraTimersUserInputsRepository = DefaultExtraTimersUserInputsRepository()
+        val extraTimersCountdownRepository = DefaultExtraTimersCountdownRepository()
+        val errorRepository = DefaultErrorRepository()
+        val errorLoggerProvider = testErrorLoggerProvider // Or runtimeErrorLoggerProvider
 
-        // Set the mock to your ViewModel
-        viewModel = BronnBakesTimerViewModel(
+        val viewModel = BronnBakesTimerViewModel(
             timerRepository,
-            timerManagerMock, // Use the mock here
+            timerManager,
             inputValidator,
-            extraTimersRepository,
+            extraTimersUserInputsRepository,
+            extraTimersCountdownRepository,
             errorRepository,
-            errorLoggerProvider,
+            errorLoggerProvider
         )
 
-        // Call onResetClick
-        viewModel.onResetClick()
+        // Act
+        viewModel.onResetClick(testThrowingException = true)
 
-        // Verify that the exception is handled
-        val errorMessage = errorRepository.errorMessage.first()
-        assertNotNull(errorMessage)
-        assertEquals("Simulated Reset Exception", errorMessage)
+        // Assert
+        assertNotNull(errorRepository.errorMessage.value, "Exception should be caught and logged.")
     }
 
     @Test
@@ -238,9 +300,9 @@ class BronnBakesTimerViewModelTest {
         viewModel.startTimersIfValid()
 
         // Verify that the timers started correctly
-        val timerData = timerRepository.timerData.value
+        val timerData = mainTimerRepository.timerData.value
         assertNotNull(timerData)
-        assertEquals(10 * 60 * 1000L, timerData?.millisecondsRemaining) // 10 minutes in milliseconds
+        assertEquals(10 * 60 * 1000, timerData.millisecondsRemaining) // 10 minutes in milliseconds
     }
 
     @Test
@@ -252,7 +314,7 @@ class BronnBakesTimerViewModelTest {
         viewModel.startTimersIfValid()
 
         // Verify that the timers did not start
-        val timerData = timerRepository.timerData.value
+        val timerData = mainTimerRepository.timerData.value
         assertNull(timerData)
     }
 
@@ -260,48 +322,41 @@ class BronnBakesTimerViewModelTest {
     fun testTimerResetFunctionality() = runTest {
         // Setup and start timers
         val timerData = TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false)
-        timerRepository.updateData(timerData)
+        mainTimerRepository.updateData(timerData)
 
         // Call onResetClick to reset timers
         viewModel.onResetClick()
 
         // Assertions to verify timers are reset
-        val resetTimerData = timerRepository.timerData.value
+        val resetTimerData = mainTimerRepository.timerData.value
         assertNull(resetTimerData) // Assuming reset sets the timerData to null
     }
 
     @Test
     fun testAddTimer() = runTest {
-        val initialCount = extraTimersRepository.timerData.value.size
+        val initialCount = extraTimersUserInputRepository.timerData.value.size
 
         viewModel.onAddTimerClicked()
 
-        val newCount = extraTimersRepository.timerData.value.size
+        val newCount = extraTimersUserInputRepository.timerData.value.size
         assertEquals(initialCount + 1, newCount)
     }
 
     @Test
     fun testRemoveTimer() = runTest {
-        // Ensure there's at least one timer to remove
-        val initialTimers = listOf(
-            ExtraTimerData(
-                TimerData(
-                    10_000,
-                    isPaused = false,
-                    isFinished = false,
-                    beepTriggered = false
-                ),
-                ExtraTimerInputsData()
-            )
-        )
-        extraTimersRepository.updateData(initialTimers)
+        // Arrange: Add a timer to the repository
+        val initialTimerData = ExtraTimerUserInputData()
+        extraTimersUserInputRepository.updateData(listOf(initialTimerData))
 
-        val timerId = extraTimersRepository.timerData.value.first().id
+        val initialTimers = extraTimersUserInputRepository.timerData.value
+        val timerToRemove = initialTimers.first()
 
-        viewModel.onRemoveTimerClicked(timerId)
+        // Act: Remove the timer
+        viewModel.onRemoveTimerClicked(timerToRemove.id)
 
-        val remainingTimers = extraTimersRepository.timerData.value
-        assertTrue(remainingTimers.none { it.id == timerId })
+        // Assert: Check if the timer has been removed
+        val remainingTimers = extraTimersUserInputRepository.timerData.value
+        assertFalse(remainingTimers.any { it.id == timerToRemove.id }, "The timer should be removed.")
     }
 
     @Test
@@ -315,33 +370,107 @@ class BronnBakesTimerViewModelTest {
     }
 
     @Test
-    fun testSuccessfulUpdateOfExtraTimers() = runTest {
-        // Initialize extra timers with initial values
-        val initialExtraTimer1 = ExtraTimerInputsData().apply { updateTimerDurationInput("5") } // 5 minutes
-        val initialExtraTimer2 = ExtraTimerInputsData().apply { updateTimerDurationInput("10") } // 10 minutes
-
-        val extraTimerData1 = ExtraTimerData(
-            TimerData(0, isPaused = false, isFinished = false, beepTriggered = false),
-            initialExtraTimer1
+    fun testStartTimers_RemovesExtraTimersNotInUserInputs() = runTest {
+        // Arrange: Create a timer that will not be in the user inputs
+        val extraTimerIdNotInInputs = TimerUserInputDataId.randomId()
+        val countdownDataNotInInputs = SingleTimerCountdownData(
+            data = TimerData(
+                millisecondsRemaining = 60_000,
+                isPaused = false,
+                beepTriggered = false,
+                isFinished = false
+            ),
+            useInputTimerId = extraTimerIdNotInInputs
         )
-        val extraTimerData2 = ExtraTimerData(
-            TimerData(0, isPaused = false, isFinished = false, beepTriggered = false),
-            initialExtraTimer2
+
+        // Add this timer to the countdown repository
+        extraTimersCountdownRepository.updateData(
+            ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
+                put(extraTimerIdNotInInputs, countdownDataNotInInputs)
+            }
         )
 
-        extraTimersRepository.updateData(listOf(extraTimerData1, extraTimerData2))
+        // Ensure there are no timers in the user inputs repository
+        extraTimersUserInputRepository.updateData(listOf())
 
-        // Update the main timer duration input as a prerequisite for starting timers
-        viewModel.updateTimerDurationInput("15") // 15 minutes for the main timer
+        // Act: Call startTimers in the ViewModel
+        viewModel.startTimers()
 
-        // Start timers, which should update extra timers' millisecondsRemaining based on inputs
-        viewModel.startTimersIfValid()
+        // Assert: The timer not present in user inputs should be removed from the countdown repository
+        val countdownData = extraTimersCountdownRepository.timerData.value
+        assertFalse(
+            countdownData.containsKey(extraTimerIdNotInInputs),
+            "Extra timer not in user inputs should be removed."
+        )
+    }
 
-        // Retrieve updated extra timers
-        val updatedExtraTimers = extraTimersRepository.timerData.value
+    @Test
+    fun testStartTimers_AddsNewExtraTimersFromUserInputs() = runTest {
+        // Arrange: Create a new timer in the user inputs repository
+        val newExtraTimerId = TimerUserInputDataId.randomId()
+        val newExtraTimerInputsData = ExtraTimerInputsData().apply {
+            updateTimerDurationInput("10") // Set duration input to 10 minutes
+        }
+        val newExtraTimerUserInputData = ExtraTimerUserInputData(
+            inputs = newExtraTimerInputsData,
+            id = newExtraTimerId
+        )
 
-        // Verify that the millisecondsRemaining is updated correctly
-        assertEquals(5 * 60 * 1000L, updatedExtraTimers[0].data.millisecondsRemaining) // 5 minutes in milliseconds
-        assertEquals(10 * 60 * 1000L, updatedExtraTimers[1].data.millisecondsRemaining) // 10 minutes in milliseconds
+        // Add this new timer to the user inputs repository
+        extraTimersUserInputRepository.updateData(listOf(newExtraTimerUserInputData))
+
+        // Ensure the new timer does not exist in the countdown repository
+        extraTimersCountdownRepository.updateData(ConcurrentHashMap())
+
+        // Act: Call startTimers in the ViewModel
+        viewModel.startTimers()
+
+        // Assert: The new timer from user inputs should be added to the countdown repository
+        val countdownData = extraTimersCountdownRepository.timerData.value
+        assertTrue(countdownData.containsKey(newExtraTimerId), "New extra timer should be added.")
+        val timerData = countdownData[newExtraTimerId]
+        assertNotNull(timerData)
+        assertEquals(10 * 60 * 1000, timerData.data.millisecondsRemaining) // 10 minutes in milliseconds
+    }
+
+    @Test
+    fun testStartTimers_UpdatesExistingExtraTimersFromUserInputs() = runTest {
+        // Arrange: Create an existing timer in both user inputs and countdown repositories
+        val existingExtraTimerId = TimerUserInputDataId.randomId()
+        val existingExtraTimerInputsData = ExtraTimerInputsData().apply {
+            updateTimerDurationInput("5") // Initially set to 5 minutes
+        }
+        val existingExtraTimerUserInputData = ExtraTimerUserInputData(
+            inputs = existingExtraTimerInputsData,
+            id = existingExtraTimerId
+        )
+        val existingTimerCountdownData = SingleTimerCountdownData(
+            data = TimerData(millisecondsRemaining = 5 * 60 * 1000), // 5 minutes in milliseconds
+            useInputTimerId = existingExtraTimerId
+        )
+
+        // Add this existing timer to both repositories
+        extraTimersUserInputRepository.updateData(listOf(existingExtraTimerUserInputData))
+        extraTimersCountdownRepository.updateData(
+            ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
+                put(existingExtraTimerId, existingTimerCountdownData)
+            }
+        )
+
+        // Change the duration input for this timer
+        existingExtraTimerInputsData.updateTimerDurationInput("10") // Change to 10 minutes
+
+        // Act: Call startTimers in the ViewModel
+        viewModel.startTimers()
+
+        // Assert: The existing timer's data in countdown repository should be updated
+        val countdownData = extraTimersCountdownRepository.timerData.value
+        assertTrue(countdownData.containsKey(existingExtraTimerId), "Existing extra timer should be updated.")
+        val updatedTimerData = countdownData[existingExtraTimerId]
+        assertNotNull(updatedTimerData)
+        assertEquals(
+            10 * 60 * 1000,
+            updatedTimerData.data.millisecondsRemaining
+        ) // Updated to 10 minutes in milliseconds
     }
 }

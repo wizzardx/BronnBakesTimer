@@ -1,17 +1,17 @@
 package com.example.bronnbakestimer
 
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @Suppress("FunctionMaxLength")
 class UtilsKtTest {
@@ -74,21 +74,21 @@ class UtilsKtTest {
     fun `validateIntInput returns error for non-numeric input`() {
         val result = validateIntInput("abc")
         assertTrue(result is ValidationResult.Invalid) // Check if the result is Invalid
-        assertEquals("Invalid number", (result as ValidationResult.Invalid).reason)
+        assertEquals("Invalid number", result.reason)
     }
 
     @Test
     fun `validateIntInput returns error for input less than 1`() {
         val result = validateIntInput("0")
         assertTrue(result is ValidationResult.Invalid) // Check if the result is Invalid
-        assertEquals("Must be at least 1", (result as ValidationResult.Invalid).reason)
+        assertEquals("Must be at least 1", result.reason)
     }
 
     @Test
     fun `validateIntInput returns error for input greater than MaxUserInputNum`() {
-        val result = validateIntInput((Constants.MaxUserInputNum + 1).toString())
-        assertTrue(result is ValidationResult.Invalid) // Check if the result is Invalid
-        assertEquals("Must be at most ${Constants.MaxUserInputNum}", (result as ValidationResult.Invalid).reason)
+        val result = validateIntInput((Constants.MAX_USER_INPUT_NUM + 1).toString())
+        assertTrue(result is ValidationResult.Invalid)
+        assertEquals("Must be at most ${Constants.MAX_USER_INPUT_NUM}", result.reason)
     }
 
     @Test
@@ -117,37 +117,37 @@ class UtilsKtTest {
 
     @Test
     fun `formatMinSec formats zero seconds correctly`() {
-        val result = formatMinSec(0)
+        val result = formatMinSec(Seconds(0))
         assertEquals("00:00", result)
     }
 
     @Test
     fun `formatMinSec formats less than a minute correctly`() {
-        val result = formatMinSec(45)
+        val result = formatMinSec(Seconds(45))
         assertEquals("00:45", result)
     }
 
     @Test
     fun `formatMinSec formats exactly one minute correctly`() {
-        val result = formatMinSec(60)
+        val result = formatMinSec(Seconds(60))
         assertEquals("01:00", result)
     }
 
     @Test
     fun `formatMinSec formats more than a minute correctly`() {
-        val result = formatMinSec(90)
+        val result = formatMinSec(Seconds(90))
         assertEquals("01:30", result)
     }
 
     @Test
     fun `formatMinSec formats exactly one hour correctly`() {
-        val result = formatMinSec(3600)
+        val result = formatMinSec(Seconds(3600))
         assertEquals("60:00", result)
     }
 
     @Test
     fun `formatMinSec formats more than an hour correctly`() {
-        val result = formatMinSec(3661)
+        val result = formatMinSec(Seconds(3661))
         assertEquals("61:01", result)
     }
 
@@ -187,28 +187,28 @@ class UtilsKtTest {
 
     @Test
     fun `converts minutes to seconds correctly`() {
-        assertEquals(600, userInputToSeconds("10", UserInputTimeUnitType.MINUTES))
+        assertEquals(Seconds(600), userInputToSeconds("10", UserInputTimeUnitType.MINUTES))
     }
 
     @Test
     fun `converts seconds to seconds correctly`() {
-        assertEquals(10, userInputToSeconds("10", UserInputTimeUnitType.SECONDS))
+        assertEquals(Seconds(10), userInputToSeconds("10", UserInputTimeUnitType.SECONDS))
     }
 
     @Test
     fun `handles non-numeric input correctly`() {
-        assertEquals(0, userInputToSeconds("not a number"))
+        assertEquals(Seconds(0), userInputToSeconds("not a number"))
     }
 
     @Test
     fun `handles empty input correctly`() {
-        assertEquals(0, userInputToSeconds(""))
+        assertEquals(Seconds(0), userInputToSeconds(""))
     }
 
     @Test
     @Suppress("UnderscoresInNumericLiterals")
     fun `handles large numeric input correctly`() {
-        assertEquals(18000, userInputToSeconds("300", UserInputTimeUnitType.MINUTES))
+        assertEquals(Seconds(18000), userInputToSeconds("300", UserInputTimeUnitType.MINUTES))
     }
 
     // Unit tests for logException
@@ -249,8 +249,44 @@ class UtilsKtTest {
     // Tests for formatTotalTimeRemainingString
 
     @Test
+    fun `formatTotalTimeRemainingString calculates time from input when timerData is null`() {
+        // Set timerData to null to ensure the if branch is exercised
+        val timerData: TimerData? = null
+
+        // Provide a timer duration input in minutes
+        val timerDurationInput = "15" // 15 minutes
+
+        // Invoke the function with null TimerData and a timer duration input
+        val result = formatTotalTimeRemainingString(timerData, timerDurationInput)
+
+        // The expected result is "15:00", which is 15 minutes in MM:SS format
+        assertEquals("15:00", result)
+    }
+
+    @Test
+    fun `formatTotalTimeRemainingString uses timerData when not null`() {
+        // Create a non-null TimerData instance with a specific millisecondsRemaining value
+        val timerData = TimerData(
+            isPaused = false,
+            beepTriggered = false,
+            isFinished = false,
+            millisecondsRemaining = 30_000 // 30 seconds remaining
+        )
+
+        // Any value for timerDurationInput, as it should not be used
+        val timerDurationInput = "10"
+
+        // Invoke the function with the non-null TimerData
+        val result = formatTotalTimeRemainingString(timerData, timerDurationInput)
+
+        // Verify that the result is based on the timerData's millisecondsRemaining
+        // The expected result is "00:30", which is 30 seconds in MM:SS format
+        assertEquals("00:30", result)
+    }
+
+    @Test
     fun `formatTotalTimeRemainingString returns correct format when timerData is null`() {
-        val result = formatTotalTimeRemainingString(null, "10")
+        val result = formatTotalTimeRemainingString(seconds = null, "10")
         assertEquals("10:00", result)
     }
 
@@ -268,19 +304,19 @@ class UtilsKtTest {
 
     @Test
     fun `formatTotalTimeRemainingString handles non-numeric input correctly`() {
-        val result = formatTotalTimeRemainingString(null, "not a number")
+        val result = formatTotalTimeRemainingString(seconds = null, "not a number")
         assertEquals("00:00", result)
     }
 
     @Test
     fun `formatTotalTimeRemainingString handles empty input correctly`() {
-        val result = formatTotalTimeRemainingString(null, "")
+        val result = formatTotalTimeRemainingString(seconds = null, "")
         assertEquals("00:00", result)
     }
 
     @Test
     fun `formatTotalTimeRemainingString handles large numeric input correctly`() {
-        val result = formatTotalTimeRemainingString(null, "300")
+        val result = formatTotalTimeRemainingString(seconds = null, "300")
         assertEquals("300:00", result)
     }
 }

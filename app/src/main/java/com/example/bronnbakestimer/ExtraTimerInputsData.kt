@@ -57,4 +57,6 @@ class ExtraTimerInputsData {
     fun updateTimerNameInput(newValue: String) {
         _timerNameInput.value = newValue
     }
+
+    // TODO: Some validations during construction
 }

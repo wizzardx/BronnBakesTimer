@@ -37,7 +37,7 @@ class TimerService : Service() {
     // Injecting dependencies using Koin
     private val timerRepository: ITimerRepository by inject()
     private val mediaPlayerWrapper: IMediaPlayerWrapper by inject()
-    private val extraTimersRepository: IExtraTimersRepository by inject()
+    private val extraTimersCountdownRepository: IExtraTimersCountdownRepository by inject()
     private val errorRepository: IErrorRepository by inject()
     private val errorLoggerProvider: IErrorLoggerProvider by inject()
     private val coroutineScopeProvider: CoroutineScopeProvider by inject()
@@ -65,7 +65,7 @@ class TimerService : Service() {
             mediaPlayerWrapper,
             coroutineScopeProvider,
             timeController,
-            extraTimersRepository,
+            extraTimersCountdownRepository,
             phoneVibrator,
         )
         val dispatcher = Dispatchers.Default

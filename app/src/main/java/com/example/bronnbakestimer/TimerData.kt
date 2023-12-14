@@ -12,8 +12,9 @@ package com.example.bronnbakestimer
  *                         the countdown. True if beep is triggered, false otherwise.
  */
 data class TimerData(
-    val millisecondsRemaining: Long,
-    val isPaused: Boolean,
-    val isFinished: Boolean,
-    val beepTriggered: Boolean
+    val millisecondsRemaining: Int = 0,
+    val isPaused: Boolean = false,
+    val isFinished: Boolean = false,
+    val beepTriggered: Boolean = false
+    // TODO: Some validations during construction
 )

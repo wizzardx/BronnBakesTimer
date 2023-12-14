@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 /**
  * Composable function for displaying configurable input fields in the BronnBakesTimer app.
@@ -23,20 +22,16 @@ import org.koin.compose.koinInject
  * @param modifier A [Modifier] for styling and layout of the input fields.
  * @param viewModel The [BronnBakesTimerViewModel] instance responsible for handling user interactions
  *                  and business logic associated with the timer.
- * @param timerRepository The [ITimerRepository] instance that provides access to the current timer data,
- *                        which is used to determine the enabled state of the input fields.
  */
 @Composable
 fun ConfigInputFields(
     modifier: Modifier,
     viewModel: BronnBakesTimerViewModel = koinViewModel(),
-    timerRepository: ITimerRepository = koinInject(),
 ) {
-    val timerData by timerRepository.timerData.collectAsState()
-
     // Use collectAsState to observe changes in timerDurationInput
     val currentTimerDurationInput by viewModel.timerDurationInput.collectAsState()
 
+    val configControlsEnabled by viewModel.configControlsEnabled.collectAsState()
     val unitsName = Constants.UserInputTimeUnit.getName()
     val labelText = "Work ($unitsName)"
 
@@ -47,7 +42,7 @@ fun ConfigInputFields(
             onValueChange = { viewModel.updateTimerDurationInput(normaliseIntInput(it)) },
             labelText = labelText,
             modifier = modifier,
-            enabled = viewModel.areTextInputControlsEnabled(timerData),
+            enabled = configControlsEnabled,
             keyboardType = KeyboardType.Number,
         )
     )

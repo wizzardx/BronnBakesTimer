@@ -30,7 +30,7 @@ fun interface IInputValidator {
      * @param timerDurationInput A StateFlow representing the user's input for the main timer duration.
      * @param setTimerDurationInputError A function that takes a string and sets it as the error message for the main
      *                                   timer duration input.
-     * @param extraTimersRepository An IExtraTimersRepository instance for accessing extra timer data.
+     * @param extraTimersUserInputsRepository An IExtraTimersRepository instance for accessing extra timer data.
      * @return A ValidationResult representing the result of the validation. If all inputs are valid, it returns
      *         ValidationResult.Valid. If any input is invalid, it returns ValidationResult.Invalid with a reason for
      *         the invalidity.
@@ -38,6 +38,6 @@ fun interface IInputValidator {
     fun validateAllInputs(
         timerDurationInput: StateFlow<String>,
         setTimerDurationInputError: (String) -> Unit,
-        extraTimersRepository: IExtraTimersRepository,
+        extraTimersUserInputsRepository: IExtraTimersUserInputsRepository,
     ): ValidationResult
 }

@@ -19,8 +19,11 @@ val appModule = module {
     // Bind TimerRepository instance to ITimerRepository
     single<ITimerRepository> { DefaultTimerRepository() }
 
-    // Bind ExtraTimersRepository instance to IExtraTimersRepository
-    single<IExtraTimersRepository> { DefaultExtraTimersRepository() }
+    // Bind DefaultExtraTimersUserInputsRepository instance to IExtraTimersUserInputsRepository
+    single<IExtraTimersUserInputsRepository> { DefaultExtraTimersUserInputsRepository() }
+
+    // Bind DefaultExtraTimersCountdownRepository instance to IExtraTimersCountdownRepository
+    single<IExtraTimersCountdownRepository> { DefaultExtraTimersCountdownRepository() }
 
     // Bind DefaultRepository instance to IErrorRepository
     single<IErrorRepository> { DefaultErrorRepository() }
@@ -35,7 +38,7 @@ val appModule = module {
     single<IErrorLoggerProvider> { runtimeErrorLoggerProvider }
 
     // Define the ViewModel
-    viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get(), get()) }
 
     // Provide CoroutineScope for TimerService
     single<CoroutineScopeProvider> { ProductionCoroutineScopeProvider() }

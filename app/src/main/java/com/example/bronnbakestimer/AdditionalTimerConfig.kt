@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 /**
  * Composable function for configuring an additional timer in the BronnBakesTimer app.
@@ -22,21 +21,18 @@ import org.koin.compose.koinInject
  * It observes the main timer's data to determine whether the controls are enabled or disabled.
  *
  * @param modifier Modifier for styling and layout of the additional timer configuration.
- * @param timerData The data representing the additional timer.
+ * @param timerUserInputData The data representing the additional timer.
  * @param viewModel The view model responsible for managing timer data and updates.
- * @param timerRepository The repository for managing main timer data.
  */
 @Composable
 fun AdditionalTimerConfig(
     modifier: Modifier,
-    timerData: ExtraTimerData,
+    timerUserInputData: ExtraTimerUserInputData,
     viewModel: BronnBakesTimerViewModel = koinViewModel(),
-    timerRepository: ITimerRepository = koinInject(),
 ) {
-    val mainTimerData by timerRepository.timerData.collectAsState()
-    val enabled = viewModel.areTextInputControlsEnabled(mainTimerData)
-    val currentTimerNameInput by timerData.inputs.timerNameInput.collectAsState()
-    val currentTimerDurationInput by timerData.inputs.timerDurationInput.collectAsState()
+    val enabled = viewModel.configControlsEnabled.collectAsState().value
+    val currentTimerNameInput by timerUserInputData.inputs.timerNameInput.collectAsState()
+    val currentTimerDurationInput by timerUserInputData.inputs.timerDurationInput.collectAsState()
 
     // A column to contain our controls to follow:
     Column(
@@ -46,9 +42,9 @@ fun AdditionalTimerConfig(
         // An input field for the Label for this additional timer:
         InputTextField(
             InputTextFieldParams(
-                errorMessage = timerData.inputs.timerNameInputError,
+                errorMessage = timerUserInputData.inputs.timerNameInputError,
                 value = currentTimerNameInput,
-                onValueChange = { timerData.inputs.updateTimerNameInput(it) },
+                onValueChange = { timerUserInputData.inputs.updateTimerNameInput(it) },
                 labelText = "Label",
                 modifier = modifier,
                 enabled = enabled,
@@ -60,9 +56,9 @@ fun AdditionalTimerConfig(
         val labelText = Constants.UserInputTimeUnit.getName()
         InputTextField(
             InputTextFieldParams(
-                errorMessage = timerData.inputs.timerDurationInputError,
+                errorMessage = timerUserInputData.inputs.timerDurationInputError,
                 value = currentTimerDurationInput,
-                onValueChange = { timerData.inputs.updateTimerDurationInput(normaliseIntInput(it)) },
+                onValueChange = { timerUserInputData.inputs.updateTimerDurationInput(normaliseIntInput(it)) },
                 labelText = labelText,
                 modifier = modifier.padding(bottom = 8.dp),
                 enabled = enabled,
@@ -71,7 +67,7 @@ fun AdditionalTimerConfig(
         )
         // A button with the text "Remove" in it:
         Button(
-            onClick = { viewModel.onRemoveTimerClicked(timerData.id) },
+            onClick = { viewModel.onRemoveTimerClicked(timerUserInputData.id) },
             modifier = modifier.padding(bottom = 8.dp),
             enabled = enabled,
         ) {

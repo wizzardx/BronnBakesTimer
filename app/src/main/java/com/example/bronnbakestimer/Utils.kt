@@ -19,13 +19,15 @@ import java.util.Locale
  * @param totalSeconds The total duration in seconds to be formatted.
  * @return A string formatted as MM:SS representing the input duration.
  */
-fun formatMinSec(totalSeconds: Long): String =
-    String.format(
+fun formatMinSec(totalSeconds: Seconds): String {
+    val seconds = totalSeconds.value
+    return String.format(
         Locale.ROOT,
         "%02d:%02d",
-        totalSeconds / Constants.SecondsPerMinute,
-        totalSeconds % Constants.SecondsPerMinute
+        seconds / Constants.SECONDS_PER_MINUTE,
+        seconds % Constants.SECONDS_PER_MINUTE
     )
+}
 
 /**
  * Normalises a string input to remove non-numeric characters and leading zeros.
@@ -73,7 +75,8 @@ fun validateIntInput(value: String): ValidationResult {
     return when {
         intVal == null -> ValidationResult.Invalid("Invalid number")
         intVal < 1 -> ValidationResult.Invalid("Must be at least 1")
-        intVal > Constants.MaxUserInputNum -> ValidationResult.Invalid("Must be at most ${Constants.MaxUserInputNum}")
+        intVal > Constants.MAX_USER_INPUT_NUM ->
+            ValidationResult.Invalid("Must be at most ${Constants.MAX_USER_INPUT_NUM}")
         else -> ValidationResult.Valid
     }
 }
@@ -232,14 +235,14 @@ fun logError(msg: String, errorRepository: IErrorRepository, logger: IErrorLogge
  * @param units An optional parameter of type UserInputTimeUnitType, which specifies the unit of
  *              time represented by the input. It defaults to a standard unit defined in
  *              Constants.UserInputTimeUnit (e.g., minutes or seconds).
- * @return The equivalent duration in seconds as a Long. If the input is non-numeric or empty,
+ * @return The equivalent duration in seconds as a Int. If the input is non-numeric or empty,
  *         the function returns 0.
  */
-fun userInputToSeconds(input: String, units: UserInputTimeUnitType = Constants.UserInputTimeUnit): Long {
-    val i = input.toLongOrNull() ?: 0 // Empty (or none-numeric) user input gets converted to 0 by default
+fun userInputToSeconds(input: String, units: UserInputTimeUnitType = Constants.UserInputTimeUnit): Seconds {
+    val i = input.toIntOrNull() ?: 0 // Empty (or none-numeric) user input gets converted to 0 by default
     return when (units) {
-        UserInputTimeUnitType.MINUTES -> i * Constants.SecondsPerMinute
-        UserInputTimeUnitType.SECONDS -> i
+        UserInputTimeUnitType.MINUTES -> Seconds(i * Constants.SECONDS_PER_MINUTE)
+        UserInputTimeUnitType.SECONDS -> Seconds(i)
     }
 }
 
@@ -259,9 +262,21 @@ fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: St
     val secondsRemaining = if (timerData == null) {
         userInputToSeconds(timerDurationInput)
     } else {
-        timerData.millisecondsRemaining / Constants.MillisecondsPerSecond
+        Seconds(timerData.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND)
     }
     return formatMinSec(secondsRemaining)
+}
+
+/**
+ * Overloaded version of formatTotalTimeRemainingString that accepts Seconds? and a timer duration string.
+ *
+ * @param seconds The remaining time in Seconds, nullable. If null, uses the timerDurationInput for calculation.
+ * @param timerDurationInput The user-inputted timer duration as a string.
+ * @return A string representing the total time remaining in MM:SS format.
+ */
+fun formatTotalTimeRemainingString(seconds: Seconds?, timerDurationInput: String): String {
+    val totalSeconds = seconds ?: userInputToSeconds(timerDurationInput)
+    return formatMinSec(totalSeconds)
 }
 
 /**
@@ -277,12 +292,12 @@ fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: St
  *
  * @param input The user input string representing the time duration. This should be a numeric
  *              string. Non-numeric input is treated as 0 by the `userInputToSeconds` function.
- * @return The equivalent duration in milliseconds as a Long. If the input is non-numeric or empty,
+ * @return The equivalent duration in milliseconds as a Int. If the input is non-numeric or empty,
  *         the function returns 0.
  */
-fun userInputToMillis(input: String): Long {
+fun userInputToMillis(input: String): Int {
     val seconds = userInputToSeconds(input)
-    return seconds * Constants.MillisecondsPerSecond
+    return seconds.value * Constants.MILLISECONDS_PER_SECOND
 }
 
 /**
@@ -318,4 +333,24 @@ val runtimeErrorLoggerProvider = IErrorLoggerProvider { tag, message, throwable 
 val testErrorLoggerProvider = IErrorLoggerProvider { tag, message, throwable ->
     // Custom implementation for testing, e.g., print to console or use a mock logger
     println("[$tag] $message - ${throwable.message}")
+}
+
+/**
+ * Represents a time duration in seconds.
+ *
+ * This value class wraps an integer value representing a duration in seconds. It ensures that the
+ * seconds value is non-negative and provides a structured way to work with time durations in the
+ * application. The class also implements `Comparable` to allow comparison between different `Seconds`
+ * instances.
+ *
+ * @property value The duration in seconds as an integer. Must not be negative.
+ * @throws IllegalArgumentException if the value is negative.
+ */
+@JvmInline
+value class Seconds(val value: Int) : Comparable<Seconds> {
+    init {
+        require(value >= 0) { "Seconds must not be negative" }
+    }
+
+    override fun compareTo(other: Seconds): Int = value.compareTo(other.value)
 }

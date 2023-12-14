@@ -10,30 +10,31 @@ import androidx.compose.ui.unit.dp
 import org.koin.compose.koinInject
 
 /**
- * Composable function for displaying the time remaining for all additional timers in the BronnBakesTimer app.
+ * Renders the countdowns for all additional timers in the BronnBakesTimer app.
  *
- * This function renders the time remaining for all additional timers as a list of text elements on the user interface.
- * It observes the timer data for additional timers from the provided [extraTimersRepository] and updates the UI
- * accordingly.
+ * This Composable function displays the remaining time for all additional timers as a list of UI elements.
+ * It observes and updates the UI based on the timer data from the [timerUserInputsRepo]. The function
+ * dynamically generates a countdown display for each additional timer, separated by dividers for visual clarity.
+ * The layout and appearance of the countdowns can be customized using the [modifier] parameter.
  *
- * @param modifier Modifier for styling and layout of the additional time countdowns view.
- * @param extraTimersRepository The repository for managing additional timer data.
+ * @param modifier Modifier for customizing the layout and styling of the countdowns view.
+ * @param timerUserInputsRepo Repository for managing data of additional timer inputs. Default is injected by Koin.
  */
-@Composable
-fun AdditionalTimeCountdowns(modifier: Modifier, extraTimersRepository: IExtraTimersRepository = koinInject()) {
-    // Placeholder text
 
-    // A list containing tuples with these values in them: ("Check Rice", 10), ("Stir Soup", 15)
-    val timersData by extraTimersRepository.timerData.collectAsState()
+@Composable
+fun AdditionalTimeCountdowns(modifier: Modifier, timerUserInputsRepo: IExtraTimersUserInputsRepository = koinInject()) {
+    val timerUserInputData by timerUserInputsRepo.timerData.collectAsState()
 
     // A dividing line from the control above, but only if there's at least one additional timer:
-    if (timersData.isNotEmpty()) {
+    if (timerUserInputData.isNotEmpty()) {
         Divider(modifier = modifier.padding(bottom = 8.dp))
     }
 
     // Render the additional countdowns:
-    timersData.forEach { timerData ->
-        // to the point where we're rendering AdditionalTimeCountdowns
-        AdditionalTimeCountdown(modifier, timerData)
+    timerUserInputData.forEach { timerData ->
+        AdditionalTimeCountdown(
+            modifier = modifier,
+            extraTimerUserInputData = timerData,
+        )
     }
 }

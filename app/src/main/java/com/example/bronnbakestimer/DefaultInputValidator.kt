@@ -17,15 +17,15 @@ class DefaultInputValidator : IInputValidator {
      *
      * @param timerDurationInput The state flow representing the main timer duration input.
      * @param setTimerDurationInputError A function to set an error message for the main timer duration input.
-     * @param extraTimersRepository The repository containing data for extra timers.
+     * @param extraTimersUserInputsRepository The repository containing data for extra timers.
      * @return ValidationResult.Valid if all inputs are valid; ValidationResult.Invalid if there are validation errors.
      */
     override fun validateAllInputs(
         timerDurationInput: StateFlow<String>,
         setTimerDurationInputError: (String) -> Unit,
-        extraTimersRepository: IExtraTimersRepository,
+        extraTimersUserInputsRepository: IExtraTimersUserInputsRepository,
     ): ValidationResult {
-        val mainTimerDuration = timerDurationInput.value.toIntOrNull() ?: 0
+        val mainTimerSeconds = userInputToSeconds(timerDurationInput.value)
 
         // Validate the main timer input and set the error message if invalid
         val mainTimerValidationResult = validateIntInput(timerDurationInput.value)
@@ -33,11 +33,11 @@ class DefaultInputValidator : IInputValidator {
             setTimerDurationInputError(mainTimerValidationResult.reason)
         }
 
-        val extraTimerValidationResults = extraTimersRepository.timerData.value.map { extraTimer ->
-            val extraTimerDuration = extraTimer.inputs.timerDurationInput.value.toIntOrNull() ?: 0
+        val extraTimerValidationResults = extraTimersUserInputsRepository.timerData.value.map { extraTimer ->
+            val extraTimerSeconds = userInputToSeconds(extraTimer.inputs.timerDurationInput.value)
             val extraTimerValidationResult = validateIntInput(extraTimer.inputs.timerDurationInput.value)
 
-            if (!mainTimerValidationResult.isInvalid && extraTimerDuration > mainTimerDuration) {
+            if (!mainTimerValidationResult.isInvalid && extraTimerSeconds > mainTimerSeconds) {
                 extraTimer.inputs.timerDurationInputError = "Extra timer time cannot be " +
                     "greater than main timer time."
                 ValidationResult.Invalid("Extra timer time cannot be greater than main timer time.")

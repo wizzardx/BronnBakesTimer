@@ -7,12 +7,12 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
-import androidx.compose.runtime.getValue
 
 /**
  * Composable function for displaying controls for managing additional timers in the BronnBakesTimer app.
@@ -22,19 +22,17 @@ import androidx.compose.runtime.getValue
  * the state and behavior of these controls.
  *
  * @param modifier Modifier for styling and layout of the additional timer controls.
- * @param extraTimersRepository The repository for managing additional timer data.
- * @param timerRepository The repository for managing main timer data.
+ * @param extraTimersUserInputsRepository The repository for managing additional timer data.
  * @param viewModel The view model responsible for managing timer data and updates.
  */
 @Composable
 fun AdditionalTimerControls(
     modifier: Modifier,
-    extraTimersRepository: IExtraTimersRepository = koinInject(),
-    timerRepository: ITimerRepository = koinInject(),
+    extraTimersUserInputsRepository: IExtraTimersUserInputsRepository = koinInject(),
     viewModel: BronnBakesTimerViewModel = koinViewModel(),
 ) {
-    val mainTimerData by timerRepository.timerData.collectAsState()
-    val timersData by extraTimersRepository.timerData.collectAsState()
+    val timersUserInputsData by extraTimersUserInputsRepository.timerData.collectAsState()
+    val configControlsEnabled = viewModel.configControlsEnabled.collectAsState().value
 
     // A column to contain the sub-controls:
     Column(
@@ -44,15 +42,15 @@ fun AdditionalTimerControls(
     ) {
         Divider()
 
-        timersData.forEach { timerData ->
-            AdditionalTimerConfig(modifier, timerData)
+        timersUserInputsData.forEach { timerUserInputData ->
+            AdditionalTimerConfig(modifier, timerUserInputData)
         }
 
         // A horizontally centered button with the text "Add Timer"
         Button(
             onClick = { viewModel.onAddTimerClicked() },
             modifier = modifier.padding(top = 3.dp),
-            enabled = viewModel.areTextInputControlsEnabled(mainTimerData)
+            enabled = configControlsEnabled,
         ) {
             Text(
                 text = "Add Timer",
