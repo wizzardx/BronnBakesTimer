@@ -22,7 +22,7 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
 
     <application
-        android:name=".MyApplication"
+        android:name=".app.MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -33,7 +33,7 @@
         android:theme="@style/Theme.BronnBakesTimer"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name=".app.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.BronnBakesTimer">
             <intent-filter>
@@ -46,7 +46,7 @@
         <!-- Register the TimerService class as a service.
              This tells the Android system that the app contains a service (background task)
              that can perform long-running operations outside the user interface. -->
-        <service android:name=".TimerService"
+        <service android:name=".service.TimerService"
                  android:foregroundServiceType="mediaPlayback"
                  android:exported="false"/>
 
