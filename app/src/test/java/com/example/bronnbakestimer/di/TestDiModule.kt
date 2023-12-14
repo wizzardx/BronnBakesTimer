@@ -5,9 +5,11 @@ import com.example.bronnbakestimer.provider.IErrorLoggerProvider
 import com.example.bronnbakestimer.provider.TestCoroutineScopeProvider
 import com.example.bronnbakestimer.repository.DefaultErrorRepository
 import com.example.bronnbakestimer.repository.DefaultExtraTimersCountdownRepository
+import com.example.bronnbakestimer.repository.DefaultExtraTimersUserInputsRepository
 import com.example.bronnbakestimer.repository.DefaultTimerRepository
 import com.example.bronnbakestimer.repository.IErrorRepository
 import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
+import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
 import com.example.bronnbakestimer.repository.ITimerRepository
 import com.example.bronnbakestimer.util.testErrorLoggerProvider
 import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
@@ -21,6 +23,9 @@ import org.koin.dsl.module
 val testModule = module {
     // Provide a test implementation of TimerRepository
     single<ITimerRepository> { DefaultTimerRepository() }
+
+    // Bind DefaultExtraTimersUserInputsRepository instance to IExtraTimersUserInputsRepository
+    single<IExtraTimersUserInputsRepository> { DefaultExtraTimersUserInputsRepository() }
 
     // Provide DefaultExtraTimersCountdownRepository for IExtraTimersCountdownRepository
     single<IExtraTimersCountdownRepository> { DefaultExtraTimersCountdownRepository() }

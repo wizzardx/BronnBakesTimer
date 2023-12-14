@@ -99,6 +99,9 @@ dependencies {
     // Dependency Injection with Koin
     implementation("io.insert-koin:koin-android:3.5.0")
     implementation("io.insert-koin:koin-androidx-compose:3.5.0")
+
+    // Rust-like Result
+    implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
 }
 
 tasks.withType<KotlinCompile>().configureEach {

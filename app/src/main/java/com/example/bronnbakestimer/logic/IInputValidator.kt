@@ -1,6 +1,7 @@
 package com.example.bronnbakestimer.logic
 
 import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
+import com.github.michaelbull.result.Result
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -30,7 +31,7 @@ fun interface IInputValidator {
      *
      * @param timerDurationInput A StateFlow representing the user's input for the main timer duration.
      * @param setTimerDurationInputError A function that takes a string and sets it as the error message for the main
-     *                                   timer duration input.
+     *                                   timer duration input. If the string is null, it clears the error message.
      * @param extraTimersUserInputsRepository An IExtraTimersRepository instance for accessing extra timer data.
      * @return A ValidationResult representing the result of the validation. If all inputs are valid, it returns
      *         ValidationResult.Valid. If any input is invalid, it returns ValidationResult.Invalid with a reason for
@@ -38,7 +39,7 @@ fun interface IInputValidator {
      */
     fun validateAllInputs(
         timerDurationInput: StateFlow<String>,
-        setTimerDurationInputError: (String) -> Unit,
+        setTimerDurationInputError: (String?) -> Unit,
         extraTimersUserInputsRepository: IExtraTimersUserInputsRepository,
-    ): ValidationResult
+    ): Result<Unit, String>
 }

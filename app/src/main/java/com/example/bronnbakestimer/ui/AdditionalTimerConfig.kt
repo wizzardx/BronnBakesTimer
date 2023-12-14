@@ -57,7 +57,7 @@ fun AdditionalTimerConfig(
         )
 
         // An input field for the duration entry for this additional timer:
-        val labelText = Constants.UserInputTimeUnit.getName()
+        val labelText = Constants.USER_INPUT_TIME_UNIT.getName()
         InputTextField(
             InputTextFieldParams(
                 errorMessage = timerUserInputData.inputs.timerDurationInputError,

@@ -1,12 +1,13 @@
 package com.example.bronnbakestimer.util
 
+import com.example.bronnbakestimer.di.testModule
 import com.example.bronnbakestimer.logic.Constants
-import com.example.bronnbakestimer.logic.UserInputTimeUnitType
-import com.example.bronnbakestimer.logic.ValidationResult
+import com.example.bronnbakestimer.logic.UserInputTimeUnit
 import com.example.bronnbakestimer.provider.IErrorLoggerProvider
 import com.example.bronnbakestimer.repository.IErrorRepository
 import com.example.bronnbakestimer.service.TimerData
-import com.example.bronnbakestimer.di.testModule
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -15,7 +16,6 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -73,35 +73,6 @@ class UtilsKtTest {
     fun `normaliseIntInput preserves internal zeros`() {
         val result = normaliseIntInput("10203")
         assertEquals("10203", result)
-    }
-
-    // Tests for validateIntInput
-
-    @Test
-    fun `validateIntInput returns error for non-numeric input`() {
-        val result = validateIntInput("abc")
-        assertTrue(result is ValidationResult.Invalid) // Check if the result is Invalid
-        assertEquals("Invalid number", result.reason)
-    }
-
-    @Test
-    fun `validateIntInput returns error for input less than 1`() {
-        val result = validateIntInput("0")
-        assertTrue(result is ValidationResult.Invalid) // Check if the result is Invalid
-        assertEquals("Must be at least 1", result.reason)
-    }
-
-    @Test
-    fun `validateIntInput returns error for input greater than MaxUserInputNum`() {
-        val result = validateIntInput((Constants.MAX_USER_INPUT_NUM + 1).toString())
-        assertTrue(result is ValidationResult.Invalid)
-        assertEquals("Must be at most ${Constants.MAX_USER_INPUT_NUM}", result.reason)
-    }
-
-    @Test
-    fun `validateIntInput returns Valid for valid input`() {
-        val result = validateIntInput("1")
-        assertIs<ValidationResult.Valid>(result)
     }
 
     // Tests for getErrorInfoFor
@@ -194,28 +165,29 @@ class UtilsKtTest {
 
     @Test
     fun `converts minutes to seconds correctly`() {
-        assertEquals(Seconds(600), userInputToSeconds("10", UserInputTimeUnitType.MINUTES))
+        assertEquals(Seconds(600), (userInputToSeconds("10", UserInputTimeUnit.MINUTES) as Ok).value)
     }
 
     @Test
     fun `converts seconds to seconds correctly`() {
-        assertEquals(Seconds(10), userInputToSeconds("10", UserInputTimeUnitType.SECONDS))
+        assertEquals(Seconds(10), (userInputToSeconds("10", UserInputTimeUnit.SECONDS) as Ok).value)
     }
 
     @Test
     fun `handles non-numeric input correctly`() {
-        assertEquals(Seconds(0), userInputToSeconds("not a number"))
+        val result: String = (userInputToSeconds("not a number") as Err).error
+        assertEquals("Invalid number", result)
     }
 
     @Test
     fun `handles empty input correctly`() {
-        assertEquals(Seconds(0), userInputToSeconds(""))
+        assertEquals("Invalid number", (userInputToSeconds("") as Err).error)
     }
 
     @Test
     @Suppress("UnderscoresInNumericLiterals")
     fun `handles large numeric input correctly`() {
-        assertEquals(Seconds(18000), userInputToSeconds("300", UserInputTimeUnitType.MINUTES))
+        assertEquals(Seconds(18000), (userInputToSeconds("300", UserInputTimeUnit.MINUTES) as Ok).value)
     }
 
     // Unit tests for logException
@@ -256,6 +228,20 @@ class UtilsKtTest {
     // Tests for formatTotalTimeRemainingString
 
     @Test
+    fun `formatTotalTimeRemainingString returns error for invalid input`() {
+        // Arrange: Provide an invalid input that cannot be converted to seconds
+        val invalidInput = "invalid"
+        val timerData: TimerData? = null // Can be null, as it should not affect this test case
+
+        // Act: Invoke the function with the invalid input
+        val result = formatTotalTimeRemainingString(timerData, invalidInput)
+
+        // Assert: Check if the result is an error and contains the expected error message
+        assertTrue(result is Err)
+        assertEquals("Invalid number", result.error)
+    }
+
+    @Test
     fun `formatTotalTimeRemainingString calculates time from input when timerData is null`() {
         // Set timerData to null to ensure the if branch is exercised
         val timerData: TimerData? = null
@@ -267,7 +253,7 @@ class UtilsKtTest {
         val result = formatTotalTimeRemainingString(timerData, timerDurationInput)
 
         // The expected result is "15:00", which is 15 minutes in MM:SS format
-        assertEquals("15:00", result)
+        assertEquals("15:00", (result as Ok).value)
     }
 
     @Test
@@ -288,13 +274,13 @@ class UtilsKtTest {
 
         // Verify that the result is based on the timerData's millisecondsRemaining
         // The expected result is "00:30", which is 30 seconds in MM:SS format
-        assertEquals("00:30", result)
+        assertEquals("00:30", (result as Ok).value)
     }
 
     @Test
     fun `formatTotalTimeRemainingString returns correct format when timerData is null`() {
         val result = formatTotalTimeRemainingString(seconds = null, "10")
-        assertEquals("10:00", result)
+        assertEquals("10:00", (result as Ok).value)
     }
 
     @Test
@@ -306,25 +292,25 @@ class UtilsKtTest {
             millisecondsRemaining = 60_000
         )
         val result = formatTotalTimeRemainingString(timerData, "10")
-        assertEquals("01:00", result)
+        assertEquals("01:00", (result as Ok).value)
     }
 
     @Test
     fun `formatTotalTimeRemainingString handles non-numeric input correctly`() {
-        val result = formatTotalTimeRemainingString(seconds = null, "not a number")
-        assertEquals("00:00", result)
+        val result = (formatTotalTimeRemainingString(seconds = null, "not a number") as Err).error
+        assertEquals("Invalid number", result)
     }
 
     @Test
     fun `formatTotalTimeRemainingString handles empty input correctly`() {
         val result = formatTotalTimeRemainingString(seconds = null, "")
-        assertEquals("00:00", result)
+        assertEquals("Invalid number", (result as Err).error)
     }
 
     @Test
     fun `formatTotalTimeRemainingString handles large numeric input correctly`() {
         val result = formatTotalTimeRemainingString(seconds = null, "300")
-        assertEquals("300:00", result)
+        assertEquals("300:00", (result as Ok).value)
     }
 }
 
@@ -333,15 +319,9 @@ class TestErrorLoggerProvider : IErrorLoggerProvider {
     var lastLogMessage: String? = null
     var lastThrowable: Throwable? = null
 
-    override fun logError(tag: String, message: String, throwable: Throwable) {
+    override fun logError(tag: String, message: String, throwable: Throwable?) {
         lastLogTag = tag
         lastLogMessage = message
         lastThrowable = throwable
-    }
-
-    override fun logError(tag: String, message: String) {
-        lastLogTag = tag
-        lastLogMessage = message
-        lastThrowable = null // Indicate that no Throwable was provided
     }
 }

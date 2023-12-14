@@ -6,23 +6,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bronnbakestimer.model.ExtraTimerUserInputData
 import com.example.bronnbakestimer.logic.IInputValidator
-import com.example.bronnbakestimer.service.ITimerManager
-import com.example.bronnbakestimer.service.SingleTimerCountdownData
-import com.example.bronnbakestimer.service.TimerData
-import com.example.bronnbakestimer.util.TimerUserInputDataId
-import com.example.bronnbakestimer.logic.ValidationResult
+import com.example.bronnbakestimer.model.ExtraTimerUserInputData
 import com.example.bronnbakestimer.provider.IErrorLoggerProvider
 import com.example.bronnbakestimer.repository.IErrorRepository
 import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
 import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
 import com.example.bronnbakestimer.repository.ITimerRepository
+import com.example.bronnbakestimer.service.ITimerManager
+import com.example.bronnbakestimer.service.SingleTimerCountdownData
+import com.example.bronnbakestimer.service.TimerData
+import com.example.bronnbakestimer.util.InvalidTimerDurationException
 import com.example.bronnbakestimer.util.Seconds
+import com.example.bronnbakestimer.util.TimerUserInputDataId
 import com.example.bronnbakestimer.util.formatMinSec
+import com.example.bronnbakestimer.util.formatTotalTimeRemainingString
 import com.example.bronnbakestimer.util.logException
 import com.example.bronnbakestimer.util.userInputToMillis
 import com.example.bronnbakestimer.util.userInputToSeconds
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +40,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * ViewModel to help separate business logic from UI logic.
  */
-open class BronnBakesTimerViewModel( // "open" for testing
+open class BronnBakesTimerViewModel(
+    // "open" for testing
     private val timerRepository: ITimerRepository,
     private val timerManager: ITimerManager,
     private val inputValidator: IInputValidator,
@@ -67,7 +72,17 @@ open class BronnBakesTimerViewModel( // "open" for testing
      */
     val totalTimeRemainingString: StateFlow<String> = timerRepository.secondsRemaining
         .combine(timerDurationInput) { secondsRemaining, timerDurationInput ->
-            com.example.bronnbakestimer.util.formatTotalTimeRemainingString(secondsRemaining, timerDurationInput)
+            val maybeFormattedString: Result<String, String> = try {
+                formatTotalTimeRemainingString(secondsRemaining, timerDurationInput)
+            } catch (e: IllegalArgumentException) {
+                logException(e, errorRepository, errorLoggerProvider)
+                Err("Invalid number")
+            }
+            if (maybeFormattedString is Ok) {
+                maybeFormattedString.value
+            } else {
+                "Error: ${(maybeFormattedString as Err).error}"
+            }
         }
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.Eagerly, "Loading...")
@@ -202,14 +217,14 @@ open class BronnBakesTimerViewModel( // "open" for testing
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     open fun startTimersIfValid() { // Also, made "open" for testing
-        val setTimerDurationInputError = { error: String ->
+        val setTimerDurationInputError = { error: String? ->
             timerDurationInputError = error
         }
         if (inputValidator.validateAllInputs(
                 timerDurationInput,
                 setTimerDurationInputError,
                 extraTimersUserInputsRepository
-            ) is ValidationResult.Valid
+            ) is Ok
         ) {
             startTimers()
         }
@@ -221,7 +236,7 @@ open class BronnBakesTimerViewModel( // "open" for testing
      * This method initializes and starts the main timer and any additional extra timers based on the current
      * user input values. It updates the timer data in the timer repository for the main timer and adjusts the
      * countdown data for each extra timer accordingly. The method ensures that all timers are set up with their
-     * respective durations, marked as unpaused, and ready to start the countdown.
+     * respective durations, marked as un-paused, and ready to start the countdown.
      *
      * The main timer's duration is retrieved from the current value of the timer duration input, converted to
      * milliseconds, and then used to update the timer data in the timer repository. For extra timers, this
@@ -241,10 +256,12 @@ open class BronnBakesTimerViewModel( // "open" for testing
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     fun startTimers() {
         // Logic to start main and extra timers
-        // Utilizes the validated inputs from validationResult
-        // Assuming validationResult is valid, as it should be checked before calling this method
+        val maybeCurrentMainTimerMillis = userInputToMillis(timerDurationInput.value)
+        if (maybeCurrentMainTimerMillis is Err) {
+            throw InvalidTimerDurationException("Invalid timer duration input: ${maybeCurrentMainTimerMillis.error}")
+        }
+        val currentMainTimerMillis: Int = (maybeCurrentMainTimerMillis as Ok).value
 
-        val currentMainTimerMillis = userInputToMillis(timerDurationInput.value)
         timerRepository.updateData(
             TimerData(
                 millisecondsRemaining = currentMainTimerMillis,
@@ -274,7 +291,13 @@ open class BronnBakesTimerViewModel( // "open" for testing
 
         // Update entries in the ConcurrentHashMap with the latest data from the user input-related timer data
         for (timer in timerUserInputData) {
-            val currentExtraTimerMillis = userInputToMillis(timer.inputs.timerDurationInput.value)
+            val maybeCurrentExtraTimerMillis = userInputToMillis(timer.inputs.timerDurationInput.value)
+            if (maybeCurrentExtraTimerMillis is Err) {
+                throw InvalidTimerDurationException(
+                    "Invalid timer duration input: ${maybeCurrentExtraTimerMillis.error}"
+                )
+            }
+            val currentExtraTimerMillis = (maybeCurrentExtraTimerMillis as Ok).value
             val timerCountdownDataEntry = timerCountdownData[timer.id]
             if (timerCountdownDataEntry == null) {
                 timerCountdownData[timer.id] = SingleTimerCountdownData(
@@ -364,6 +387,11 @@ fun StateFlow<Seconds>.getTotalSeconds(mainTimerActive: Boolean, timerDurationIn
     } else {
         // Timer is not active, so use a value from the users input
         val userInput = timerDurationInput.value
-        userInputToSeconds(userInput)
+        val maybeSeconds = userInputToSeconds(userInput)
+        if (maybeSeconds is Err) {
+            // This shouldn't be possible (user's input input is validated), but just in case.
+            return Seconds(0)
+        }
+        (maybeSeconds as Ok).value
     }
 }

@@ -1,5 +1,8 @@
 package com.example.bronnbakestimer.logic
 
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertFalse
@@ -19,26 +22,26 @@ class InputValidatorTest {
     fun `validateInput returns Valid for valid input`() {
         val validInput = "ValidInputTest"
         val result = validator.validateInput(validInput)
-        assertTrue(result.isValid, "Input should be valid")
+        assertTrue(result is Ok, "Input should be valid")
     }
 
     @Test
     fun `validateInput returns Invalid for invalid input`() {
         val invalidInput = "Bad"
         val result = validator.validateInput(invalidInput)
-        assertFalse(result.isValid, "Input should be invalid")
-        assertTrue(result.isInvalid, "Result should be of type Invalid")
+        assertFalse(result is Ok, "Input should be invalid")
+        assertTrue(result is Err, "Result should be of type Invalid")
     }
 }
 
 class InputValidator {
 
-    fun validateInput(input: String): ValidationResult {
+    fun validateInput(input: String): Result<Unit, String> {
         // Hypothetical validation logic: for example, consider valid if input length is more than 5
         return if (input.length > 5) {
-            ValidationResult.Valid
+            Ok(Unit)
         } else {
-            ValidationResult.Invalid("Input must be longer than 5 characters.")
+            Err("Input must be longer than 5 characters.")
         }
     }
 }

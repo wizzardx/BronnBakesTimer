@@ -1,7 +1,7 @@
 package com.example.bronnbakestimer.logic
 
-import com.example.bronnbakestimer.service.ITimerManager
 import com.example.bronnbakestimer.repository.ITimerRepository
+import com.example.bronnbakestimer.service.ITimerManager
 
 /**
  * Default implementation of the ITimerManager interface.

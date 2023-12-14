@@ -26,7 +26,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.seconds
 
 class TestTimeController(
     private val scheduler: TestCoroutineScheduler,
@@ -70,7 +69,7 @@ class TestMediaPlayerWrapper : IMediaPlayerWrapper {
     }
 }
 
-@Suppress("FunctionMaxLength")
+@Suppress("FunctionMaxLength", "LongMethod")
 @ExperimentalCoroutinesApi
 class CountdownLogicTest {
 
@@ -398,8 +397,20 @@ class CountdownLogicTest {
 
         // Create and add ExtraTimerData instances to extraTimersRepository
         val extraTimers = ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
-            put(TimerUserInputDataId.randomId(), SingleTimerCountdownData(TimerData(3000, false, false, false), TimerUserInputDataId.randomId()))
-            put(TimerUserInputDataId.randomId(), SingleTimerCountdownData(TimerData(5000, false, false, false), TimerUserInputDataId.randomId()))
+            put(
+                TimerUserInputDataId.randomId(),
+                SingleTimerCountdownData(
+                    TimerData(3000, isPaused = false, isFinished = false, beepTriggered = false),
+                    TimerUserInputDataId.randomId()
+                )
+            )
+            put(
+                TimerUserInputDataId.randomId(),
+                SingleTimerCountdownData(
+                    TimerData(5000, isPaused = false, isFinished = false, beepTriggered = false),
+                    TimerUserInputDataId.randomId()
+                )
+            )
         }
         extraTimersCountdownRepository.updateData(extraTimers)
 
@@ -410,7 +421,11 @@ class CountdownLogicTest {
         // Check that the main timer is updated
         val updatedMainTimer = timerRepository.timerData.value
         assertNotNull(updatedMainTimer, "Main timer should be updated")
-        assertEquals(10_000 - tickDuration, updatedMainTimer.millisecondsRemaining, "Main timer should decrement correctly")
+        assertEquals(
+            10_000 - tickDuration,
+            updatedMainTimer.millisecondsRemaining,
+            "Main timer should decrement correctly"
+        )
 
         // Check that the extra timers are updated
         extraTimers.forEach { (_, timerData) ->
@@ -418,14 +433,14 @@ class CountdownLogicTest {
             assertNotNull(updatedExtraTimer, "Updated extra timer should not be null")
             assertTrue(
                 updatedExtraTimer.millisecondsRemaining <= 3000 - tickDuration ||
-                        updatedExtraTimer.millisecondsRemaining <= 5000 - tickDuration,
+                    updatedExtraTimer.millisecondsRemaining <= 5000 - tickDuration,
                 "Extra timers should decrement correctly"
             )
         }
     }
 
     @Test
-    fun `getTimerLambdasSequence should handle multiple timers`() = runTest(timeout = 1000.seconds) {
+    fun `getTimerLambdasSequence should handle multiple timers`() = runTest {
         // Initialize test environment
         initScope(this) {
             delay(it)
@@ -447,9 +462,27 @@ class CountdownLogicTest {
 
         // Define and initialize extra timers
         val extraTimers = ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
-            put(TimerUserInputDataId.randomId(), SingleTimerCountdownData(TimerData(3000, false, false, false), TimerUserInputDataId.randomId()))
-            put(TimerUserInputDataId.randomId(), SingleTimerCountdownData(TimerData(2000, true, false, false), TimerUserInputDataId.randomId()))
-            put(TimerUserInputDataId.randomId(), SingleTimerCountdownData(TimerData(1000, false, true, false), TimerUserInputDataId.randomId()))
+            put(
+                TimerUserInputDataId.randomId(),
+                SingleTimerCountdownData(
+                    TimerData(3000, isPaused = false, isFinished = false, beepTriggered = false),
+                    TimerUserInputDataId.randomId()
+                )
+            )
+            put(
+                TimerUserInputDataId.randomId(),
+                SingleTimerCountdownData(
+                    TimerData(2000, isPaused = true, isFinished = false, beepTriggered = false),
+                    TimerUserInputDataId.randomId()
+                )
+            )
+            put(
+                TimerUserInputDataId.randomId(),
+                SingleTimerCountdownData(
+                    TimerData(1000, isPaused = false, isFinished = true, beepTriggered = false),
+                    TimerUserInputDataId.randomId()
+                )
+            )
         }
         extraTimersCountdownRepository.updateData(extraTimers)
 
@@ -458,7 +491,11 @@ class CountdownLogicTest {
 
         // Verify the lambda sequence
         val lambdaList = timerLambdaSequence.toList()
-        assertEquals(extraTimers.size + 1, lambdaList.size, "The sequence should contain the main timer and all extra timers")
+        assertEquals(
+            extraTimers.size + 1,
+            lambdaList.size,
+            "The sequence should contain the main timer and all extra timers"
+        )
 
         // First lambda should correspond to main timer
         val (mainGet, mainSet) = lambdaList[0]
@@ -468,13 +505,17 @@ class CountdownLogicTest {
         extraTimers.forEach { (id, timerData) ->
             val lambdaPair = lambdaList.find { it.first() == timerData.data }
             assertNotNull(lambdaPair, "Lambda for extra timer with ID $id should be present")
-            val (getLambda, setLambda) = lambdaPair!!
+            val (getLambda, setLambda) = lambdaPair
             assertEquals(timerData.data, getLambda(), "Extra timer lambda should return correct timer state")
 
             // Test updating the timer state
-            val updatedTimerData = TimerData(1234, true, false, false)
+            val updatedTimerData = TimerData(1234, isPaused = true, isFinished = false, beepTriggered = false)
             setLambda(updatedTimerData)
-            assertEquals(updatedTimerData, getLambda(), "Extra timer set lambda should update the timer state correctly")
+            assertEquals(
+                updatedTimerData,
+                getLambda(),
+                "Extra timer set lambda should update the timer state correctly"
+            )
         }
     }
 
@@ -504,7 +545,8 @@ class CountdownLogicTest {
 
         // Retrieve the sequence of timer lambdas
         val timerLambdaSequence = countdownLogic.getTimerLambdasSequence(
-            mainTimerGetSetLambda, ConcurrentHashMap()
+            mainTimerGetSetLambda,
+            ConcurrentHashMap()
         )
 
         // Verify the lambda sequence

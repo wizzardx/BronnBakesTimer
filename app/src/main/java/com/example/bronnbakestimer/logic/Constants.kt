@@ -34,10 +34,10 @@ object Constants {
     const val APP_VERSION = BuildConfig.VERSION_NAME
 
     /**
-     * A constant value representing the default time unit for user input, which is [UserInputTimeUnitType.MINUTES].
+     * A constant value representing the default time unit for user input, which is [UserInputTimeUnit.MINUTES].
      * User input values are typically provided in minutes.
      */
-    val UserInputTimeUnit: UserInputTimeUnitType = UserInputTimeUnitType.MINUTES
+    val USER_INPUT_TIME_UNIT: UserInputTimeUnit = UserInputTimeUnit.MINUTES
 
     /**
      * The duration of half a second in milliseconds.
@@ -57,7 +57,7 @@ object Constants {
  * Enumeration representing time units for user input.
  * It includes [MINUTES] and [SECONDS] to specify the time unit.
  */
-enum class UserInputTimeUnitType {
+enum class UserInputTimeUnit {
     MINUTES, SECONDS;
 
     /**

@@ -11,10 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import com.example.bronnbakestimer.model.ExtraTimerUserInputData
 import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
 import com.example.bronnbakestimer.repository.ITimerRepository
+import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 

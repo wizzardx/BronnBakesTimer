@@ -5,9 +5,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import com.example.bronnbakestimer.logic.Constants
 import com.example.bronnbakestimer.util.normaliseIntInput
+import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -35,7 +35,7 @@ fun ConfigInputFields(
     val currentTimerDurationInput by viewModel.timerDurationInput.collectAsState()
 
     val configControlsEnabled by viewModel.configControlsEnabled.collectAsState()
-    val unitsName = Constants.UserInputTimeUnit.getName()
+    val unitsName = Constants.USER_INPUT_TIME_UNIT.getName()
     val labelText = "Work ($unitsName)"
 
     InputTextField(

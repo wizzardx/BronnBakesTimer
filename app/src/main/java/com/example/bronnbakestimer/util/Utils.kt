@@ -6,11 +6,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import com.example.bronnbakestimer.logic.Constants
+import com.example.bronnbakestimer.logic.UserInputTimeUnit
 import com.example.bronnbakestimer.provider.IErrorLoggerProvider
 import com.example.bronnbakestimer.repository.IErrorRepository
 import com.example.bronnbakestimer.service.TimerData
-import com.example.bronnbakestimer.logic.UserInputTimeUnitType
-import com.example.bronnbakestimer.logic.ValidationResult
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
 import java.util.Locale
 
 /**
@@ -58,33 +60,6 @@ fun normaliseIntInput(s: String): String {
     }
 
     return normalised
-}
-
-/**
- * Validates a string input as an integer within a specified range.
- *
- * This function takes a string input and attempts to convert it to an integer. If the conversion is successful,
- * it checks whether the integer is within a specified range (1 to Constants.MaxUserInputNum, inclusive).
- *
- * The function returns a ValidationResult object. If the input is valid, it returns ValidationResult.Valid.
- * If the input is invalid, it returns ValidationResult.Invalid with a reason for the invalidity.
- *
- * This function is useful for validating user inputs in scenarios where an integer within a specific range is expected.
- *
- * @param value The string input to be validated.
- * @return A ValidationResult object representing the result of the validation. If the input is valid, it returns
- * ValidationResult.Valid. If the input is invalid, it returns ValidationResult.Invalid with a reason for the
- * invalidity.
- */
-fun validateIntInput(value: String): ValidationResult {
-    val intVal = value.toIntOrNull()
-    return when {
-        intVal == null -> ValidationResult.Invalid("Invalid number")
-        intVal < 1 -> ValidationResult.Invalid("Must be at least 1")
-        intVal > Constants.MAX_USER_INPUT_NUM ->
-            ValidationResult.Invalid("Must be at most ${Constants.MAX_USER_INPUT_NUM}")
-        else -> ValidationResult.Valid
-    }
 }
 
 /**
@@ -170,6 +145,7 @@ fun getErrorInfoFor(
 // Default implementation of the UI creation, used in the actual app
 // To manually check this, just get an error to show in the UI.
 private val defaultErrorUiCreator = ErrorUiCreator { error ->
+    // Regular unit tests can't get good coverage for this, so we'll just manually check it
     Text(
         text = error,
         color = Color.Red,
@@ -221,89 +197,112 @@ fun logException(exception: Throwable, errorRepository: IErrorRepository, logger
  *
  * @param msg The error message to be logged and reported.
  * @param errorRepository The IErrorRepository instance where the error message will be reported.
- * @param logger The ErrorLoggerProvider used for logging the error.
+ * @param logger The ErrorLoggerProvider used for logging the error. If null then no exception to log
  */
 fun logError(msg: String, errorRepository: IErrorRepository, logger: IErrorLoggerProvider) {
     errorRepository.updateData(msg)
-    logger.logError("BronnBakesTimer", msg)
+    logger.logError("BronnBakesTimer", msg, null)
 }
 
 /**
- * Converts user input into seconds based on the specified time unit.
+ * Converts user input to seconds based on the specified time unit.
  *
- * This function processes a string input representing a time duration and converts it into
- * an equivalent duration in seconds. It supports different units of time (minutes or seconds)
- * and handles the conversion accordingly. The function is robust against non-numeric inputs,
- * converting them to 0 by default.
- *
- * @param input The user input string representing the time duration. This should be a numeric
- *              string. Non-numeric input is treated as 0.
- * @param units An optional parameter of type UserInputTimeUnitType, which specifies the unit of
- *              time represented by the input. It defaults to a standard unit defined in
- *              Constants.UserInputTimeUnit (e.g., minutes or seconds).
- * @return The equivalent duration in seconds as a Int. If the input is non-numeric or empty,
- *         the function returns 0.
+ * @param input The user input as a String.
+ * @param units The time unit type (MINUTES or SECONDS).
+ * @return A Result containing the converted value in seconds (Ok) or an error message (Err).
  */
-fun userInputToSeconds(input: String, units: UserInputTimeUnitType = Constants.UserInputTimeUnit): Seconds {
-    val i = input.toIntOrNull() ?: 0 // Empty (or none-numeric) user input gets converted to 0 by default
-    return when (units) {
-        UserInputTimeUnitType.MINUTES -> Seconds(i * Constants.SECONDS_PER_MINUTE)
-        UserInputTimeUnitType.SECONDS -> Seconds(i)
-    }
+fun userInputToSeconds(
+    input: String,
+    units: UserInputTimeUnit = Constants.USER_INPUT_TIME_UNIT
+): Result<Seconds, String> {
+    return input.toIntOrNull()?.let { integerValue ->
+        // Keep the input within the allowed range.
+        when {
+            integerValue <= 0 -> { Err("Must be at least 1") }
+            integerValue > Constants.MAX_USER_INPUT_NUM -> { Err("Must be at most ${Constants.MAX_USER_INPUT_NUM}") }
+            else -> {
+                // Calculate the result based on the selected time unit.
+                val resultSeconds = when (units) {
+                    UserInputTimeUnit.MINUTES -> integerValue * Constants.SECONDS_PER_MINUTE
+                    UserInputTimeUnit.SECONDS -> integerValue
+                }
+                Ok(Seconds(resultSeconds))
+            }
+        }
+    } ?: Err("Invalid number")
 }
 
 /**
- * Formats the total time remaining as a string based on timer data and user-inputted timer duration.
+ * Formats the total time remaining into a minutes:seconds string.
  *
- * This function calculates and formats the total time remaining as a string, taking into account the timer data
- * and the user-inputted timer duration. If timer data is available (not null), it uses the milliseconds remaining
- * from the timer data. Otherwise, it calculates the total time remaining based on the user-inputted timer duration.
- * The formatted string is in the format MM:SS (minutes:seconds), where MM and SS are padded with zeros if necessary.
+ * This function takes a TimerData object and a timer duration input as input parameters.
+ * It calculates the time remaining based on the TimerData or the user input and formats it into
+ * a string in the MM:SS (minutes:seconds) format. The function returns a Result containing the
+ * formatted string (Ok) or an error message (Err) if there's an issue with the input.
  *
- * @param timerData The timer data representing the main timer. If null, the user-inputted timer duration will be used.
- * @param timerDurationInput The user-inputted timer duration as a string.
- * @return A string representing the total time remaining in MM:SS format.
+ * @param timerData The TimerData object representing the timer state.
+ * @param timerDurationInput The user input for the timer duration as a String.
+ * @return A Result containing the formatted time remaining string (Ok) or an error message (Err).
  */
-fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: String): String {
-    val secondsRemaining = if (timerData == null) {
+
+// TODO: Get high coverage on the two versions of formatTotalTimeRemainingString, and then refactor more,
+//       factor out common logic, etc.
+
+fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: String): Result<String, String> {
+    val maybeSecondsRemaining = if (timerData == null) {
         userInputToSeconds(timerDurationInput)
     } else {
-        Seconds(timerData.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND)
+        Ok(Seconds(timerData.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND))
     }
-    return formatMinSec(secondsRemaining)
+    if (maybeSecondsRemaining is Err) {
+        return Err(maybeSecondsRemaining.error)
+    }
+    return Ok(formatMinSec((maybeSecondsRemaining as Ok).value))
 }
 
 /**
- * Overloaded version of formatTotalTimeRemainingString that accepts Seconds? and a timer duration string.
+ * Formats the total time remaining into a minutes:seconds string.
  *
- * @param seconds The remaining time in Seconds, nullable. If null, uses the timerDurationInput for calculation.
- * @param timerDurationInput The user-inputted timer duration as a string.
- * @return A string representing the total time remaining in MM:SS format.
+ * This function takes a Seconds object and a timer duration input as input parameters.
+ * It calculates the time remaining based on the Seconds object or the user input and formats it into
+ * a string in the MM:SS (minutes:seconds) format. The function returns a Result containing the
+ * formatted string (Ok) or an error message (Err) if there's an issue with the input.
+ *
+ * @param seconds The duration in seconds as a Seconds object.
+ * @param timerDurationInput The user input for the timer duration as a String.
+ * @return A Result containing the formatted time remaining string (Ok) or an error message (Err).
  */
-fun formatTotalTimeRemainingString(seconds: Seconds?, timerDurationInput: String): String {
-    val totalSeconds = seconds ?: userInputToSeconds(timerDurationInput)
-    return formatMinSec(totalSeconds)
+fun formatTotalTimeRemainingString(seconds: Seconds?, timerDurationInput: String): Result<String, String> {
+    val maybeSecondsRemaining = if (seconds == null) {
+        userInputToSeconds(timerDurationInput)
+    } else {
+        Ok(seconds)
+    }
+    if (maybeSecondsRemaining is Err) {
+        return Err(maybeSecondsRemaining.error)
+    }
+    return Ok(formatMinSec((maybeSecondsRemaining as Ok).value))
 }
 
 /**
- * Converts a user-inputted time duration from a string to milliseconds.
+ * Converts user input to milliseconds.
  *
- * This function takes a string input representing a time duration and converts it into
- * an equivalent duration in milliseconds. It first converts the input into seconds using
- * the `userInputToSeconds` function, then multiplies the result by the number of milliseconds
- * per second (defined in `Constants.MillisecondsPerSecond`) to get the duration in milliseconds.
- *
- * This function is useful for converting user-inputted time durations into a format suitable
- * for use with timer functions or other operations that require time durations in milliseconds.
- *
- * @param input The user input string representing the time duration. This should be a numeric
- *              string. Non-numeric input is treated as 0 by the `userInputToSeconds` function.
- * @return The equivalent duration in milliseconds as a Int. If the input is non-numeric or empty,
- *         the function returns 0.
+ * @param input The user input as a String.
+ * @return A Result containing the converted value in milliseconds (Ok) or an error message (Err).
  */
-fun userInputToMillis(input: String): Int {
-    val seconds = userInputToSeconds(input)
-    return seconds.value * Constants.MILLISECONDS_PER_SECOND
+fun userInputToMillis(input: String): Result<Int, String> {
+    // Validate input: It should be a valid integer.
+    val maybeSeconds = userInputToSeconds(input)
+    if (maybeSeconds is Err) {
+        return Err(maybeSeconds.error)
+    }
+
+    // Calculate milliseconds based on the seconds value.
+    val secondsValue = (maybeSeconds as Ok).value.value
+    val milliseconds = secondsValue * Constants.MILLISECONDS_PER_SECOND
+
+    // Return the result.
+    return Ok(milliseconds)
 }
 
 /**
@@ -320,6 +319,8 @@ fun userInputToMillis(input: String): Int {
  * message to the Android log output, which can be viewed and filtered in the Logcat window in Android Studio.
  */
 val runtimeErrorLoggerProvider = IErrorLoggerProvider { tag, message, throwable ->
+    // It's hard to unit test this, since Log.e is an android internal, so we can't mock it.
+    // We can manually check it though, by getting an error to show in the UI.
     Log.e(tag, message, throwable)
 }
 
@@ -338,7 +339,11 @@ val runtimeErrorLoggerProvider = IErrorLoggerProvider { tag, message, throwable 
  */
 val testErrorLoggerProvider = IErrorLoggerProvider { tag, message, throwable ->
     // Custom implementation for testing, e.g., print to console or use a mock logger
-    println("[$tag] $message - ${throwable.message}")
+    var msg = "[$tag] $message"
+    if (throwable != null) {
+        msg += " - ${throwable.message}"
+    }
+    println(msg)
 }
 
 /**
@@ -360,3 +365,22 @@ value class Seconds(val value: Int) : Comparable<Seconds> {
 
     override fun compareTo(other: Seconds): Int = value.compareTo(other.value)
 }
+
+/**
+ * Exception thrown when the timer duration input is invalid.
+ *
+ * This exception is used within the timer management system to signify
+ * that the provided input for the timer's duration does not meet the required
+ * criteria or format. This could occur in situations where the input is
+ * non-numeric, out of acceptable range, or in an improper format.
+ *
+ * The exception includes a descriptive message that provides specific details
+ * about the nature of the invalid input, aiding in troubleshooting and informing
+ * the user or developer about the nature of the error.
+ *
+ * @param message A string detailing the specific reason why the timer duration
+ *                input is considered invalid. This message is intended to be
+ *                descriptive enough to diagnose the specific nature of the
+ *                invalid input.
+ */
+class InvalidTimerDurationException(message: String) : Exception(message)
