@@ -1,13 +1,15 @@
 package com.example.bronnbakestimer.util
 
 import com.example.bronnbakestimer.di.testModule
-import com.example.bronnbakestimer.logic.Constants
 import com.example.bronnbakestimer.logic.UserInputTimeUnit
 import com.example.bronnbakestimer.provider.IErrorLoggerProvider
 import com.example.bronnbakestimer.repository.IErrorRepository
 import com.example.bronnbakestimer.service.TimerData
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -311,6 +313,27 @@ class UtilsKtTest {
     fun `formatTotalTimeRemainingString handles large numeric input correctly`() {
         val result = formatTotalTimeRemainingString(seconds = null, "300")
         assertEquals("300:00", (result as Ok).value)
+    }
+
+    // Tests for myProfiler
+
+    @Test
+    fun `myProfiler calculates average execution time correctly`() {
+        // Arrange
+        val mockTimeProvider = mockk<() -> Long>()
+        val mockPrintFunction = mockk<(String) -> Unit>(relaxed = true)
+
+        // Setting up the mock behavior for mockTimeProvider
+        // The first value is the start time and the second value is the end time after all iterations
+        // For example, if the block takes 1000ms each time, for 4 iterations, the end time would be start time + 4000ms
+        every { mockTimeProvider() } returnsMany listOf(0L, 4000L)
+
+        // Act
+        myProfiler(times = 4, block = {}, timeProvider = mockTimeProvider, printFunction = mockPrintFunction)
+
+        // Assert
+        // The expected average time should be (4000 - 0) / 4 = 1000.0 ms
+        verify(exactly = 1) { mockPrintFunction("Average Execution Time for 4 runs: 1000.0 ms") }
     }
 }
 

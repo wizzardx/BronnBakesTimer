@@ -21,7 +21,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.AfterClass
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.core.context.GlobalContext
@@ -52,9 +54,6 @@ class DefaultInputValidatorTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setUp() {
-        startKoin {
-            modules(testModule)
-        }
         defaultInputValidator = DefaultInputValidator()
 
         Dispatchers.setMain(testDispatcher)
@@ -82,7 +81,6 @@ class DefaultInputValidatorTest {
     fun tearDown() {
         // Any cleanup code if needed
         Dispatchers.resetMain()
-        stopKoin()
     }
 
     @Test
@@ -151,33 +149,32 @@ class DefaultInputValidatorTest {
     }
 
     @Test
-    fun validatesAllInputsReturnsInvalidWhenExtraTimerDurationIsGreaterThanMainTimerDuration() =
-        runTest {
-            val mainTimerDurationInput = MutableStateFlow("10") // 10 seconds
-            val setMainTimerDurationInputError: (String?) -> Unit = {}
+    fun validatesAllInputsReturnsInvalidWhenExtraTimerDurationIsGreaterThanMainTimerDuration() = runTest {
+        val mainTimerDurationInput = MutableStateFlow("10") // 10 seconds
+        val setMainTimerDurationInputError: (String?) -> Unit = {}
 
-            // Mock an extra timer with a duration greater than the main timer
-            val extraTimer = ExtraTimerUserInputData().apply {
-                inputs.updateTimerDurationInput("15") // 15 seconds
-            }
-            `when`(extraTimersUserInputRepository.timerData).thenReturn(MutableStateFlow(listOf(extraTimer)))
-
-            val result = defaultInputValidator.validateAllInputs(
-                mainTimerDurationInput,
-                setMainTimerDurationInputError,
-                extraTimersUserInputRepository,
-                viewModel,
-                this,
-                true,
-            )
-
-            // Check that the result is Invalid
-            assert(result is Err)
-            // Check the specific error message for the extra timer
-            assert(
-                extraTimer.inputs.timerDurationInputError == "Extra timer time cannot be greater than main timer time."
-            )
+        // Mock an extra timer with a duration greater than the main timer
+        val extraTimer = ExtraTimerUserInputData().apply {
+            inputs.updateTimerDurationInput("15") // 15 seconds
         }
+        `when`(extraTimersUserInputRepository.timerData).thenReturn(MutableStateFlow(listOf(extraTimer)))
+
+        val result = defaultInputValidator.validateAllInputs(
+            mainTimerDurationInput,
+            setMainTimerDurationInputError,
+            extraTimersUserInputRepository,
+            viewModel,
+            this,
+            true,
+        )
+
+        // Check that the result is Invalid
+        assert(result is Err)
+        // Check the specific error message for the extra timer
+        assert(
+            extraTimer.inputs.timerDurationInputError == "Extra timer time cannot be greater than main timer time."
+        )
+    }
 
     @Test
     fun validateAllInputsShouldReturnValidResultWhenAllInputsAreCorrect() = runTest {
@@ -240,5 +237,23 @@ class DefaultInputValidatorTest {
             }
         }
         assert(allErrorsCleared)
+    }
+
+    companion object {
+        @JvmStatic
+        @BeforeClass
+        fun beforeAllTests() {
+            // Start Koin here
+            startKoin {
+                modules(testModule)
+            }
+        }
+
+        @JvmStatic
+        @AfterClass
+        fun afterAllTests() {
+            // Stop Koin after all tests
+            stopKoin()
+        }
     }
 }

@@ -1,13 +1,12 @@
 package com.example.bronnbakestimer.provider
 
-import com.example.bronnbakestimer.provider.CoroutineScopeProviderWrapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -74,7 +73,7 @@ class CoroutineScopeProviderWrapperTest {
 
     @Test
     fun `isActive should return false after coroutine completion`() {
-        runBlocking {
+        runTest {
             coroutineScopeProviderWrapper.launch {
                 // Perform some coroutine work
                 delay(100)

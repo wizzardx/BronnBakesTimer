@@ -384,3 +384,46 @@ value class Seconds(val value: Int) : Comparable<Seconds> {
  *                invalid input.
  */
 class InvalidTimerDurationException(message: String) : Exception(message)
+
+/**
+ * Measures the average execution time of a given block of code over a specified number of iterations.
+ *
+ * This function executes a block of code multiple times (defined by the `times` parameter) and calculates
+ * the average execution time. It's designed to help in profiling code to identify performance bottlenecks.
+ * Dependency injection for time measurement and output functions is utilized to enhance testability.
+ *
+ * @param times The number of times the block of code should be executed. Defaults to 1.
+ *              If a non-positive value is provided, it defaults to 1 execution.
+ * @param block The block of code to be profiled. This is a lambda function with no arguments and no return value.
+ * @param timeProvider A function that provides the current time in milliseconds. By default, it uses
+ *                      `System.currentTimeMillis`.
+ *                     This can be replaced with a custom function in testing environments.
+ * @param printFunction A function to output the results. By default, it uses `println`.
+ *                      This can be replaced with a custom function in testing environments.
+ *
+ * Usage:
+ *   myProfiler(times = 5) {
+ *       // Code to be profiled
+ *   }
+ *
+ * Note:
+ *   This function is designed for simplicity and basic profiling scenarios. For more complex performance
+ *   testing, consider using dedicated profiling tools or libraries.
+ */
+fun myProfiler(
+    times: Int = 1,
+    block: () -> Unit,
+    timeProvider: () -> Long = System::currentTimeMillis,
+    printFunction: (String) -> Unit = ::println
+) {
+    val totalTimes = if (times > 0) times else 1 // Ensure at least one execution
+    val startTime = timeProvider()
+
+    repeat(totalTimes) {
+        block()
+    }
+
+    val endTime = timeProvider()
+    val averageTime = (endTime - startTime) / totalTimes.toFloat()
+    printFunction("Average Execution Time for $totalTimes runs: $averageTime ms")
+}
