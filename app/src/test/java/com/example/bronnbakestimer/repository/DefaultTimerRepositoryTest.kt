@@ -51,18 +51,6 @@ class DefaultTimerRepositoryTest {
     }
 
     @Test
-    fun `updateData throws exception for negative milliseconds`() {
-        val timerRepository = DefaultTimerRepository()
-        val invalidTimerData = TimerData(-1000, isPaused = false, isFinished = false)
-
-        val exception = assertThrows(IllegalArgumentException::class.java) {
-            timerRepository.updateData(invalidTimerData)
-        }
-
-        assertEquals("Time remaining cannot be negative", exception.message)
-    }
-
-    @Test
     fun `timerData reflects state changes correctly`() = runTest {
         val timerRepository = DefaultTimerRepository()
         val timerDataList = mutableListOf<TimerData?>()

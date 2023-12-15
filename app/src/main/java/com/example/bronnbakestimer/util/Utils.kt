@@ -207,57 +207,51 @@ fun logError(msg: String, errorRepository: IErrorRepository, logger: IErrorLogge
 /**
  * Converts user input to seconds based on the specified time unit.
  *
- * @param input The user input as a String.
- * @param units The time unit type (MINUTES or SECONDS).
- * @return A Result containing the converted value in seconds (Ok) or an error message (Err).
+ * This function interprets a string representing a time duration and converts it into seconds.
+ * It supports two types of time units: minutes and seconds, as defined in `UserInputTimeUnit`.
+ * The input string is first converted to an integer. If the conversion is successful and the
+ * value is within a specified range (if range checking is enabled), it's then converted to seconds
+ * based on the provided time unit. The function returns a `Result` type, encapsulating either the
+ * calculated seconds in a `Seconds` object (Ok) or an error message (Err) in case of invalid input
+ * or out-of-range values.
+ *
+ * The function allows for optional range checking of the input value. When enabled, the input must
+ * be a positive number and not exceed a predefined maximum. When range checking is disabled, the
+ * input is still validated for being a valid integer but can include larger values.
+ *
+ * @param input The user input as a string, representing the time duration.
+ * @param units The time unit for conversion, either minutes or seconds. Defaults to the unit defined in
+ *              `Constants.USER_INPUT_TIME_UNIT`.
+ * @param checkRange Boolean flag to enable or disable range checking of the input value. Defaults to true.
+ * @return A `Result<Seconds, String>` encapsulating either the successful conversion result (Ok) or an error message
+ *         (Err).
  */
-
-// TODO: Unit test the below
-// TODO: Refactor the below, get GPT4-assistance, etc.
-// TODO: Make checkRange arg optional?
 fun userInputToSeconds(
     input: String,
     units: UserInputTimeUnit = Constants.USER_INPUT_TIME_UNIT,
-    checkRange: Boolean,
+    checkRange: Boolean = true
 ): Result<Seconds, String> {
-    return input.toIntOrNull()?.let { integerValue ->
-        // Keep the input within the allowed range.
-        if (checkRange) {
-            // Range check required, so do that here:
-            when {
-                integerValue <= 0 -> {
-                    Err("Must be at least 1")
-                }
+    val integerValue = input.toIntOrNull()
+    val errorMessage = when {
+        integerValue == null -> "Invalid input"
+        checkRange && integerValue <= 0 -> "Input must be greater than 0"
+        checkRange && integerValue > Constants.MAX_USER_INPUT_NUM -> "Input exceeds maximum limit"
+        else -> null
+    }
 
-                integerValue > Constants.MAX_USER_INPUT_NUM -> {
-                    Err("Must be at most ${Constants.MAX_USER_INPUT_NUM}")
-                }
-
-                else -> {
-                    // Calculate the result based on the selected time unit.
-                    val resultSeconds = when (units) {
-                        UserInputTimeUnit.MINUTES -> integerValue * Constants.SECONDS_PER_MINUTE
-                        UserInputTimeUnit.SECONDS -> integerValue
-                    }
-                    Ok(Seconds(resultSeconds))
-                }
-            }
-        } else {
-            // Not checking the range, so calculate the range based on the selected time unit:
-            val resultSeconds = when (units) {
-                UserInputTimeUnit.MINUTES -> integerValue * Constants.SECONDS_PER_MINUTE
-                UserInputTimeUnit.SECONDS -> integerValue
-            }
-            // Before we return the result, make sure that we're not going to send a negative
-            // value into the Seconds constructor (since we're not checking the range). It
-            // doesn't like that.
-            if (resultSeconds < 0) {
-                Err("Negative seconds not allowed")
-            } else {
-                Ok(Seconds(resultSeconds))
-            }
+    return if (errorMessage != null) {
+        Err(errorMessage)
+    } else {
+        // At this point, integerValue is guaranteed to be non-null.
+        val resultSeconds = when (units) {
+            UserInputTimeUnit.MINUTES -> integerValue!! * Constants.SECONDS_PER_MINUTE
+            UserInputTimeUnit.SECONDS -> integerValue
         }
-    } ?: Err("Invalid number")
+
+        // Since integerValue is non-null and Constants.SECONDS_PER_MINUTE is a non-null constant,
+        // resultSeconds is guaranteed to be non-null.
+        if (resultSeconds!! < 0) Err("Negative seconds not allowed") else Ok(Seconds(resultSeconds))
+    }
 }
 
 /**
@@ -272,10 +266,6 @@ fun userInputToSeconds(
  * @param timerDurationInput The user input for the timer duration as a String.
  * @return A Result containing the formatted time remaining string (Ok) or an error message (Err).
  */
-
-// TODO: Get high coverage on the two versions of formatTotalTimeRemainingString, and then refactor more,
-//       factor out common logic, etc.
-
 fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: String): Result<String, String> {
     val maybeSecondsRemaining = if (timerData == null) {
         userInputToSeconds(timerDurationInput, checkRange = false)
@@ -313,12 +303,22 @@ fun formatTotalTimeRemainingString(seconds: Seconds?, timerDurationInput: String
 }
 
 /**
- * Converts user input to milliseconds.
+ * Converts user input representing time duration to milliseconds.
  *
- * @param input The user input as a String.
- * @return A Result containing the converted value in milliseconds (Ok) or an error message (Err).
+ * This function takes a string input, interprets it as a time duration based on user input format,
+ * and converts it into milliseconds. The input is first passed to the `userInputToSeconds` function
+ * to convert it into seconds. If this conversion is successful, the result is then multiplied by
+ * the number of milliseconds in a second to obtain the equivalent duration in milliseconds.
+ * The function returns a `Result` type, encapsulating either the calculated milliseconds (Ok)
+ * or an error message (Err) in case of invalid input.
+ *
+ * The function is useful for scenarios where time duration needs to be represented in milliseconds
+ * for further processing, such as setting timers or performing time calculations.
+ *
+ * @param input The user input as a string, representing the time duration.
+ * @return A `Result<Int, String>` encapsulating either the successful conversion result in milliseconds (Ok)
+ *         or an error message (Err).
  */
-// TODO: Update docstring above? TODO: Make sure that unit testing here is good?
 fun userInputToMillis(input: String): Result<Int, String> {
     // Validate input: It should be a valid integer.
     val maybeSeconds = userInputToSeconds(input, checkRange = true)
@@ -417,27 +417,31 @@ class InvalidTimerDurationException(message: String) : Exception(message)
 /**
  * Measures the average execution time of a given block of code over a specified number of iterations.
  *
- * This function executes a block of code multiple times (defined by the `times` parameter) and calculates
- * the average execution time. It's designed to help in profiling code to identify performance bottlenecks.
- * Dependency injection for time measurement and output functions is utilized to enhance testability.
+ * This profiling function executes a specified block of code multiple times, as defined by the `times` parameter,
+ * and calculates the average execution time for these executions. It is useful for identifying performance bottlenecks
+ * and for getting a general sense of how long a block of code takes to execute.
  *
- * @param times The number of times the block of code should be executed. Defaults to 1.
- *              If a non-positive value is provided, it defaults to 1 execution.
- * @param block The block of code to be profiled. This is a lambda function with no arguments and no return value.
- * @param timeProvider A function that provides the current time in milliseconds. By default, it uses
- *                      `System.currentTimeMillis`.
- *                     This can be replaced with a custom function in testing environments.
- * @param printFunction A function to output the results. By default, it uses `println`.
- *                      This can be replaced with a custom function in testing environments.
+ * Dependency injection for time measurement and output functions is used to enhance flexibility and testability,
+ * allowing the function to adapt to different environments and requirements.
+ *
+ * The function is primarily intended for basic performance testing and profiling. For more detailed and comprehensive
+ * performance analysis, dedicated profiling tools or libraries are recommended.
+ *
+ * @param times The number of times to execute the block of code. Defaults to 1. If a non-positive value is provided,
+ *              it is defaulted to 1 execution.
+ * @param timeProvider A function providing the current time in milliseconds, used for measuring execution time.
+ *                     Defaults to `System.currentTimeMillis()`. It can be replaced with a custom function in
+ *                     testing or other specific scenarios.
+ * @param printFunction A function to output the results, defaults to `println`. It can be replaced with a custom
+ *                      function to direct output to a different destination or format.
+ * @param block The block of code to be profiled.
  *
  * Usage:
- *   myProfiler(times = 5) {
- *       // Code to be profiled
- *   }
- *
- * Note:
- *   This function is designed for simplicity and basic profiling scenarios. For more complex performance
- *   testing, consider using dedicated profiling tools or libraries.
+ * ```
+ * myProfiler(times = 5) {
+ *     // Code to be profiled
+ * }
+ * ```
  */
 fun myProfiler(
     times: Int = 1,

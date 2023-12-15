@@ -49,66 +49,62 @@ class DefaultInputValidator : IInputValidator {
         coroutineScope: CoroutineScope,
         skipUiLogic: Boolean,
     ): Result<Unit, String> {
-        // Clear out errors in the UI:
+        // Clear out errors in the UI
         setTimerDurationInputError(null)
         extraTimersUserInputsRepository.timerData.value.forEach {
             it.inputs.timerDurationInputError = null
         }
 
-        // Get the main timer duration in seconds
-        val maybeMainTimerSeconds: Result<Seconds, String> = userInputToSeconds(timerDurationInput.value, checkRange=true)
+        // Initialize a variable for the result
+        var validationResult: Result<Unit, String> = Ok(Unit)
 
-        // Convert maybeSeconds from Result<Seconds, String> to  Result<Unit, String>
-        var result: Result<Unit, String> = maybeMainTimerSeconds.map { }
-
-        // Update user input error feedback label string:
-        if (result is Err) {
-            setTimerDurationInputError(result.error)
-            // Set focus and scroll to the main timer duration input:
-            viewModel.focusOnTimerDurationInput(coroutineScope = coroutineScope, skipUiLogic = skipUiLogic)
+        // Get the main timer duration in seconds and check for errors
+        val maybeMainTimerSeconds = userInputToSeconds(timerDurationInput.value, checkRange = true)
+        if (maybeMainTimerSeconds is Err) {
+            setTimerDurationInputError(maybeMainTimerSeconds.error)
+            viewModel.focusOnTimerDurationInput(coroutineScope, skipUiLogic)
+            validationResult = maybeMainTimerSeconds.map { }
         } else {
-            setTimerDurationInputError(null)
-        }
-        // Validate and process extra timers
-        for (extraTimer in extraTimersUserInputsRepository.timerData.value) {
-            val validateResult: Result<Unit, String> = validateExtraTimerInputs(extraTimer, maybeMainTimerSeconds)
-            if (validateResult is Err && result is Ok) {
-                // Set focus and scroll to the main timer duration input:
-                extraTimer.inputs.focusOnTimerDurationInput(
-                    coroutineScope = coroutineScope,
-                    skipUiLogic = skipUiLogic
-                )
-                result = validateResult
+            // Validate extra timers only if main timer validation passed
+            for (extraTimer in extraTimersUserInputsRepository.timerData.value) {
+                val validateResult = validateExtraTimerInputs(extraTimer, maybeMainTimerSeconds)
+                if (validateResult is Err) {
+                    extraTimer.inputs.focusOnTimerDurationInput(coroutineScope, skipUiLogic)
+                    validationResult = validateResult
+                    break // Exit the loop if an error is found
+                }
             }
         }
 
-        // Return the result that we were building up until now:
-        return result
+        // Return the final validation result
+        return validationResult
     }
 
-    @Suppress("ReturnCount") // TODO: After I get good unit test coverage, then I can try to remove this suppression
     private fun validateExtraTimerInputs(
         extraTimer: ExtraTimerUserInputData,
         maybeMainTimerSeconds: Result<Seconds, String>
     ): Result<Unit, String> {
-        // Attempt to parse the extra timer duration input as an integer
-        val maybeExtraTimerSeconds: Result<Seconds, String> =
-            userInputToSeconds(extraTimer.inputs.timerDurationInput.value, checkRange = true)
-        // If the parsing failed then set the error message and set the result to an error if it wasn't already:
+        // Initialize a variable for holding the function's result
+        var validationResult: Result<Unit, String> = Ok(Unit)
+
+        // Parse the extra timer duration input as an integer
+        val maybeExtraTimerSeconds = userInputToSeconds(extraTimer.inputs.timerDurationInput.value, checkRange = true)
+
+        // Handle parsing failure
         if (maybeExtraTimerSeconds is Err) {
-            val msg = maybeExtraTimerSeconds.error
-            extraTimer.inputs.timerDurationInputError = msg
-            return Err(msg)
+            extraTimer.inputs.timerDurationInputError = maybeExtraTimerSeconds.error
+            validationResult = maybeExtraTimerSeconds
+        } else if (maybeMainTimerSeconds is Ok) {
+            // Check if the extra timer duration is greater than the main timer duration
+            val extraTimerSeconds = (maybeExtraTimerSeconds as Ok).value
+            if (extraTimerSeconds > maybeMainTimerSeconds.value) {
+                val msg = "Extra timer time cannot be greater than main timer time."
+                extraTimer.inputs.timerDurationInputError = msg
+                validationResult = Err(msg)
+            }
         }
 
-        // Check if the extra timer duration is greater than the main timer duration
-        if (maybeMainTimerSeconds is Ok && (maybeExtraTimerSeconds as Ok).value > maybeMainTimerSeconds.value) {
-            val msg = "Extra timer time cannot be greater than main timer time."
-            extraTimer.inputs.timerDurationInputError = msg
-            return Err(msg)
-        }
-
-        // If we got here then there were no validation errors
-        return Ok(Unit)
+        // Return the validation result
+        return validationResult
     }
 }

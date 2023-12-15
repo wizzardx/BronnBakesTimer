@@ -16,5 +16,12 @@ data class TimerData(
     val isPaused: Boolean = false,
     val isFinished: Boolean = false,
     val beepTriggered: Boolean = false
-    // TODO: Some validations during construction
-)
+) {
+    init {
+        require(millisecondsRemaining >= 0) {
+            "millisecondsRemaining must be a non-negative value"
+        }
+
+        // Additional validations can be added here if needed
+    }
+}

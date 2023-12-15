@@ -176,12 +176,12 @@ class UtilsKtTest {
     @Test
     fun `handles non-numeric input correctly`() {
         val result: String = (userInputToSeconds("not a number") as Err).error
-        assertEquals("Invalid number", result)
+        assertEquals("Invalid input", result)
     }
 
     @Test
     fun `handles empty input correctly`() {
-        assertEquals("Invalid number", (userInputToSeconds("") as Err).error)
+        assertEquals("Invalid input", (userInputToSeconds("") as Err).error)
     }
 
     @Test
@@ -238,7 +238,7 @@ class UtilsKtTest {
 
         // Assert: Check if the result is an error and contains the expected error message
         assertTrue(result is Err)
-        assertEquals("Invalid number", result.error)
+        assertEquals("Invalid input", result.error)
     }
 
     @Test
@@ -296,13 +296,13 @@ class UtilsKtTest {
     @Test
     fun `formatTotalTimeRemainingString handles non-numeric input correctly`() {
         val result = (formatTotalTimeRemainingString(seconds = null, "not a number") as Err).error
-        assertEquals("Invalid number", result)
+        assertEquals("Invalid input", result)
     }
 
     @Test
     fun `formatTotalTimeRemainingString handles empty input correctly`() {
         val result = formatTotalTimeRemainingString(seconds = null, "")
-        assertEquals("Invalid number", (result as Err).error)
+        assertEquals("Invalid input", (result as Err).error)
     }
 
     @Test

@@ -1,8 +1,5 @@
 package com.example.bronnbakestimer.service
 
-// TODO: Unify main timer and extra timer handling, so no special cases for main timer.
-// TODO: Optimize some of this code re the new timers. A lot of ugly looking things there.
-
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder

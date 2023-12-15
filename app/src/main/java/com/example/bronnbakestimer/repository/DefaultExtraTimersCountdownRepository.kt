@@ -49,75 +49,33 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
      * @param newData The new [ConcurrentHashMap] of [TimerUserInputDataId] to [SingleTimerCountdownData] to be used.
      */
     override fun updateData(newData: ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>) {
-        // Ensure the millisecondsRemaining in all the Timers are none-negative:
+        // Validate that milliseconds remaining in all timers are non-negative
         for (timer in newData) {
             val msRemaining = timer.value.data.millisecondsRemaining
             require(msRemaining >= 0) { "Time remaining cannot be negative" }
         }
 
+        // Update the main timer data
         _timerData.value = newData // Atomic and thread-safe update
 
-        // Get extra timer ids from the list of timers, after we update them with the new data
-        val newIds = _timerData.value.map { it.value.useInputTimerId }
+        // Process each timer in the new data
+        for ((timerId, timerData) in newData) {
+            // Convert milliseconds remaining to seconds
+            val secondsRemaining = timerData.data.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND
 
-        // Remove entries in the _secondsRemaining map for timers that are no longer in the list
-        _secondsRemaining.keys.removeAll { it !in newIds }
+            // Update or initialize the seconds remaining StateFlow
+            _secondsRemaining.getOrPut(timerId) { MutableStateFlow(Seconds(secondsRemaining)) }
+                .value = Seconds(secondsRemaining)
 
-        // Add new StateFlow<Seconds> entries in the _secondsRemaining map for timers that are new to the list
-        for (timer in newData) {
-            if (!_secondsRemaining.containsKey(timer.value.useInputTimerId)) {
-                val msInt = timer.value.data.millisecondsRemaining
-                val secondsInt = msInt / Constants.MILLISECONDS_PER_SECOND
-                val seconds = Seconds(secondsInt)
-                val secondsStateFlow = MutableStateFlow(seconds)
-                _secondsRemaining[timer.value.useInputTimerId] = secondsStateFlow
-            }
+            // Update or initialize the timer completed StateFlow
+            _timerCompleted.getOrPut(timerId) { MutableStateFlow(timerData.data.isFinished) }
+                .value = timerData.data.isFinished
         }
 
-        // Update all the seconds in the stateflow mapping to match the new data
-        for (timer in newData) {
-            val msInt = timer.value.data.millisecondsRemaining
-            val secondsInt = msInt / Constants.MILLISECONDS_PER_SECOND
-            val seconds = Seconds(secondsInt)
-            val maybeStateFlow = _secondsRemaining[timer.value.useInputTimerId]
-            if (maybeStateFlow != null) {
-                maybeStateFlow.value = seconds
-            } else {
-                // Logic can never reach here, so we can't get test coverage:
-                error("StateFlow for timer id ${timer.value.useInputTimerId} is missing in _secondsRemaining map")
-            }
-        }
-
-        // TODO: Refactor this method....
-        // TODO: Get a GPT-4 review...
-        // TODO: After getting high test coverage here..
-
-        // Remove entries in the _timerCompleted map for timers that are no longer in the list
-        _timerCompleted.keys.removeAll { it !in newIds }
-
-        // Add new StateFlow<Seconds> entries in the _timerCompleted map for timers that are new to the list
-        for (timer in newData) {
-            if (!_timerCompleted.containsKey(timer.value.useInputTimerId)) {
-                val isFinished = timer.value.data.isFinished
-                val isCompletedStateFlow = MutableStateFlow(isFinished)
-                _timerCompleted[timer.value.useInputTimerId] = isCompletedStateFlow
-            }
-        }
-
-        // Update all the completion statuses in the stateflow mapping to match the new data
-        for (timer in newData) {
-            val isFinished = timer.value.data.isFinished
-            val maybeStateFlow = _timerCompleted[timer.value.useInputTimerId]
-            if (maybeStateFlow != null) {
-                if (isFinished) {
-                    println() // Set a breakpoint here to debug
-                }
-                maybeStateFlow.value = isFinished
-            } else {
-                // Logic can never reach here, so we can't get test coverage:
-                error("StateFlow for timer id ${timer.value.useInputTimerId} is missing in _timerCompleted map")
-            }
-        }
+        // Remove obsolete entries from _secondsRemaining and _timerCompleted maps
+        val newIds = newData.keys
+        _secondsRemaining.keys.retainAll(newIds)
+        _timerCompleted.keys.retainAll(newIds)
     }
 
     override fun extraTimerSecsFlow(timerUserInputDataId: TimerUserInputDataId): StateFlow<Seconds> {

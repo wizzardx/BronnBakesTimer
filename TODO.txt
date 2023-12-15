@@ -1,6 +1,4 @@
 
-* Handle the TODO tasks listed in the code.
-
 * Check all the other code warnings, lints, etc in the code.
 
 * Make editing of numbers in text fields less annoying. See how I did it in the Marshalls Metronome app?

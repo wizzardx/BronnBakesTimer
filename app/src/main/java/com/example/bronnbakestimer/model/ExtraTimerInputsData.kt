@@ -25,17 +25,41 @@ import kotlinx.coroutines.launch
  * `FocusRequester` for managing UI interactions, such as bringing the timer duration input into view and requesting
  * focus on it.
  *
+ * Validations are performed during the construction of the instance to ensure that the initial timer duration is a
+ * valid numeric value within a specified range (currently 1 to 60 minutes) and that the timer name is not blank and
+ * does not exceed a maximum length (currently 20 characters). These validations help maintain data integrity and
+ * improve user experience by preventing invalid input states.
+ *
  * Key functionalities include:
  * - Managing state and updates for timer duration and name inputs.
  * - Handling UI interactions like focusing on and bringing the timer duration input into view.
  * - Offering a clear interface for updating input values and managing related error messages.
+ * - Ensuring input validity through initial value validations.
  *
  * Note: This class is marked with `@OptIn(ExperimentalFoundationApi::class)` indicating the use of experimental
  * APIs in Compose Foundation, specifically for UI focus and view adjustments.
  */
-class ExtraTimerInputsData {
+class ExtraTimerInputsData(
+    initialTimerDuration: String = "5",
+    initialTimerName: String = "check/flip/stir"
+) {
 
-    private val _timerDurationInput = MutableStateFlow("5") // Initialize with default value
+    init {
+        require(initialTimerDuration.matches(TIMER_DURATION_REGEX.toRegex())) {
+            "Timer duration must be a numeric value"
+        }
+        require(initialTimerDuration.toInt() in MIN_TIMER_DURATION..MAX_TIMER_DURATION) {
+            "Timer duration must be between $MIN_TIMER_DURATION and $MAX_TIMER_DURATION minutes"
+        }
+        require(initialTimerName.isNotBlank()) {
+            "Timer name cannot be blank"
+        }
+        require(initialTimerName.length <= MAX_TIMER_NAME_LENGTH) {
+            "Timer name must be $MAX_TIMER_NAME_LENGTH characters or less"
+        }
+    }
+
+    private val _timerDurationInput = MutableStateFlow(initialTimerDuration)
 
     /**
      * The input value for timer duration, initialized to "5".
@@ -49,7 +73,7 @@ class ExtraTimerInputsData {
 
     // MutableStateFlow to hold the user input value for the timer name.
     // This state flow is initialized with the default value "check/flip/stir".
-    private val _timerNameInput = MutableStateFlow("check/flip/stir")
+    private val _timerNameInput = MutableStateFlow(initialTimerName)
 
     /**
      * The input value for timer name, initialized to "check/flip/stir".
@@ -124,5 +148,10 @@ class ExtraTimerInputsData {
         }
     }
 
-    // TODO: Some validations during construction
+    companion object {
+        private const val MAX_TIMER_NAME_LENGTH = 20
+        private const val TIMER_DURATION_REGEX = "\\d+"
+        private const val MIN_TIMER_DURATION = 1
+        private const val MAX_TIMER_DURATION = 60
+    }
 }
