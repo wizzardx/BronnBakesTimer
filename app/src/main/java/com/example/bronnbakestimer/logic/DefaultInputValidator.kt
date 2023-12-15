@@ -56,7 +56,7 @@ class DefaultInputValidator : IInputValidator {
         }
 
         // Get the main timer duration in seconds
-        val maybeMainTimerSeconds: Result<Seconds, String> = userInputToSeconds(timerDurationInput.value)
+        val maybeMainTimerSeconds: Result<Seconds, String> = userInputToSeconds(timerDurationInput.value, checkRange=true)
 
         // Convert maybeSeconds from Result<Seconds, String> to  Result<Unit, String>
         var result: Result<Unit, String> = maybeMainTimerSeconds.map { }
@@ -93,7 +93,7 @@ class DefaultInputValidator : IInputValidator {
     ): Result<Unit, String> {
         // Attempt to parse the extra timer duration input as an integer
         val maybeExtraTimerSeconds: Result<Seconds, String> =
-            userInputToSeconds(extraTimer.inputs.timerDurationInput.value)
+            userInputToSeconds(extraTimer.inputs.timerDurationInput.value, checkRange = true)
         // If the parsing failed then set the error message and set the result to an error if it wasn't already:
         if (maybeExtraTimerSeconds is Err) {
             val msg = maybeExtraTimerSeconds.error

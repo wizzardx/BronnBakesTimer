@@ -1,5 +1,4 @@
 
-
 * Handle the TODO tasks listed in the code.
 
 * Check all the other code warnings, lints, etc in the code.
@@ -30,5 +29,7 @@
 * For default values for controls, use constants (or maybe android resources?)
 
 * Reformat all the code in the project (but keep the builtin detekt/etc checks happy)
+
+* Check everything carefully on my real phone, too, not just the emulator.
 
 * Update version from 1.2-dev to 1.2 just before releasing, after I have tested everything...

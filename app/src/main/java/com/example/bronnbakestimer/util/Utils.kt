@@ -211,21 +211,49 @@ fun logError(msg: String, errorRepository: IErrorRepository, logger: IErrorLogge
  * @param units The time unit type (MINUTES or SECONDS).
  * @return A Result containing the converted value in seconds (Ok) or an error message (Err).
  */
+
+// TODO: Unit test the below
+// TODO: Refactor the below, get GPT4-assistance, etc.
+// TODO: Make checkRange arg optional?
 fun userInputToSeconds(
     input: String,
-    units: UserInputTimeUnit = Constants.USER_INPUT_TIME_UNIT
+    units: UserInputTimeUnit = Constants.USER_INPUT_TIME_UNIT,
+    checkRange: Boolean,
 ): Result<Seconds, String> {
     return input.toIntOrNull()?.let { integerValue ->
         // Keep the input within the allowed range.
-        when {
-            integerValue <= 0 -> { Err("Must be at least 1") }
-            integerValue > Constants.MAX_USER_INPUT_NUM -> { Err("Must be at most ${Constants.MAX_USER_INPUT_NUM}") }
-            else -> {
-                // Calculate the result based on the selected time unit.
-                val resultSeconds = when (units) {
-                    UserInputTimeUnit.MINUTES -> integerValue * Constants.SECONDS_PER_MINUTE
-                    UserInputTimeUnit.SECONDS -> integerValue
+        if (checkRange) {
+            // Range check required, so do that here:
+            when {
+                integerValue <= 0 -> {
+                    Err("Must be at least 1")
                 }
+
+                integerValue > Constants.MAX_USER_INPUT_NUM -> {
+                    Err("Must be at most ${Constants.MAX_USER_INPUT_NUM}")
+                }
+
+                else -> {
+                    // Calculate the result based on the selected time unit.
+                    val resultSeconds = when (units) {
+                        UserInputTimeUnit.MINUTES -> integerValue * Constants.SECONDS_PER_MINUTE
+                        UserInputTimeUnit.SECONDS -> integerValue
+                    }
+                    Ok(Seconds(resultSeconds))
+                }
+            }
+        } else {
+            // Not checking the range, so calculate the range based on the selected time unit:
+            val resultSeconds = when (units) {
+                UserInputTimeUnit.MINUTES -> integerValue * Constants.SECONDS_PER_MINUTE
+                UserInputTimeUnit.SECONDS -> integerValue
+            }
+            // Before we return the result, make sure that we're not going to send a negative
+            // value into the Seconds constructor (since we're not checking the range). It
+            // doesn't like that.
+            if (resultSeconds < 0) {
+                Err("Negative seconds not allowed")
+            } else {
                 Ok(Seconds(resultSeconds))
             }
         }
@@ -250,7 +278,7 @@ fun userInputToSeconds(
 
 fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: String): Result<String, String> {
     val maybeSecondsRemaining = if (timerData == null) {
-        userInputToSeconds(timerDurationInput)
+        userInputToSeconds(timerDurationInput, checkRange = false)
     } else {
         Ok(Seconds(timerData.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND))
     }
@@ -274,7 +302,7 @@ fun formatTotalTimeRemainingString(timerData: TimerData?, timerDurationInput: St
  */
 fun formatTotalTimeRemainingString(seconds: Seconds?, timerDurationInput: String): Result<String, String> {
     val maybeSecondsRemaining = if (seconds == null) {
-        userInputToSeconds(timerDurationInput)
+        userInputToSeconds(timerDurationInput, checkRange = false)
     } else {
         Ok(seconds)
     }
@@ -290,9 +318,10 @@ fun formatTotalTimeRemainingString(seconds: Seconds?, timerDurationInput: String
  * @param input The user input as a String.
  * @return A Result containing the converted value in milliseconds (Ok) or an error message (Err).
  */
+// TODO: Update docstring above? TODO: Make sure that unit testing here is good?
 fun userInputToMillis(input: String): Result<Int, String> {
     // Validate input: It should be a valid integer.
-    val maybeSeconds = userInputToSeconds(input)
+    val maybeSeconds = userInputToSeconds(input, checkRange = true)
     if (maybeSeconds is Err) {
         return Err(maybeSeconds.error)
     }

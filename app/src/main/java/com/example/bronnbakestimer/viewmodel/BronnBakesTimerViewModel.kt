@@ -438,7 +438,7 @@ fun StateFlow<Seconds>.getTotalSeconds(mainTimerActive: Boolean, timerDurationIn
     } else {
         // Timer is not active, so use a value from the users input
         val userInput = timerDurationInput.value
-        val maybeSeconds = userInputToSeconds(userInput)
+        val maybeSeconds = userInputToSeconds(userInput, checkRange = false)
         if (maybeSeconds is Err) {
             // This shouldn't be possible (user's input input is validated), but just in case.
             return Seconds(0)
