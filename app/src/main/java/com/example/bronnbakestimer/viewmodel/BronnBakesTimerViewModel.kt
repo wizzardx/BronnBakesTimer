@@ -359,7 +359,7 @@ open class BronnBakesTimerViewModel(
             if (testThrowingException) {
                 throw Exception("Test exception")
             }
-            timerManager.clearResources(timerRepository)
+            timerManager.clearResources(timerRepository, extraTimersCountdownRepository)
         } catch (e: Exception) {
             logException(e, errorRepository, errorLoggerProvider)
         }

@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.bronnbakestimer.model.ExtraTimerUserInputData
@@ -58,6 +59,14 @@ fun AdditionalTimeCountdown(
 
     val currentTimerNameInput by extraTimerUserInputData.inputs.timerNameInput.collectAsState()
 
+    // Countdown label is black until the countdown completes, then it turns to green.
+    val extraTimerIsCompletedStateFlow =
+        extraTimersCountdownRepo
+            .extraTimerIsCompletedFlow(extraTimerUserInputData.id)
+
+    val isCompletedState by extraTimerIsCompletedStateFlow.collectAsState()
+    val textColor = if (isCompletedState) Color.Green else Color.Black
+
     // A column to contain our controls to follow:
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -73,6 +82,7 @@ fun AdditionalTimeCountdown(
 
         Text(
             text = timeRemaining,
+            color = textColor,
             modifier = modifier.padding(bottom = 8.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

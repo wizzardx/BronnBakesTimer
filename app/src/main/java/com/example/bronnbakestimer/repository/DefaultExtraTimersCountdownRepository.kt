@@ -2,6 +2,7 @@ package com.example.bronnbakestimer.repository
 
 import com.example.bronnbakestimer.logic.Constants
 import com.example.bronnbakestimer.service.SingleTimerCountdownData
+import com.example.bronnbakestimer.service.TimerData
 import com.example.bronnbakestimer.util.Seconds
 import com.example.bronnbakestimer.util.TimerUserInputDataId
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,9 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
 
     // A private concurrent safe mapping between extra timer ids, and StateFlows for their seconds remaining
     private val _secondsRemaining = ConcurrentHashMap<TimerUserInputDataId, MutableStateFlow<Seconds>>()
+
+    // A private concurrent safe mapping between extra timer ids, and StateFlows for their completion status
+    private val _timerCompleted = ConcurrentHashMap<TimerUserInputDataId, MutableStateFlow<Boolean>>()
 
     /**
      * A read-only [StateFlow] that emits the current state of the countdown data for extra timers.
@@ -83,11 +87,83 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
                 error("StateFlow for timer id ${timer.value.useInputTimerId} is missing in _secondsRemaining map")
             }
         }
+
+        // TODO: Refactor this method....
+        // TODO: Get a GPT-4 review...
+        // TODO: After getting high test coverage here..
+
+        // Remove entries in the _timerCompleted map for timers that are no longer in the list
+        _timerCompleted.keys.removeAll { it !in newIds }
+
+        // Add new StateFlow<Seconds> entries in the _timerCompleted map for timers that are new to the list
+        for (timer in newData) {
+            if (!_timerCompleted.containsKey(timer.value.useInputTimerId)) {
+                val isFinished = timer.value.data.isFinished
+                val isCompletedStateFlow = MutableStateFlow(isFinished)
+                _timerCompleted[timer.value.useInputTimerId] = isCompletedStateFlow
+            }
+        }
+
+        // Update all the completion statuses in the stateflow mapping to match the new data
+        for (timer in newData) {
+            val isFinished = timer.value.data.isFinished
+            val maybeStateFlow = _timerCompleted[timer.value.useInputTimerId]
+            if (maybeStateFlow != null) {
+                if (isFinished) {
+                    println() // Set a breakpoint here to debug
+                }
+                maybeStateFlow.value = isFinished
+            } else {
+                // Logic can never reach here, so we can't get test coverage:
+                error("StateFlow for timer id ${timer.value.useInputTimerId} is missing in _timerCompleted map")
+            }
+        }
     }
 
     override fun extraTimerSecsFlow(timerUserInputDataId: TimerUserInputDataId): StateFlow<Seconds> {
         val maybeStateFlow = _secondsRemaining[timerUserInputDataId]
         requireNotNull(maybeStateFlow) { "No extra timer with id $timerUserInputDataId!" }
         return maybeStateFlow
+    }
+
+    /**
+     * Provides a [StateFlow] of [Boolean] indicating whether a specific extra timer has completed its countdown.
+     *
+     * This method is an integral part of the [IExtraTimersCountdownRepository] interface and is responsible for
+     * emitting the completion status of an extra timer identified by [id]. The method retrieves a
+     * [StateFlow<Boolean>] that continuously emits updates to the completion status of the specified timer.
+     * This allows for real-time tracking of whether the extra timer has completed its countdown.
+     *
+     * @param id The unique identifier [TimerUserInputDataId] of the extra timer
+     *           for which the completion status is requested.
+     * @return StateFlow<Boolean> that emits the completion status (true if completed, false otherwise)
+     *         for the identified extra timer.
+     * @throws IllegalArgumentException If no timer with the given identifier exists.
+     */
+    override fun extraTimerIsCompletedFlow(id: TimerUserInputDataId): StateFlow<Boolean> {
+        val maybeStateFlow = _timerCompleted[id]
+        requireNotNull(maybeStateFlow) { "No extra timer with id $id!" }
+        return maybeStateFlow
+    }
+
+    override fun clearDataInAllTimers() {
+        // Create a temporary map to hold the updated timer data
+        val updatedTimers = ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>()
+
+        // Iterate over each entry in the original _timerData map
+        for ((id, timer) in _timerData.value) {
+            // Create a new SingleTimerCountdownData with default TimerData and the same id
+            val newTimerData = SingleTimerCountdownData(TimerData(), timer.useInputTimerId)
+
+            // Add the updated timer data to the temporary map
+            updatedTimers[id] = newTimerData
+
+            // Also reset the related entries in _secondsRemaining and _timerCompleted maps
+            _secondsRemaining[id]?.value = Seconds(0) // Assuming 0 seconds as the default
+            _timerCompleted[id]?.value = false // Assuming false (not completed) as the default
+        }
+
+        // Update _timerData with the new map
+        _timerData.value = updatedTimers
     }
 }

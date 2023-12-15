@@ -1,5 +1,4 @@
 
-* On timer completion, display a visible flag (temporarily?) next to the timer.
 
 * Handle the TODO tasks listed in the code.
 
