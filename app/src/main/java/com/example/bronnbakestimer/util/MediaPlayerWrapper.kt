@@ -3,8 +3,8 @@ package com.example.bronnbakestimer.util
 import android.content.Context
 import android.media.MediaPlayer
 import com.example.bronnbakestimer.provider.IErrorLoggerProvider
-import com.example.bronnbakestimer.repository.IErrorRepository
 import com.example.bronnbakestimer.provider.IMediaPlayerWrapper
+import com.example.bronnbakestimer.repository.IErrorRepository
 import org.koin.core.context.GlobalContext
 
 /**

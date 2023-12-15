@@ -1,9 +1,12 @@
 package com.example.bronnbakestimer.viewmodel
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bronnbakestimer.logic.IInputValidator
@@ -27,6 +30,7 @@ import com.example.bronnbakestimer.util.userInputToSeconds
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +39,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -62,6 +67,26 @@ open class BronnBakesTimerViewModel(
      * Error message for the "Timer Duration" TextField.
      */
     var timerDurationInputError by mutableStateOf<String?>(null)
+
+    /**
+     * A `FocusRequester` instance for programmatically requesting focus on the "Timer Duration" input field.
+     *
+     * This object is used within the ViewModel to manage focus control in the UI. It can be called upon to
+     * set the focus directly to the "Timer Duration" input field, ensuring a smoother user experience,
+     * especially in scenarios where immediate user interaction with this field is desired.
+     */
+    @OptIn(ExperimentalFoundationApi::class)
+    val timerDurationInputBringIntoViewRequester = BringIntoViewRequester()
+
+    /**
+     * A `BringIntoViewRequester` instance for programmatically scrolling the "Timer Duration" input field into view.
+     *
+     * This object is utilized in the ViewModel to control the visibility of the "Timer Duration" input field in the UI.
+     * When invoked, it ensures that the input field is brought into the viewport of the device, making it visible
+     * to the user without manual scrolling. This feature is particularly useful in forms or long pages where
+     * the input field might not be immediately visible.
+     */
+    val timerDurationInputFocusRequester = FocusRequester()
 
     /**
      * Represents the total time remaining as a state flow string. This property combines the timer data
@@ -190,7 +215,7 @@ open class BronnBakesTimerViewModel(
             when {
                 timerData?.isPaused == true -> timerManager.resumeTimers(timerRepository)
                 timerData != null -> timerManager.pauseTimers(timerRepository)
-                else -> startTimersIfValid()
+                else -> startTimersIfValid(skipUiLogic = false)
             }
         } catch (e: Exception) {
             logException(e, errorRepository, errorLoggerProvider)
@@ -216,14 +241,17 @@ open class BronnBakesTimerViewModel(
      * for effective testing.
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    open fun startTimersIfValid() { // Also, made "open" for testing
+    open fun startTimersIfValid(skipUiLogic: Boolean) { // Also, made "open" for testing
         val setTimerDurationInputError = { error: String? ->
             timerDurationInputError = error
         }
         if (inputValidator.validateAllInputs(
                 timerDurationInput,
                 setTimerDurationInputError,
-                extraTimersUserInputsRepository
+                extraTimersUserInputsRepository,
+                this,
+                viewModelScope,
+                skipUiLogic,
             ) is Ok
         ) {
             startTimers()
@@ -365,6 +393,31 @@ open class BronnBakesTimerViewModel(
         val timerData = extraTimersUserInputsRepository.timerData.value
         val newTimerData = timerData.filter { it.id != id }
         extraTimersUserInputsRepository.updateData(newTimerData)
+    }
+
+    /**
+     * Focuses on the "Timer Duration" input field and brings it into view in the UI.
+     *
+     * This method uses `timerDurationInputFocusRequester` to programmatically set focus on the "Timer Duration" input
+     * field, and `timerDurationInputBringIntoViewRequester` to scroll it into view if it's not currently visible. This
+     * method is designed to enhance user interaction by automatically directing the user's attention to the required
+     * input field.
+     *
+     * The method's execution is dependent on the provided `CoroutineScope` and can be conditionally skipped based on
+     * the `skipUiLogic` flag, allowing flexibility in scenarios where automatic focus and scrolling are not necessary.
+     *
+     * @param coroutineScope The CoroutineScope within which the UI operations are executed.
+     * @param skipUiLogic A Boolean flag that, when true, bypasses the UI logic for efficiency.
+     */
+    @OptIn(ExperimentalFoundationApi::class)
+    fun focusOnTimerDurationInput(coroutineScope: CoroutineScope, skipUiLogic: Boolean) {
+        if (skipUiLogic) return
+        // Logic won't go here during unit tests, because this is some Android UI integration
+        // that's hard to test. So, we'll just skip it during unit tests.
+        coroutineScope.launch {
+            timerDurationInputBringIntoViewRequester.bringIntoView()
+            timerDurationInputFocusRequester.requestFocus()
+        }
     }
 }
 

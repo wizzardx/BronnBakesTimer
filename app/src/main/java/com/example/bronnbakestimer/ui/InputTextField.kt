@@ -1,10 +1,13 @@
 package com.example.bronnbakestimer.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import com.example.bronnbakestimer.util.getErrorInfoFor
 
@@ -19,16 +22,25 @@ import com.example.bronnbakestimer.util.getErrorInfoFor
  *
  * @see InputTextFieldParams
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InputTextField(params: InputTextFieldParams) {
     val (supportingText, isError) = getErrorInfoFor(params.errorMessage)
+    var modifier = params.modifier.padding(top = 8.dp)
+    if (params.bringIntoViewRequester != null) {
+        modifier = modifier.bringIntoViewRequester(params.bringIntoViewRequester)
+    }
+    if (params.focusRequester != null) {
+        modifier = modifier.focusRequester(params.focusRequester)
+    }
+
     TextField(
         value = params.value,
         onValueChange = params.onValueChange,
         keyboardOptions = KeyboardOptions(keyboardType = params.keyboardType),
         singleLine = true,
         label = { Text(text = params.labelText) },
-        modifier = params.modifier.padding(top = 8.dp),
+        modifier = modifier,
         enabled = params.enabled,
         supportingText = supportingText,
         isError = isError,

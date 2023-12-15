@@ -32,7 +32,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.koin.core.context.startKoin
@@ -40,9 +39,9 @@ import org.koin.core.context.stopKoin
 import org.mockito.MockitoAnnotations
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -176,7 +175,7 @@ class BronnBakesTimerViewModelTest {
         viewModel.updateTimerDurationInput(invalidInput)
 
         // Act
-        viewModel.startTimersIfValid()
+        viewModel.startTimersIfValid(true)
 
         // Assert
         assertNotNull(viewModel.timerDurationInputError, "Invalid input should set an error message.")
@@ -254,7 +253,7 @@ class BronnBakesTimerViewModelTest {
         ) {
             @Suppress("TooGenericExceptionThrown")
             @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-            override fun startTimersIfValid() {
+            override fun startTimersIfValid(skipUiLogic: Boolean) {
                 throw RuntimeException("Simulated Exception")
             }
         }
@@ -321,7 +320,7 @@ class BronnBakesTimerViewModelTest {
         viewModel.updateTimerDurationInput("10")
 
         // Attempt to start timers
-        viewModel.startTimersIfValid()
+        viewModel.startTimersIfValid(true)
 
         // Verify that the timers started correctly
         val timerData = mainTimerRepository.timerData.value
@@ -335,7 +334,7 @@ class BronnBakesTimerViewModelTest {
         viewModel.updateTimerDurationInput("invalid")
 
         // Attempt to start timers
-        viewModel.startTimersIfValid()
+        viewModel.startTimersIfValid(true)
 
         // Verify that the timers did not start
         val timerData = mainTimerRepository.timerData.value

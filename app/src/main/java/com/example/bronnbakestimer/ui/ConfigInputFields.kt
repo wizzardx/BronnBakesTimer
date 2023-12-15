@@ -1,5 +1,6 @@
 package com.example.bronnbakestimer.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,6 +27,7 @@ import org.koin.androidx.compose.koinViewModel
  * @param viewModel The [BronnBakesTimerViewModel] instance responsible for handling user interactions
  *                  and business logic associated with the timer.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ConfigInputFields(
     modifier: Modifier,
@@ -47,6 +49,8 @@ fun ConfigInputFields(
             modifier = modifier,
             enabled = configControlsEnabled,
             keyboardType = KeyboardType.Number,
+            focusRequester = viewModel.timerDurationInputFocusRequester,
+            bringIntoViewRequester = viewModel.timerDurationInputBringIntoViewRequester,
         )
     )
 }

@@ -1,5 +1,6 @@
 package com.example.bronnbakestimer.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -12,10 +13,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import com.example.bronnbakestimer.logic.Constants
 import com.example.bronnbakestimer.model.ExtraTimerUserInputData
 import com.example.bronnbakestimer.util.normaliseIntInput
+import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import org.koin.androidx.compose.koinViewModel
 
 /**
@@ -28,6 +29,7 @@ import org.koin.androidx.compose.koinViewModel
  * @param timerUserInputData The data representing the additional timer.
  * @param viewModel The view model responsible for managing timer data and updates.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AdditionalTimerConfig(
     modifier: Modifier,
@@ -53,6 +55,8 @@ fun AdditionalTimerConfig(
                 modifier = modifier,
                 enabled = enabled,
                 keyboardType = KeyboardType.Text,
+                bringIntoViewRequester = null,
+                focusRequester = null,
             )
         )
 
@@ -67,6 +71,8 @@ fun AdditionalTimerConfig(
                 modifier = modifier.padding(bottom = 8.dp),
                 enabled = enabled,
                 keyboardType = KeyboardType.Number,
+                focusRequester = timerUserInputData.inputs.timerDurationInputFocusRequester,
+                bringIntoViewRequester = timerUserInputData.inputs.timerDurationInputBringIntoViewRequester,
             )
         )
         // A button with the text "Remove" in it:

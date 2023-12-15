@@ -2,11 +2,24 @@ package com.example.bronnbakestimer.logic
 
 import com.example.bronnbakestimer.di.testModule
 import com.example.bronnbakestimer.model.ExtraTimerUserInputData
+import com.example.bronnbakestimer.provider.IErrorLoggerProvider
+import com.example.bronnbakestimer.repository.DefaultErrorRepository
+import com.example.bronnbakestimer.repository.DefaultExtraTimersCountdownRepository
+import com.example.bronnbakestimer.repository.DefaultTimerRepository
+import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
 import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
+import com.example.bronnbakestimer.repository.ITimerRepository
+import com.example.bronnbakestimer.util.testErrorLoggerProvider
+import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -17,7 +30,6 @@ import org.koin.core.context.stopKoin
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.junit.MockitoJUnitRunner
-import kotlin.time.Duration.Companion.seconds
 
 @Suppress("FunctionMaxLength")
 @RunWith(MockitoJUnitRunner::class)
@@ -28,16 +40,48 @@ class DefaultInputValidatorTest {
 
     private lateinit var defaultInputValidator: DefaultInputValidator
 
+    private lateinit var viewModel: BronnBakesTimerViewModel
+    private val testDispatcher = StandardTestDispatcher()
+    private lateinit var mainTimerRepository: ITimerRepository
+    private lateinit var extraTimersCountdownRepository: IExtraTimersCountdownRepository
+    private lateinit var errorRepository: DefaultErrorRepository
+    private lateinit var timerManager: DefaultTimerManager
+    private lateinit var inputValidator: DefaultInputValidator
+    private lateinit var errorLoggerProvider: IErrorLoggerProvider
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setUp() {
         startKoin {
             modules(testModule)
         }
         defaultInputValidator = DefaultInputValidator()
+
+        Dispatchers.setMain(testDispatcher)
+
+        mainTimerRepository = DefaultTimerRepository()
+        extraTimersCountdownRepository = DefaultExtraTimersCountdownRepository()
+        errorRepository = DefaultErrorRepository()
+        timerManager = DefaultTimerManager()
+        inputValidator = DefaultInputValidator()
+        errorLoggerProvider = testErrorLoggerProvider
+
+        viewModel = BronnBakesTimerViewModel(
+            mainTimerRepository,
+            timerManager,
+            inputValidator,
+            extraTimersUserInputRepository,
+            extraTimersCountdownRepository,
+            errorRepository,
+            errorLoggerProvider,
+        )
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @After
     fun tearDown() {
+        // Any cleanup code if needed
+        Dispatchers.resetMain()
         stopKoin()
     }
 
@@ -50,7 +94,10 @@ class DefaultInputValidatorTest {
         val result = defaultInputValidator.validateAllInputs(
             timerDurationInput,
             setTimerDurationInputError,
-            extraTimersUserInputRepository
+            extraTimersUserInputRepository,
+            viewModel,
+            this,
+            true,
         )
 
         // Check that the result is Valid
@@ -67,7 +114,10 @@ class DefaultInputValidatorTest {
         val result = defaultInputValidator.validateAllInputs(
             timerDurationInput,
             setTimerDurationInputError,
-            extraTimersUserInputRepository
+            extraTimersUserInputRepository,
+            viewModel,
+            this,
+            true,
         )
 
         // Check that the result is Invalid and error message is not empty
@@ -89,7 +139,10 @@ class DefaultInputValidatorTest {
         val result = defaultInputValidator.validateAllInputs(
             timerDurationInput,
             setTimerDurationInputError,
-            extraTimersUserInputRepository
+            extraTimersUserInputRepository,
+            viewModel,
+            this,
+            true,
         )
 
         // Check that the result is Invalid and timer duration input error is not empty
@@ -99,7 +152,7 @@ class DefaultInputValidatorTest {
 
     @Test
     fun validatesAllInputsReturnsInvalidWhenExtraTimerDurationIsGreaterThanMainTimerDuration() =
-        runTest(timeout = 1000.seconds) { // TODO: Remove this timeout
+        runTest {
             val mainTimerDurationInput = MutableStateFlow("10") // 10 seconds
             val setMainTimerDurationInputError: (String?) -> Unit = {}
 
@@ -112,7 +165,10 @@ class DefaultInputValidatorTest {
             val result = defaultInputValidator.validateAllInputs(
                 mainTimerDurationInput,
                 setMainTimerDurationInputError,
-                extraTimersUserInputRepository
+                extraTimersUserInputRepository,
+                viewModel,
+                this,
+                true,
             )
 
             // Check that the result is Invalid
@@ -137,7 +193,10 @@ class DefaultInputValidatorTest {
         val result = defaultInputValidator.validateAllInputs(
             mainTimerDurationInput,
             setMainTimerDurationInputError,
-            extraTimersUserInputRepository
+            extraTimersUserInputRepository,
+            viewModel,
+            this,
+            true,
         )
 
         // Check that the result is Valid
@@ -166,7 +225,10 @@ class DefaultInputValidatorTest {
         defaultInputValidator.validateAllInputs(
             validTimerDurationInput,
             { _ -> }, // Mock or implement as needed
-            extraTimersUserInputsRepository
+            extraTimersUserInputsRepository,
+            viewModel,
+            this,
+            true,
         )
 
         // Assert that the error messages are cleared

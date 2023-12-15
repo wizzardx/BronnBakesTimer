@@ -1,7 +1,4 @@
 
-* In validateAllInputs, set focus to the first control that has errors in the input. Also, scroll
-  the vertical column so that it's visible?
-
 * Look at slower tests and speed them up.
 
 * On timer completion, display a visible flag (temporarily?) next to the timer.

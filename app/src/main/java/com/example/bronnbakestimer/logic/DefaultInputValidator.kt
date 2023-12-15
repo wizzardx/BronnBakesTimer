@@ -4,10 +4,12 @@ import com.example.bronnbakestimer.model.ExtraTimerUserInputData
 import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
 import com.example.bronnbakestimer.util.Seconds
 import com.example.bronnbakestimer.util.userInputToSeconds
+import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.map
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -39,18 +41,13 @@ import kotlinx.coroutines.flow.StateFlow
  */
 class DefaultInputValidator : IInputValidator {
 
-    /**
-     * Validates all input parameters and returns a Result indicating success or failure.
-     *
-     * @param timerDurationInput The main timer duration input as a StateFlow of String.
-     * @param setTimerDurationInputError A function to set the timer duration input error message.
-     * @param extraTimersUserInputsRepository The repository for extra timer inputs.
-     * @return A Result indicating success (Ok) or failure (Err) with an error message.
-     */
     override fun validateAllInputs(
         timerDurationInput: StateFlow<String>,
         setTimerDurationInputError: (String?) -> Unit,
-        extraTimersUserInputsRepository: IExtraTimersUserInputsRepository
+        extraTimersUserInputsRepository: IExtraTimersUserInputsRepository,
+        viewModel: BronnBakesTimerViewModel,
+        coroutineScope: CoroutineScope,
+        skipUiLogic: Boolean,
     ): Result<Unit, String> {
         // Clear out errors in the UI:
         setTimerDurationInputError(null)
@@ -67,6 +64,8 @@ class DefaultInputValidator : IInputValidator {
         // Update user input error feedback label string:
         if (result is Err) {
             setTimerDurationInputError(result.error)
+            // Set focus and scroll to the main timer duration input:
+            viewModel.focusOnTimerDurationInput(coroutineScope = coroutineScope, skipUiLogic = skipUiLogic)
         } else {
             setTimerDurationInputError(null)
         }
@@ -74,6 +73,11 @@ class DefaultInputValidator : IInputValidator {
         for (extraTimer in extraTimersUserInputsRepository.timerData.value) {
             val validateResult: Result<Unit, String> = validateExtraTimerInputs(extraTimer, maybeMainTimerSeconds)
             if (validateResult is Err && result is Ok) {
+                // Set focus and scroll to the main timer duration input:
+                extraTimer.inputs.focusOnTimerDurationInput(
+                    coroutineScope = coroutineScope,
+                    skipUiLogic = skipUiLogic
+                )
                 result = validateResult
             }
         }
