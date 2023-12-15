@@ -29,6 +29,18 @@ interface ITimerRepository {
     val secondsRemaining: StateFlow<Seconds?>
 
     /**
+     * A [StateFlow] of [Boolean] indicating whether the timer has completed its countdown.
+     *
+     * This property emits a `true` value when the timer finishes its countdown, and `false` otherwise.
+     * It serves as a real-time indicator for the completion status of the timer, essential for UI components
+     * and other logic that need to respond to the timer's completion. The flow may emit `null` if the timer's
+     * completion status is uninitialized, such as when the timer is reset or paused.
+     * This StateFlow is updated by the TimerService class upon the completion of the timer, ensuring that
+     * all observing components receive consistent and up-to-date information about the timer's status.
+     */
+    val timerCompleted: StateFlow<Boolean?>
+
+    /**
      * Updates the current state of the timer with the provided [newData].
      * If [newData] is `null`, it signifies that the timer state is not initialized.
      *

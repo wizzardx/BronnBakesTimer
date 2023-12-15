@@ -412,9 +412,9 @@ class InvalidTimerDurationException(message: String) : Exception(message)
  */
 fun myProfiler(
     times: Int = 1,
-    block: () -> Unit,
     timeProvider: () -> Long = System::currentTimeMillis,
-    printFunction: (String) -> Unit = ::println
+    printFunction: (String) -> Unit = ::println,
+    block: () -> Unit,
 ) {
     val totalTimes = if (times > 0) times else 1 // Ensure at least one execution
     val startTime = timeProvider()

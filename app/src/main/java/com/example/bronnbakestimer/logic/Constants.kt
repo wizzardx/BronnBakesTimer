@@ -50,7 +50,7 @@ object Constants {
      *
      * Value: 500 milliseconds (0.5 seconds)
      */
-    const val HALF_SECOND_MILLIS: Long = 500L
+    const val HALF_SECOND_MILLIS: Long = 500
 }
 
 /**

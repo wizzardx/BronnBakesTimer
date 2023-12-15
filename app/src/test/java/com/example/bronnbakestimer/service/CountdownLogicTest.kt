@@ -149,7 +149,6 @@ class CountdownLogicTest {
             millisecondsRemaining = 5000,
             isPaused = true,
             isFinished = false,
-            beepTriggered = false
         )
         timerRepository.updateData(pausedTimerData)
 
@@ -177,7 +176,6 @@ class CountdownLogicTest {
             millisecondsRemaining = 0,
             isPaused = false,
             isFinished = true,
-            beepTriggered = false
         )
         timerRepository.updateData(finishedTimerData)
 
@@ -231,7 +229,7 @@ class CountdownLogicTest {
         // Set initial timer state with millisecondsRemaining slightly more than the increment amount
         val incrementAmount = 50 // Increment amount less than SmallDelay, as Int
         val initialMilliseconds: Int = incrementAmount + 10 // Slightly more than incrementAmount, as Int
-        val timerData = TimerData(initialMilliseconds, isPaused = false, isFinished = false, beepTriggered = false)
+        val timerData = TimerData(initialMilliseconds, isPaused = false, isFinished = false)
         timerRepository.updateData(timerData)
 
         // Set a custom time increment
@@ -268,7 +266,6 @@ class CountdownLogicTest {
                 millisecondsRemaining = initialMilliseconds,
                 isPaused = false,
                 isFinished = false,
-                beepTriggered = false
             )
 
         timerRepository.updateData(timerData)
@@ -287,9 +284,23 @@ class CountdownLogicTest {
             // Allow our check here to be out by about 100ms, as a buffer:
             val buffer = 100
             val updatedState = timerRepository.timerData.value!!
-            val expectedMaxValue = initialMilliseconds - i * timeToAdvance + buffer
-            assertTrue(updatedState.millisecondsRemaining <= expectedMaxValue)
-            assertFalse(updatedState.isFinished)
+            var expectedValue = initialMilliseconds - i * timeToAdvance.toInt() + buffer
+
+            // When the timer gets just below 1000ms, then it ends early, because we need to
+            // end at the same time that the user starts seeing 00:00.
+            if (expectedValue < 1000) {
+                expectedValue = 900
+            }
+
+            assertEquals(expectedValue, updatedState.millisecondsRemaining)
+            // On the 5th iteration, when we hit 900 ms, then the timer also finishes up abruptly.
+            if (i == 5) {
+                assertTrue(updatedState.isFinished)
+            } else {
+                assertFalse(updatedState.isFinished)
+            }
+
+            // THe beep plays at the same time as we we finish, which is when the UI starts showing 00:00
             if (updatedState.millisecondsRemaining < 1000) {
                 assertTrue(mediaPlayerWrapper.beepPlayed)
             }
@@ -320,7 +331,6 @@ class CountdownLogicTest {
                 millisecondsRemaining = initialMilliseconds,
                 isPaused = true,
                 isFinished = false,
-                beepTriggered = false
             )
         timerRepository.updateData(pausedTimerData)
 
@@ -358,7 +368,6 @@ class CountdownLogicTest {
                 millisecondsRemaining = 0,
                 isPaused = false,
                 isFinished = true,
-                beepTriggered = false
             )
         timerRepository.updateData(finishedTimerData)
 
@@ -392,7 +401,7 @@ class CountdownLogicTest {
         }
 
         // Initialize the main timer in timerRepository
-        val mainTimerData = TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false)
+        val mainTimerData = TimerData(10_000, isPaused = false, isFinished = false)
         timerRepository.updateData(mainTimerData)
 
         // Create and add ExtraTimerData instances to extraTimersRepository
@@ -400,14 +409,14 @@ class CountdownLogicTest {
             put(
                 TimerUserInputDataId.randomId(),
                 SingleTimerCountdownData(
-                    TimerData(3000, isPaused = false, isFinished = false, beepTriggered = false),
+                    TimerData(3000, isPaused = false, isFinished = false),
                     TimerUserInputDataId.randomId()
                 )
             )
             put(
                 TimerUserInputDataId.randomId(),
                 SingleTimerCountdownData(
-                    TimerData(5000, isPaused = false, isFinished = false, beepTriggered = false),
+                    TimerData(5000, isPaused = false, isFinished = false),
                     TimerUserInputDataId.randomId()
                 )
             )
@@ -451,7 +460,6 @@ class CountdownLogicTest {
             millisecondsRemaining = 5000,
             isPaused = false,
             isFinished = false,
-            beepTriggered = false
         )
 
         // Create main timer get/set lambda
@@ -465,21 +473,21 @@ class CountdownLogicTest {
             put(
                 TimerUserInputDataId.randomId(),
                 SingleTimerCountdownData(
-                    TimerData(3000, isPaused = false, isFinished = false, beepTriggered = false),
+                    TimerData(3000, isPaused = false, isFinished = false),
                     TimerUserInputDataId.randomId()
                 )
             )
             put(
                 TimerUserInputDataId.randomId(),
                 SingleTimerCountdownData(
-                    TimerData(2000, isPaused = true, isFinished = false, beepTriggered = false),
+                    TimerData(2000, isPaused = true, isFinished = false),
                     TimerUserInputDataId.randomId()
                 )
             )
             put(
                 TimerUserInputDataId.randomId(),
                 SingleTimerCountdownData(
-                    TimerData(1000, isPaused = false, isFinished = true, beepTriggered = false),
+                    TimerData(1000, isPaused = false, isFinished = true),
                     TimerUserInputDataId.randomId()
                 )
             )
@@ -498,7 +506,7 @@ class CountdownLogicTest {
         )
 
         // First lambda should correspond to main timer
-        val (mainGet, mainSet) = lambdaList[0]
+        val (mainGet, _) = lambdaList[0]
         assertEquals(mainTimerState, mainGet(), "Main timer lambda should return correct timer state")
 
         // Remaining lambdas should correspond to extra timers
@@ -509,7 +517,7 @@ class CountdownLogicTest {
             assertEquals(timerData.data, getLambda(), "Extra timer lambda should return correct timer state")
 
             // Test updating the timer state
-            val updatedTimerData = TimerData(1234, isPaused = true, isFinished = false, beepTriggered = false)
+            val updatedTimerData = TimerData(1234, isPaused = true, isFinished = false)
             setLambda(updatedTimerData)
             assertEquals(
                 updatedTimerData,
@@ -534,7 +542,6 @@ class CountdownLogicTest {
             millisecondsRemaining = 5000,
             isPaused = false,
             isFinished = false,
-            beepTriggered = false
         )
 
         // Create main timer get/set lambda
@@ -562,7 +569,6 @@ class CountdownLogicTest {
             millisecondsRemaining = 4000,
             isPaused = true,
             isFinished = false,
-            beepTriggered = false
         )
         mainSet(updatedState)
         assertEquals(updatedState, mainGet(), "The main timer set lambda should update the timer state correctly")

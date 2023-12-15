@@ -3,7 +3,6 @@ package com.example.bronnbakestimer.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.bronnbakestimer.di.appModule
-import com.example.bronnbakestimer.ui.BronnBakesTimer
 import com.example.bronnbakestimer.ui.theme.BronnBakesTimerTheme
 import org.koin.core.context.startKoin
 

@@ -118,7 +118,7 @@ class BronnBakesTimerViewModelTest {
     @Test
     fun `configControlsEnabled is false when timer is active`() = runTest {
         // Arrange: Simulate an active timer
-        val activeTimerData = TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false)
+        val activeTimerData = TimerData(10_000, isPaused = false, isFinished = false)
         mainTimerRepository.updateData(activeTimerData)
 
         // Act: Collect the latest value of configControlsEnabled
@@ -157,7 +157,7 @@ class BronnBakesTimerViewModelTest {
     @Test
     fun testOnButtonClick_PauseAndResumeTimers() = runTest {
         // Start the timer first
-        mainTimerRepository.updateData(TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false))
+        mainTimerRepository.updateData(TimerData(10_000, isPaused = false, isFinished = false))
 
         // Simulate pausing timers
         viewModel.onButtonClick()
@@ -344,7 +344,7 @@ class BronnBakesTimerViewModelTest {
     @Test
     fun testTimerResetFunctionality() = runTest {
         // Setup and start timers
-        val timerData = TimerData(10_000, isPaused = false, isFinished = false, beepTriggered = false)
+        val timerData = TimerData(10_000, isPaused = false, isFinished = false)
         mainTimerRepository.updateData(timerData)
 
         // Call onResetClick to reset timers
@@ -400,7 +400,6 @@ class BronnBakesTimerViewModelTest {
             data = TimerData(
                 millisecondsRemaining = 60_000,
                 isPaused = false,
-                beepTriggered = false,
                 isFinished = false
             ),
             useInputTimerId = extraTimerIdNotInInputs

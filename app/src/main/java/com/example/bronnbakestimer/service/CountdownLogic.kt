@@ -103,26 +103,32 @@ class CountdownLogic(
 
         // Set flags based on the current timings.
 
-        // Set a flag if we've just reached the end of the current interval.
-        val timerJustEnded = newMillisecondsRemaining <= 0
+        // The timer ends when the user sees 00:00 (which might still be 999 ms), rather than
+        // when the ms reaches 0. We don't want the user to see 00:00 for 999ms before triggering
+        // beeps, vibrates, other feedback, etc
+        val timerEnded = newMillisecondsRemaining < Constants.MILLISECONDS_PER_SECOND
+        val timerJustEnded = timerEnded && !state.isFinished
 
-        // If the time remaining in the interval is
-        // less than 1000 milliseconds, and we haven't triggered the beep yet, then trigger
-        // the beep now:
         if (
-            newMillisecondsRemaining < Constants.MILLISECONDS_PER_SECOND &&
-            !state.beepTriggered
+            timerJustEnded
         ) {
-            mediaPlayerWrapper.playBeep()
+            check(!state.isFinished) { "Timer state is unexpectedly finished" }
+
+            // It shouldn't ever be the case that we've already played the beep already, but in tests
+            // it's possible that things were setup that way, so we'll just check for that now
+            // anyway
+            if (!state.beepTriggered) {
+                mediaPlayerWrapper.playBeep()
+            }
+
             // Vibrate the phone too:
             phoneVibrator.vibrate()
-            // Update state to reflect that we've triggered the beep:
-            state = state.copy(beepTriggered = true)
-        }
 
-        // If the entire workout just ended then:
-        if (timerJustEnded) {
-            state = state.copy(isFinished = true)
+            // Update state to reflect that we've triggered the beep, and that the timer countdown has completed:
+            state = state.copy(
+                beepTriggered = true,
+                isFinished = true,
+            )
         }
 
         // Update the timer state:

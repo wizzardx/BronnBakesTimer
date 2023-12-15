@@ -41,13 +41,13 @@ class DefaultTimerRepository : ITimerRepository {
 
     private val _secondsRemaining = MutableStateFlow<Seconds?>(null)
 
-    /**
-     * A read-only [StateFlow] that emits the current state of the timer.
-     * It can be `null` if the timer state has not been initialized.
-     */
+    private val _timerCompleted = MutableStateFlow<Boolean?>(null)
+
     override val timerData: StateFlow<TimerData?> = _timerData
 
     override val secondsRemaining: StateFlow<Seconds?> = _secondsRemaining
+
+    override val timerCompleted: StateFlow<Boolean?> = _timerCompleted
 
     /**
      * Updates the current state of the timer.
@@ -69,9 +69,22 @@ class DefaultTimerRepository : ITimerRepository {
         _timerData.value = newData // Atomic and thread-safe update
 
         // Also update _secondsRemaining, based on data in newData.
-        val newValue = newData?.let { Seconds(it.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND) }
-        if (newValue != _secondsRemaining.value) {
-            _secondsRemaining.value = newValue
+        val updatedSecondsRemaining = calcUpdatedSecsRemain(newData)
+        if (updatedSecondsRemaining != _secondsRemaining.value) {
+            _secondsRemaining.value = updatedSecondsRemaining
+        }
+
+        // Update "timer completed" stateflow, based on data in newData.
+        val updatedTimerCompleted = isTimerCompleted(newData)
+        if (updatedTimerCompleted != _timerCompleted.value) {
+            _timerCompleted.value = updatedTimerCompleted
         }
     }
+
+    // Function to calculate updated seconds remaining
+    private fun calcUpdatedSecsRemain(newData: TimerData?): Seconds? =
+        newData?.let { Seconds(it.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND) }
+
+    // Function to determine if the timer is completed
+    private fun isTimerCompleted(newData: TimerData?): Boolean? = newData?.isFinished
 }

@@ -143,7 +143,6 @@ class UtilsKtTest {
     fun `getStartPauseResumeButtonText returns Resume when timerData isPaused is true`() {
         val timerData = TimerData(
             isPaused = true,
-            beepTriggered = false,
             isFinished = false,
             millisecondsRemaining = 0
         )
@@ -155,7 +154,6 @@ class UtilsKtTest {
     fun `getStartPauseResumeButtonText returns Pause when timerData isPaused is false`() {
         val timerData = TimerData(
             isPaused = false,
-            beepTriggered = false,
             isFinished = false,
             millisecondsRemaining = 0
         )
@@ -263,7 +261,6 @@ class UtilsKtTest {
         // Create a non-null TimerData instance with a specific millisecondsRemaining value
         val timerData = TimerData(
             isPaused = false,
-            beepTriggered = false,
             isFinished = false,
             millisecondsRemaining = 30_000 // 30 seconds remaining
         )
@@ -289,7 +286,6 @@ class UtilsKtTest {
     fun `formatTotalTimeRemainingString returns correct format when timerData is not null`() {
         val timerData = TimerData(
             isPaused = false,
-            beepTriggered = false,
             isFinished = false,
             millisecondsRemaining = 60_000
         )

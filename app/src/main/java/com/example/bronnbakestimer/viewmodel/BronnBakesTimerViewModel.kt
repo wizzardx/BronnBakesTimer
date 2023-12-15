@@ -294,7 +294,6 @@ open class BronnBakesTimerViewModel(
             TimerData(
                 millisecondsRemaining = currentMainTimerMillis,
                 isPaused = false,
-                beepTriggered = false,
                 isFinished = false,
             )
         )
@@ -332,7 +331,6 @@ open class BronnBakesTimerViewModel(
                     data = TimerData(
                         millisecondsRemaining = currentExtraTimerMillis,
                         isPaused = false,
-                        beepTriggered = false,
                         isFinished = false,
                     ),
                     useInputTimerId = timer.id,
