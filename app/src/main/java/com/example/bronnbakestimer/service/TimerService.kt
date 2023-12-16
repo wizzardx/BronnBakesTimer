@@ -61,13 +61,19 @@ class TimerService : Service() {
 
     override fun onBind(intent: Intent): IBinder? = null
 
+    @Suppress("TooGenericExceptionCaught")
     override fun onCreate() {
-        super.onCreate()
+        try {
+            super.onCreate()
 
-        val titleFlow = MutableStateFlow("BronnBakes Timer")
-        val contentFlow = viewModel.totalTimeRemainingString
-        NotificationHelper(this).launchNotification(this, titleFlow, contentFlow, serviceScope)
-        startCountdown()
+            val titleFlow = MutableStateFlow("BronnBakes Timer")
+            val contentFlow = viewModel.totalTimeRemainingString
+            NotificationHelper(this).launchNotification(this, titleFlow, contentFlow, serviceScope)
+            startCountdown()
+        } catch (e: Exception) {
+            // Log any exceptions that occur during the button click processing
+            logException(e, errorRepository, errorLoggerProvider)
+        }
     }
 
     override fun onStartCommand(
@@ -78,49 +84,66 @@ class TimerService : Service() {
 
     @Suppress("TooGenericExceptionCaught", "InstanceOfCheckForException")
     private fun startCountdown() {
-        val timeController = RealTimeController()
-        val countdownLogic =
-            CountdownLogic(
-                timerRepository,
-                mediaPlayerWrapper,
-                coroutineScopeProvider,
-                timeController,
-                extraTimersCountdownRepository,
-                phoneVibrator,
-            )
-        val dispatcher = Dispatchers.Default
-        coroutineScopeProvider.launch(dispatcher + CoroutineUtils.sharedExceptionHandler) {
-            try {
-                timeController.setDelayLambda({ delay(it) }, this)
-                countdownLogic.execute(this)
-            } catch (e: Exception) {
-                if (e is CancellationException) {
-                    // Re-throw JobCancellationException to allow the coroutine to handle cancellation normally
-                    throw e
-                } else {
-                    // Handle other exceptions
-                    logException(e, errorRepository, errorLoggerProvider)
+        try {
+            val timeController = RealTimeController()
+            val countdownLogic =
+                CountdownLogic(
+                    timerRepository,
+                    mediaPlayerWrapper,
+                    coroutineScopeProvider,
+                    timeController,
+                    extraTimersCountdownRepository,
+                    phoneVibrator,
+                )
+            val dispatcher = Dispatchers.Default
+            coroutineScopeProvider.launch(dispatcher + CoroutineUtils.sharedExceptionHandler) {
+                try {
+                    timeController.setDelayLambda({ delay(it) }, this)
+                    countdownLogic.execute(this)
+                } catch (e: Exception) {
+                    if (e is CancellationException) {
+                        // Re-throw JobCancellationException to allow the coroutine to handle cancellation normally
+                        throw e
+                    } else {
+                        // Handle other exceptions
+                        logException(e, errorRepository, errorLoggerProvider)
+                    }
                 }
             }
+        } catch (e: Exception) {
+            // Log any exceptions that occur during the button click processing
+            logException(e, errorRepository, errorLoggerProvider)
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     override fun onDestroy() {
-        super.onDestroy()
-        serviceScope.cancel() // Cancel the scope when service is destroyed
+        try {
+            super.onDestroy()
+            serviceScope.cancel() // Cancel the scope when service is destroyed
 
-        // Release resources when the service is destroyed
-        mediaPlayerWrapper.release()
-        coroutineScopeProvider.coroutineScope.cancel()
+            // Release resources when the service is destroyed
+            mediaPlayerWrapper.release()
+            coroutineScopeProvider.coroutineScope.cancel()
 
-        // Use the newer stopForeground method
-        // STOP_FOREGROUND_REMOVE = 1 or STOP_FOREGROUND_DETACH = 2
-        stopForeground(STOP_FOREGROUND_REMOVE)
+            // Use the newer stopForeground method
+            // STOP_FOREGROUND_REMOVE = 1 or STOP_FOREGROUND_DETACH = 2
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } catch (e: Exception) {
+            // Log any exceptions that occur during the button click processing
+            logException(e, errorRepository, errorLoggerProvider)
+        }
     }
 
+    @Suppress("TooGenericExceptionCaught")
     override fun onTaskRemoved(rootIntent: Intent) {
-        super.onTaskRemoved(rootIntent)
-        // Stop the service when the app is removed from recent apps
-        stopSelf()
+        try {
+            super.onTaskRemoved(rootIntent)
+            // Stop the service when the app is removed from recent apps
+            stopSelf()
+        } catch (e: Exception) {
+            // Log any exceptions that occur during the button click processing
+            logException(e, errorRepository, errorLoggerProvider)
+        }
     }
 }
