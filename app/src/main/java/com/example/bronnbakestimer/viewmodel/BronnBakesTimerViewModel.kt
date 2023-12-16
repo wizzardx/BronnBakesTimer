@@ -325,7 +325,10 @@ open class BronnBakesTimerViewModel(
             // Clear error message displayed at the bottom of the screen:
             errorRepository.updateData(null)
 
-            // And also clear out the countdown-related data for the timers:
+            // Clear out error messages associated with main timer user input:
+            timerDurationInputError = null
+
+            // Clear out the countdown-related data for the timers:
             timerManager.clearResources(mainTimerRepository, extraTimersCountdownRepository)
         } catch (e: Exception) {
             logException(e, errorRepository, errorLoggerProvider)

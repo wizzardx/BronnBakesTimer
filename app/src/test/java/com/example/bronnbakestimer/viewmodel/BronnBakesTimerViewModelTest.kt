@@ -600,4 +600,19 @@ class BronnBakesTimerViewModelTest {
         // Assert: Error message should be cleared
         assertNull(errorRepository.errorMessage.value, "Error message should be cleared after pressing Reset.")
     }
+
+    @Test
+    fun testResetButtonClearsMainTimerInputError() = runTest {
+        // Arrange: Set an error for the main timer input
+        viewModel.timerDurationInputError = "Main timer input error"
+
+        // Pre-check: Verify that the main timer input error is initially set
+        assertNotNull(viewModel.timerDurationInputError, "Main timer input error should initially be set.")
+
+        // Act: Simulate pressing the Reset button
+        viewModel.onResetClick()
+
+        // Assert: Main timer input error should be cleared
+        assertNull(viewModel.timerDurationInputError, "Main timer input error should be cleared after pressing Reset.")
+    }
 }
