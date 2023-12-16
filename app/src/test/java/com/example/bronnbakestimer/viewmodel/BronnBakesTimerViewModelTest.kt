@@ -570,4 +570,19 @@ class BronnBakesTimerViewModelTest {
                 "Error message at the bottom of the screen should not be set incorrectly.",
             )
         }
+
+    @Test
+    fun testStartButtonClearsBottomScreenError() = runTest {
+        // Arrange: Set an error message
+        errorRepository.updateData("Test error message")
+
+        // Pre-check: Verify that the error message is initially set
+        assertNotNull(errorRepository.errorMessage.value, "Error message should initially be set.")
+
+        // Act: Simulate pressing the Start button
+        viewModel.onButtonClick() // Assuming this method is connected to the Start button functionality
+
+        // Assert: Error message should be cleared
+        assertNull(errorRepository.errorMessage.value, "Error message should be cleared after pressing Start.")
+    }
 }

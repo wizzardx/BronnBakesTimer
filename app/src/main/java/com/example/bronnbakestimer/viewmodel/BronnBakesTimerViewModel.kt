@@ -214,6 +214,9 @@ open class BronnBakesTimerViewModel(
     @Suppress("TooGenericExceptionCaught")
     fun onButtonClick() {
         try {
+            // Clear out any error message that's currently set in the bottom of the screen:
+            errorRepository.updateData(null)
+
             // Retrieve the current state of the main timer
             val timerData = mainTimerRepository.timerData.value
 
