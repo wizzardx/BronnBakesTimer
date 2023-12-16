@@ -211,7 +211,8 @@ class CountdownLogicTest {
                     millisecondsRemaining = 500,
                     isPaused = false,
                     isFinished = false,
-                    beepTriggered = true, // Beep has already been triggered
+                    // Beep has already been triggered:
+                    beepTriggered = true,
                 )
             timerRepository.updateData(beepTriggeredTimerData)
 

@@ -24,6 +24,7 @@ import com.example.bronnbakestimer.util.getErrorInfoFor
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
+@Suppress("FunctionName")
 fun InputTextField(params: InputTextFieldParams) {
     val (supportingText, isError) = getErrorInfoFor(params.errorMessage)
     var modifier = params.modifier.padding(top = 8.dp)

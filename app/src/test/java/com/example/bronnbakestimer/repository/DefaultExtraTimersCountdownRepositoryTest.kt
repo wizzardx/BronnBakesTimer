@@ -28,7 +28,8 @@ class DefaultExtraTimersCountdownRepositoryTest {
             val timerId = TimerUserInputDataId.randomId()
             val timerData =
                 SingleTimerCountdownData(
-                    data = TimerData(millisecondsRemaining = 120_000), // 2 minutes in milliseconds
+                    // 2 minutes in milliseconds:
+                    data = TimerData(millisecondsRemaining = 120_000),
                     useInputTimerId = timerId,
                 )
             val newData =

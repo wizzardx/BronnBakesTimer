@@ -17,7 +17,6 @@ import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
 import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
 import com.example.bronnbakestimer.repository.IMainTimerRepository
 import com.example.bronnbakestimer.service.ITimerManager
-import com.example.bronnbakestimer.util.InvalidTimerDurationException
 import com.example.bronnbakestimer.util.Seconds
 import com.example.bronnbakestimer.util.TimerUserInputDataId
 import com.example.bronnbakestimer.util.formatMinSec
@@ -256,9 +255,15 @@ open class BronnBakesTimerViewModel(
      */
     open fun startTimersIfValid(skipUiLogic: Boolean) {
         // Handling the result of the validation
-        when (val validationResult = validateTimerInput(skipUiLogic)) {
-            is Ok -> initializeAndStartTimers()
-            is Err -> handleInvalidTimerInput(validationResult.error)
+        when (validateTimerInput(skipUiLogic)) {
+            is Ok -> {
+                initializeAndStartTimers()
+            }
+            is Err -> {
+                // We did validation failure handling within the validateTimerInput function,
+                // including setting flags on UI controls there, so we don't need to do anything
+                // here.
+            }
         }
     }
 
@@ -290,18 +295,6 @@ open class BronnBakesTimerViewModel(
     private fun initializeAndStartTimers() {
         // Initialize and start the timers with the current timer duration input
         timerManager.initializeAndStartTimers(timerDurationInput)
-    }
-
-    /**
-     * Handles the scenario when the timer input is invalid.
-     *
-     * @param errorMessage The error message to be processed.
-     */
-    @Suppress("CommentOverPrivateFunction")
-    private fun handleInvalidTimerInput(errorMessage: String) {
-        // Handling the invalid timer input, like updating the UI or logging the error
-        timerDurationInputError(errorMessage)
-        throw InvalidTimerDurationException("Invalid timer duration input: $errorMessage")
     }
 
     // Sets the error message for the timer duration input.

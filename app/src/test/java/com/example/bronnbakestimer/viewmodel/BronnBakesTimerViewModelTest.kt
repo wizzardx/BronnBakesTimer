@@ -19,7 +19,6 @@ import com.example.bronnbakestimer.service.DefaultTimerManager
 import com.example.bronnbakestimer.service.ITimerManager
 import com.example.bronnbakestimer.service.SingleTimerCountdownData
 import com.example.bronnbakestimer.service.TimerData
-import com.example.bronnbakestimer.util.InvalidTimerDurationException
 import com.example.bronnbakestimer.util.Seconds
 import com.example.bronnbakestimer.util.TimerUserInputDataId
 import com.example.bronnbakestimer.util.testErrorLoggerProvider
@@ -34,12 +33,12 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.mockito.MockitoAnnotations
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -76,7 +75,8 @@ class BronnBakesTimerViewModelTest {
         extraTimersUserInputRepository = DefaultExtraTimersUserInputsRepository()
         extraTimersCountdownRepository = DefaultExtraTimersCountdownRepository()
         errorRepository = DefaultErrorRepository()
-        timerManager = DefaultTimerManager(mainTimerRepository, extraTimersCountdownRepository, extraTimersUserInputRepository)
+        timerManager =
+            DefaultTimerManager(mainTimerRepository, extraTimersCountdownRepository, extraTimersUserInputRepository)
         inputValidator = DefaultInputValidator()
         errorLoggerProvider = testErrorLoggerProvider
 
@@ -181,9 +181,7 @@ class BronnBakesTimerViewModelTest {
             viewModel.updateTimerDurationInput(invalidInput)
 
             // Act
-            assertFailsWith<InvalidTimerDurationException> {
-                viewModel.startTimersIfValid(true)
-            }
+            viewModel.startTimersIfValid(true)
 
             // Assert
             assertNotNull(viewModel.timerDurationInputError, "Invalid input should set an error message.")
@@ -204,7 +202,7 @@ class BronnBakesTimerViewModelTest {
                 viewModel.extraTimerRemainingTime(
                     extraTimerUserInputData,
                     extraTimerRemainingSeconds,
-                    viewModel.timerDurationInput, // Assuming this is how you get the timer duration input
+                    viewModel.timerDurationInput,
                     mainTimerSecondsRemaining,
                 )
 
@@ -231,7 +229,7 @@ class BronnBakesTimerViewModelTest {
                 viewModel.extraTimerRemainingTime(
                     extraTimerUserInputData,
                     extraTimerRemainingSeconds,
-                    viewModel.timerDurationInput, // Assuming this is how you get the timer duration input
+                    viewModel.timerDurationInput,
                     mainTimerSecondsRemaining,
                 )
 
@@ -354,9 +352,7 @@ class BronnBakesTimerViewModelTest {
             viewModel.updateTimerDurationInput("invalid")
 
             // Attempt to start timers
-            assertFailsWith<InvalidTimerDurationException> {
-                viewModel.startTimersIfValid(true)
-            }
+            viewModel.startTimersIfValid(true)
 
             // Verify that the timers did not start
             val timerData = mainTimerRepository.timerData.value
@@ -503,7 +499,8 @@ class BronnBakesTimerViewModelTest {
                 )
             val existingTimerCountdownData =
                 SingleTimerCountdownData(
-                    data = TimerData(millisecondsRemaining = 3 * 60 * 1000), // 3 minutes in milliseconds
+                    // 3 minutes in milliseconds:
+                    data = TimerData(millisecondsRemaining = 3 * 60 * 1000),
                     useInputTimerId = existingExtraTimerId,
                 )
 
@@ -533,54 +530,6 @@ class BronnBakesTimerViewModelTest {
         }
 
     @Test
-    fun testStartTimersIfValid_ThrowsInvalidTimerDurationExceptionOnInvalidInput() =
-        runTest {
-            // Arrange: Set an invalid timer duration input that will cause userInputToMillis to return Err
-            val invalidInput = "invalid"
-            viewModel.updateTimerDurationInput(invalidInput)
-
-            // Act & Assert: Expect the InvalidTimerDurationException to be thrown
-            val exception =
-                assertFailsWith<InvalidTimerDurationException> {
-                    viewModel.startTimersIfValid(true)
-                }
-
-            // Verify that the exception message contains the expected error message
-            assertTrue(
-                exception.message?.contains("Invalid timer duration input") == true,
-                "Exception message should indicate invalid timer duration input.",
-            )
-        }
-
-    @Test
-    fun testStartTimersIfValid_ThrowsInvalidTimerDurationExceptionForInvalidExtraTimerInput() =
-        runTest {
-            // Arrange: Add an extra timer with invalid input
-            val invalidInput = "invalid"
-            val extraTimerUserInputData =
-                ExtraTimerUserInputData(
-                    inputs =
-                        ExtraTimerInputsData().apply {
-                            updateTimerDurationInput(invalidInput)
-                        },
-                    id = TimerUserInputDataId.randomId(),
-                )
-            extraTimersUserInputRepository.updateData(listOf(extraTimerUserInputData))
-
-            // Act & Assert: Expect the InvalidTimerDurationException to be thrown for invalid extra timer input
-            val exception =
-                assertFailsWith<InvalidTimerDurationException> {
-                    viewModel.startTimersIfValid(true)
-                }
-
-            // Verify that the exception message contains the expected error message for the extra timer
-            assertTrue(
-                exception.message?.contains("Invalid timer duration input") == true,
-                "Exception message should indicate invalid timer duration input for extra timer.",
-            )
-        }
-
-    @Test
     fun testGetTotalSeconds_ReturnsZeroOnInvalidInputWhenMainTimerInactive() =
         runTest {
             // Arrange: Create a mock StateFlow for remaining seconds and set main timer as inactive
@@ -597,6 +546,28 @@ class BronnBakesTimerViewModelTest {
                 0,
                 totalSeconds.value,
                 "Total seconds should be 0 for invalid input when main timer is inactive.",
+            )
+        }
+
+    @Test
+    fun testStartTimersWithValidExtraTimerInput_DoesNotSetIncorrectErrorMessages() =
+        runTest {
+            // Arrange: Add a timer and set its minutes input to 55
+            viewModel.onAddTimerClicked()
+            val newTimerData = extraTimersUserInputRepository.timerData.value.last()
+            newTimerData.inputs.updateTimerDurationInput("55")
+
+            // Act: Start the timers
+            viewModel.startTimersIfValid(true)
+
+            // Assert: Error messages should not be set incorrectly
+            assertNull(viewModel.timerDurationInputError, "Main Timer's input error should not be set incorrectly.")
+
+            // Access the error message from the error repository
+            val errorRepository: IErrorRepository = GlobalContext.get().get()
+            assertNull(
+                errorRepository.errorMessage.value,
+                "Error message at the bottom of the screen should not be set incorrectly.",
             )
         }
 }

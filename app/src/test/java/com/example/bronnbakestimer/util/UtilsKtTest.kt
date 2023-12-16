@@ -264,7 +264,8 @@ class UtilsKtTest {
             TimerData(
                 isPaused = false,
                 isFinished = false,
-                millisecondsRemaining = 30_000, // 30 seconds remaining
+                // 30 seconds remaining:
+                millisecondsRemaining = 30_000,
             )
 
         // Any value for timerDurationInput, as it should not be used

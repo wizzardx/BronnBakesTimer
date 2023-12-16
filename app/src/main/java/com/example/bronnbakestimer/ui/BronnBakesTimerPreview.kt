@@ -16,6 +16,7 @@ import org.koin.core.context.startKoin
  */
 @Preview(showSystemUi = true)
 @Composable
+@Suppress("FunctionName")
 fun BronnBakesTimerPreview() {
     startKoin {
         modules(appModule)

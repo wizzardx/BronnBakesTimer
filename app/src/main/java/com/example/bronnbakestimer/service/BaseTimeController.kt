@@ -11,7 +11,7 @@ import kotlinx.coroutines.CoroutineScope
  */
 abstract class BaseTimeController {
     // _delayLambda is a dist-type structure, keyed by scope, and the value is a lambda
-    private val _delayLambdas = mutableMapOf<CoroutineScope, (suspend (Long) -> Unit)>()
+    private val delayLambdas = mutableMapOf<CoroutineScope, (suspend (Long) -> Unit)>()
 
     /**
      * Suspends execution for a specified duration within a given CoroutineScope.
@@ -26,8 +26,8 @@ abstract class BaseTimeController {
         scope: CoroutineScope,
     ) {
         // Error out if the lambda is not set for this coroutine scope.
-        check(_delayLambdas.containsKey(scope)) { "Delay lambda not set for this scope. Call setDelayLambda() first." }
-        val lambda = _delayLambdas.getValue(scope)
+        check(delayLambdas.containsKey(scope)) { "Delay lambda not set for this scope. Call setDelayLambda() first." }
+        val lambda = delayLambdas.getValue(scope)
         lambda.invoke(delayTimeMillis)
     }
 
@@ -60,8 +60,8 @@ abstract class BaseTimeController {
         scope: CoroutineScope,
     ) {
         // Not allowed to set the lambda twice:
-        require(!_delayLambdas.containsKey(scope)) { "Lambda already set for this scope" }
+        require(!delayLambdas.containsKey(scope)) { "Lambda already set for this scope" }
         // Now add the lambda:
-        _delayLambdas[scope] = lambda
+        delayLambdas[scope] = lambda
     }
 }

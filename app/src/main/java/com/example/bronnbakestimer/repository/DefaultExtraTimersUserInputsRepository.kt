@@ -27,13 +27,13 @@ class DefaultExtraTimersUserInputsRepository : IExtraTimersUserInputsRepository 
     private val extraTimersCountdownRepository: IExtraTimersCountdownRepository = GlobalContext.get().get()
 
     // MutableStateFlow for internal updates
-    private val _timerData = MutableStateFlow<List<ExtraTimerUserInputData>>(listOf())
+    private val internalTimerData = MutableStateFlow<List<ExtraTimerUserInputData>>(listOf())
 
     /**
      * A read-only [StateFlow] that emits the current state of user input data for extra timers.
      * The data is a list of [ExtraTimerUserInputData].
      */
-    override val timerData: StateFlow<List<ExtraTimerUserInputData>> = _timerData
+    override val timerData: StateFlow<List<ExtraTimerUserInputData>> = internalTimerData
 
     /**
      * Updates the user input data for extra timers with new data.
@@ -41,7 +41,7 @@ class DefaultExtraTimersUserInputsRepository : IExtraTimersUserInputsRepository 
      * @param newData The new list of [ExtraTimerUserInputData] to be used.
      */
     override fun updateData(newData: List<ExtraTimerUserInputData>) {
-        _timerData.value = newData
+        internalTimerData.value = newData
 
         // Update related countdown data for all timers
         val repo = extraTimersCountdownRepository

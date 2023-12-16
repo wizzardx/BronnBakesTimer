@@ -27,21 +27,22 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
     // MutableStateFlow for internal updates
-    private val _timerData =
+    private val internalTimerData =
         MutableStateFlow<ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>>(ConcurrentHashMap())
 
     // A private concurrent safe mapping between extra timer ids, and StateFlows for their seconds remaining
-    private val _secondsRemaining = ConcurrentHashMap<TimerUserInputDataId, MutableStateFlow<Seconds>>()
+    private val secondsRemaining = ConcurrentHashMap<TimerUserInputDataId, MutableStateFlow<Seconds>>()
 
     // A private concurrent safe mapping between extra timer ids, and StateFlows for their completion status
-    private val _timerCompleted = ConcurrentHashMap<TimerUserInputDataId, MutableStateFlow<Boolean>>()
+    private val internalTimerCompleted = ConcurrentHashMap<TimerUserInputDataId, MutableStateFlow<Boolean>>()
 
     /**
      * A read-only [StateFlow] that emits the current state of the countdown data for extra timers.
      * The data is stored in a [ConcurrentHashMap] with keys as [TimerUserInputDataId] and values as
      * [SingleTimerCountdownData].
      */
-    override val timerData: StateFlow<ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>> = _timerData
+    override val timerData: StateFlow<ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>> =
+        internalTimerData
 
     /**
      * Updates the countdown data for extra timers with new data.
@@ -56,7 +57,7 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
         }
 
         // Update the main timer data
-        _timerData.value = newData // Atomic and thread-safe update
+        internalTimerData.value = newData // Atomic and thread-safe update
 
         // Process each timer in the new data
         for ((timerId, timerData) in newData) {
@@ -64,22 +65,22 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
             val secondsRemaining = timerData.data.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND
 
             // Update or initialize the seconds remaining StateFlow
-            _secondsRemaining.getOrPut(timerId) { MutableStateFlow(Seconds(secondsRemaining)) }
+            this.secondsRemaining.getOrPut(timerId) { MutableStateFlow(Seconds(secondsRemaining)) }
                 .value = Seconds(secondsRemaining)
 
             // Update or initialize the timer completed StateFlow
-            _timerCompleted.getOrPut(timerId) { MutableStateFlow(timerData.data.isFinished) }
+            internalTimerCompleted.getOrPut(timerId) { MutableStateFlow(timerData.data.isFinished) }
                 .value = timerData.data.isFinished
         }
 
         // Remove obsolete entries from _secondsRemaining and _timerCompleted maps
         val newIds = newData.keys
-        _secondsRemaining.keys.retainAll(newIds)
-        _timerCompleted.keys.retainAll(newIds)
+        secondsRemaining.keys.retainAll(newIds)
+        internalTimerCompleted.keys.retainAll(newIds)
     }
 
     override fun extraTimerSecsFlow(timerUserInputDataId: TimerUserInputDataId): StateFlow<Seconds> {
-        val maybeStateFlow = _secondsRemaining[timerUserInputDataId]
+        val maybeStateFlow = secondsRemaining[timerUserInputDataId]
         requireNotNull(maybeStateFlow) { "No extra timer with id $timerUserInputDataId!" }
         return maybeStateFlow
     }
@@ -99,7 +100,7 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
      * @throws IllegalArgumentException If no timer with the given identifier exists.
      */
     override fun extraTimerIsCompletedFlow(id: TimerUserInputDataId): StateFlow<Boolean> {
-        val maybeStateFlow = _timerCompleted[id]
+        val maybeStateFlow = internalTimerCompleted[id]
         requireNotNull(maybeStateFlow) { "No extra timer with id $id!" }
         return maybeStateFlow
     }
@@ -109,7 +110,7 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
         val updatedTimers = ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>()
 
         // Iterate over each entry in the original _timerData map
-        for ((id, timer) in _timerData.value) {
+        for ((id, timer) in internalTimerData.value) {
             // Create a new SingleTimerCountdownData with default TimerData and the same id
             val newTimerData = SingleTimerCountdownData(TimerData(), timer.useInputTimerId)
 
@@ -117,11 +118,11 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
             updatedTimers[id] = newTimerData
 
             // Also reset the related entries in _secondsRemaining and _timerCompleted maps
-            _secondsRemaining[id]?.value = Seconds(0) // Assuming 0 seconds as the default
-            _timerCompleted[id]?.value = false // Assuming false (not completed) as the default
+            secondsRemaining[id]?.value = Seconds(0) // Assuming 0 seconds as the default
+            internalTimerCompleted[id]?.value = false // Assuming false (not completed) as the default
         }
 
         // Update _timerData with the new map
-        _timerData.value = updatedTimers
+        internalTimerData.value = updatedTimers
     }
 }

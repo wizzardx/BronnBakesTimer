@@ -30,6 +30,7 @@ import org.koin.compose.koinInject
  * @see IMainTimerRepository
  */
 @Composable
+@Suppress("FunctionName")
 fun ControlButtons(
     modifier: Modifier,
     viewModel: BronnBakesTimerViewModel = koinViewModel(),
