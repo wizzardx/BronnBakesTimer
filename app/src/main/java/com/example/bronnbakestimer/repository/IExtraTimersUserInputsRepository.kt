@@ -19,4 +19,19 @@ interface IExtraTimersUserInputsRepository {
      * @param newData The new list of [ExtraTimerUserInputData] to be used.
      */
     fun updateData(newData: List<ExtraTimerUserInputData>)
+
+    /**
+     * Clears all error messages associated with user inputs for extra timers.
+     *
+     * This method iterates through the list of [ExtraTimerUserInputData] in the repository and
+     * resets any existing error messages related to timer duration input, timer name input, or other
+     * validation fields within each [ExtraTimerUserInputData] instance. The method ensures that after
+     * its execution, no extra timer retains any error message that may have been set due to previous
+     * user input validation failures or other reasons.
+     *
+     * This is typically called when a global reset action is performed in the application, such as
+     * clearing all forms or resetting the state of the application to its initial configuration. It
+     * ensures that the user interface for extra timers is free from error messages and ready for fresh input.
+     */
+    fun clearExtraTimerErrors()
 }

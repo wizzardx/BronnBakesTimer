@@ -146,6 +146,21 @@ open class BronnBakesTimerViewModel(
             .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     /**
+     * Counter for the number of times the "Timer Duration" input field has been programmatically focused and scrolled
+     * into view.
+     *
+     * This variable is incremented each time the `focusOnTimerDurationInput` method is called, which occurs when
+     * programmatically setting focus to the "Timer Duration" input field. It serves as a diagnostic or tracking tool
+     * to monitor how often the input field is auto-focused, aiding in understanding user interaction patterns and
+     * the application's response to input validation scenarios.
+     *
+     * It is particularly useful in scenarios where focus behavior is critical for user experience, such as when an
+     * error  user input is detected and the application needs to prompt the user to correct it. This counter provides
+     * insight into the frequency of such events, which can be valuable for user experience analysis and improvements.
+     */
+    var timerDurationInputFocusCount = 0
+
+    /**
      * Updates the input value for the timer duration.
      *
      * This function allows you to change the value of the timer duration input. It takes a new value
@@ -328,6 +343,9 @@ open class BronnBakesTimerViewModel(
             // Clear out error messages associated with main timer user input:
             timerDurationInputError = null
 
+            // Clear out error messages associated with the extra timer user inputs:
+            extraTimersUserInputsRepository.clearExtraTimerErrors()
+
             // Clear out the countdown-related data for the timers:
             timerManager.clearResources(mainTimerRepository, extraTimersCountdownRepository)
         } catch (e: Exception) {
@@ -382,6 +400,10 @@ open class BronnBakesTimerViewModel(
         coroutineScope: CoroutineScope,
         skipUiLogic: Boolean,
     ) {
+        // Update a counter for how many time the numeric user entry for the timer duration has
+        // been scrolled to and focused on:
+        timerDurationInputFocusCount += 1
+
         if (skipUiLogic) return
         // Logic won't go here during unit tests, because this is some Android UI integration
         // that's hard to test. So, we'll just skip it during unit tests.

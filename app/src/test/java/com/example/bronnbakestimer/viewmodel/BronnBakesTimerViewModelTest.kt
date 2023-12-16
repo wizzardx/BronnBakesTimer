@@ -572,47 +572,308 @@ class BronnBakesTimerViewModelTest {
         }
 
     @Test
-    fun testStartButtonClearsBottomScreenError() = runTest {
-        // Arrange: Set an error message
-        errorRepository.updateData("Test error message")
+    fun testStartButtonClearsBottomScreenError() =
+        runTest {
+            // Arrange: Set an error message
+            errorRepository.updateData("Test error message")
 
-        // Pre-check: Verify that the error message is initially set
-        assertNotNull(errorRepository.errorMessage.value, "Error message should initially be set.")
+            // Pre-check: Verify that the error message is initially set
+            assertNotNull(errorRepository.errorMessage.value, "Error message should initially be set.")
 
-        // Act: Simulate pressing the Start button
-        viewModel.onButtonClick() // Assuming this method is connected to the Start button functionality
+            // Act: Simulate pressing the Start button
+            viewModel.onButtonClick() // Assuming this method is connected to the Start button functionality
 
-        // Assert: Error message should be cleared
-        assertNull(errorRepository.errorMessage.value, "Error message should be cleared after pressing Start.")
-    }
-
-    @Test
-    fun testResetButtonClearsBottomScreenError() = runTest {
-        // Arrange: Set an error message
-        errorRepository.updateData("Test error message")
-
-        // Pre-check: Verify that the error message is initially set
-        assertNotNull(errorRepository.errorMessage.value, "Error message should initially be set.")
-
-        // Act: Simulate pressing the Reset button
-        viewModel.onResetClick()
-
-        // Assert: Error message should be cleared
-        assertNull(errorRepository.errorMessage.value, "Error message should be cleared after pressing Reset.")
-    }
+            // Assert: Error message should be cleared
+            assertNull(errorRepository.errorMessage.value, "Error message should be cleared after pressing Start.")
+        }
 
     @Test
-    fun testResetButtonClearsMainTimerInputError() = runTest {
-        // Arrange: Set an error for the main timer input
-        viewModel.timerDurationInputError = "Main timer input error"
+    fun testResetButtonClearsBottomScreenError() =
+        runTest {
+            // Arrange: Set an error message
+            errorRepository.updateData("Test error message")
 
-        // Pre-check: Verify that the main timer input error is initially set
-        assertNotNull(viewModel.timerDurationInputError, "Main timer input error should initially be set.")
+            // Pre-check: Verify that the error message is initially set
+            assertNotNull(errorRepository.errorMessage.value, "Error message should initially be set.")
 
-        // Act: Simulate pressing the Reset button
-        viewModel.onResetClick()
+            // Act: Simulate pressing the Reset button
+            viewModel.onResetClick()
 
-        // Assert: Main timer input error should be cleared
-        assertNull(viewModel.timerDurationInputError, "Main timer input error should be cleared after pressing Reset.")
-    }
+            // Assert: Error message should be cleared
+            assertNull(errorRepository.errorMessage.value, "Error message should be cleared after pressing Reset.")
+        }
+
+    @Test
+    fun testResetButtonClearsMainTimerInputError() =
+        runTest {
+            // Arrange: Set an error for the main timer input
+            viewModel.timerDurationInputError = "Main timer input error"
+
+            // Pre-check: Verify that the main timer input error is initially set
+            assertNotNull(viewModel.timerDurationInputError, "Main timer input error should initially be set.")
+
+            // Act: Simulate pressing the Reset button
+            viewModel.onResetClick()
+
+            // Assert: Main timer input error should be cleared
+            assertNull(
+                viewModel.timerDurationInputError,
+                "Main timer input error should be cleared after pressing Reset.",
+            )
+        }
+
+    @Test
+    fun testResetButtonClearsExtraTimersInputErrors() =
+        runTest {
+            // Arrange: Set errors for an extra timer's duration and name inputs
+            val extraTimerId = TimerUserInputDataId.randomId()
+            val extraTimerUserInputData =
+                ExtraTimerUserInputData(
+                    id = extraTimerId,
+                    inputs =
+                        ExtraTimerInputsData().apply {
+                            this.timerDurationInputError = "Extra timer duration input error"
+                            this.timerNameInputError = "Extra timer name input error"
+                        },
+                )
+            extraTimersUserInputRepository.updateData(listOf(extraTimerUserInputData))
+
+            // Pre-check: Verify that the extra timer input errors are initially set
+            val firstExtraTimerInputs = extraTimersUserInputRepository.timerData.value.first().inputs
+            assertNotNull(
+                firstExtraTimerInputs.timerDurationInputError,
+                "Extra timer duration input error should initially be set.",
+            )
+            assertNotNull(
+                firstExtraTimerInputs.timerNameInputError,
+                "Extra timer name input error should initially be set.",
+            )
+
+            // Act: Simulate pressing the Reset button
+            viewModel.onResetClick()
+
+            // Assert: Extra timer input errors should be cleared
+            assertNull(
+                firstExtraTimerInputs.timerDurationInputError,
+                "Extra timer duration input error should be cleared after pressing Reset.",
+            )
+            assertNull(
+                firstExtraTimerInputs.timerNameInputError,
+                "Extra timer name input error should be cleared after pressing Reset.",
+            )
+        }
+
+    @Test
+    fun testEmptyNameInputForExtraTimerSetsValidationErrorMessage() =
+        runTest {
+            // Arrange: Create an extra timer with an empty name input
+            val emptyNameInput = "   " // Represents a name input with only whitespace
+            val extraTimerId = TimerUserInputDataId.randomId()
+            val extraTimerInputsData = ExtraTimerInputsData()
+            extraTimerInputsData.updateTimerNameInput(emptyNameInput) // Update the name input
+
+            val extraTimerUserInputData =
+                ExtraTimerUserInputData(
+                    id = extraTimerId,
+                    inputs = extraTimerInputsData,
+                )
+            extraTimersUserInputRepository.updateData(listOf(extraTimerUserInputData))
+
+            // Pre-check: Make sure that the name input has not yet been focused and scrolled to:
+            val preCheckResultExtraTimerUserInputData = extraTimersUserInputRepository.timerData.value.first()
+            assertEquals(
+                0,
+                preCheckResultExtraTimerUserInputData.inputs.focusOnTimerNameInputCount,
+                "Empty name input should not yet have been focused.",
+            )
+
+            // Act: Trigger validation logic
+            viewModel.startTimersIfValid(skipUiLogic = true)
+
+            // Assert: Check if the appropriate error message is set for empty name input
+            val resultExtraTimerUserInputData = extraTimersUserInputRepository.timerData.value.first()
+            val expectedErrorMessage = "Extra timer name cannot be blank."
+            assertEquals(
+                expectedErrorMessage,
+                resultExtraTimerUserInputData.inputs.timerNameInputError,
+                "Empty name input should set a validation error message.",
+            )
+
+            // Make sure that the name input has been focused and scrolled to:
+            assertEquals(
+                1,
+                resultExtraTimerUserInputData.inputs.focusOnTimerNameInputCount,
+                "Empty name input should have been focused.",
+            )
+        }
+
+    @Test
+    fun testExtraTimerDurationInputErrorTriggersScrollAndFocus() =
+        runTest {
+            // Arrange: Create an extra timer with an invalid duration input
+            val invalidDurationInput = "invalid" // Represents an invalid duration input
+            val extraTimerId = TimerUserInputDataId.randomId()
+            val extraTimerInputsData = ExtraTimerInputsData()
+            extraTimerInputsData.updateTimerDurationInput(invalidDurationInput) // Update the duration input
+
+            val extraTimerUserInputData =
+                ExtraTimerUserInputData(
+                    id = extraTimerId,
+                    inputs = extraTimerInputsData,
+                )
+            extraTimersUserInputRepository.updateData(listOf(extraTimerUserInputData))
+
+            // Pre-check: Make sure that the duration input has not yet been focused and scrolled to
+            val preCheckResultExtraTimerUserInputData = extraTimersUserInputRepository.timerData.value.first()
+            assertEquals(
+                0,
+                preCheckResultExtraTimerUserInputData.inputs.focusOnTimerDurationInputCount,
+                "Extra timer duration input should not yet have been focused.",
+            )
+
+            // Act: Trigger validation logic
+            viewModel.startTimersIfValid(skipUiLogic = true)
+
+            // Assert: Check if the appropriate error message is set for invalid duration input
+            val resultExtraTimerUserInputData = extraTimersUserInputRepository.timerData.value.first()
+            assertNotNull(
+                resultExtraTimerUserInputData.inputs.timerDurationInputError,
+                "Invalid duration input should set a validation error message.",
+            )
+
+            // Make sure that the duration input has been focused and scrolled to
+            assertEquals(
+                1,
+                resultExtraTimerUserInputData.inputs.focusOnTimerDurationInputCount,
+                "Extra timer duration input should have been focused.",
+            )
+        }
+
+    @Test
+    fun testExtraTimerDurationGreaterThanMainTimerSetsErrorAndFocusesInput() =
+        runTest {
+            // Arrange: Set the main timer duration to a default value (e.g., 5 minutes)
+            viewModel.updateTimerDurationInput("5")
+
+            // Create an extra timer with a duration input greater than the main timer (e.g., 10 minutes)
+            val extraTimerId = TimerUserInputDataId.randomId()
+            val extraTimerInputsData = ExtraTimerInputsData(initialTimerDuration = "10")
+            val extraTimerUserInputData =
+                ExtraTimerUserInputData(
+                    id = extraTimerId,
+                    inputs = extraTimerInputsData,
+                )
+            extraTimersUserInputRepository.updateData(listOf(extraTimerUserInputData))
+
+            // Pre-check: Ensure the duration input has not yet been focused and scrolled to
+            val precheckExtraTimerInputs = extraTimersUserInputRepository.timerData.value.first().inputs
+            assertEquals(
+                0,
+                precheckExtraTimerInputs.focusOnTimerDurationInputCount,
+                "Extra timer duration input should not yet have been focused.",
+            )
+
+            // Act: Trigger the validation logic
+            viewModel.startTimersIfValid(skipUiLogic = true)
+
+            // Assert: Check if an error message is set for the extra timer's duration input
+            val resultExtraTimerInputs = extraTimersUserInputRepository.timerData.value.first().inputs
+            val expectedErrorMessage = "Extra timer time cannot be greater than main timer time."
+            assertEquals(
+                expectedErrorMessage,
+                resultExtraTimerInputs.timerDurationInputError,
+                "Extra timer duration input error should be set correctly.",
+            )
+
+            // Make sure the duration input has been focused and scrolled to
+            assertEquals(
+                1,
+                resultExtraTimerInputs.focusOnTimerDurationInputCount,
+                "Extra timer duration input should have been focused.",
+            )
+        }
+
+    @Test
+    fun testStartWithInvalidMainAndExtraTimerInput() =
+        runTest {
+            // Arrange: Set invalid inputs for the main timer and an extra timer
+            val invalidMainTimerInput = "invalidMain"
+            val invalidExtraTimerInput = "invalidExtra"
+            viewModel.updateTimerDurationInput(invalidMainTimerInput)
+            viewModel.onAddTimerClicked() // Add an extra timer
+            val extraTimerData = extraTimersUserInputRepository.timerData.value.last()
+            extraTimerData.inputs.updateTimerDurationInput(invalidExtraTimerInput)
+
+            // Act: Attempt to start timers
+            viewModel.startTimersIfValid(skipUiLogic = true)
+
+            // Assert: Verify error messages are set for both main and extra timer inputs
+            assertNotNull(viewModel.timerDurationInputError, "Main Timer's input error should be set.")
+            assertEquals(
+                "Invalid input",
+                viewModel.timerDurationInputError,
+            )
+
+            val extraTimerInputError = extraTimerData.inputs.timerDurationInputError
+            assertNotNull(extraTimerInputError, "Extra Timer's input error should be set.")
+            assertEquals(
+                "Invalid input",
+                extraTimerInputError,
+            )
+
+            // Assert: Main timer input field should be focused and scrolled to
+            assertEquals(
+                1,
+                viewModel.timerDurationInputFocusCount,
+                "Main timer input should be focused.",
+            )
+
+            // Assert: Extra timer input field should not be focused
+            assertEquals(
+                0,
+                extraTimerData.inputs.focusOnTimerDurationInputCount,
+                "Extra timer input should not be focused.",
+            )
+        }
+
+    @Test
+    fun testTwoTimersWithNumericInputErrors_OnlyFirstFocused() =
+        runTest {
+            // Arrange: Add two extra timers with invalid numeric inputs
+            viewModel.onAddTimerClicked()
+            viewModel.onAddTimerClicked()
+
+            val extraTimers = extraTimersUserInputRepository.timerData.value
+            val firstExtraTimer = extraTimers[0]
+            val secondExtraTimer = extraTimers[1]
+
+            val invalidInput = "invalid"
+            firstExtraTimer.inputs.updateTimerDurationInput(invalidInput)
+            secondExtraTimer.inputs.updateTimerDurationInput(invalidInput)
+
+            // Act: Attempt to start timers
+            viewModel.startTimersIfValid(skipUiLogic = true)
+
+            // Assert: Verify error messages are set for both extra timer inputs
+            assertNotNull(
+                firstExtraTimer.inputs.timerDurationInputError,
+                "First extra timer's input error should be set.",
+            )
+            assertNotNull(
+                secondExtraTimer.inputs.timerDurationInputError,
+                "Second extra timer's input error should be set.",
+            )
+
+            // Assert: Only the first extra timer input field should be focused
+            assertEquals(
+                1,
+                firstExtraTimer.inputs.focusOnTimerDurationInputCount,
+                "First extra timer input should be focused.",
+            )
+            assertEquals(
+                0,
+                secondExtraTimer.inputs.focusOnTimerDurationInputCount,
+                "Second extra timer input should not be focused.",
+            )
+        }
 }

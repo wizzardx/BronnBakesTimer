@@ -46,3 +46,55 @@ fun myProfiler(
     val averageTime = (endTime - startTime) / totalTimes.toFloat()
     printFunction("Average Execution Time for $totalTimes runs: $averageTime ms")
 }
+
+/**
+ * Prints debugging information including the module, file name, and line number of the call location.
+ * Optionally includes a custom message. The function allows for flexible output handling by accepting
+ * an output function parameter.
+ *
+ * @param message An optional custom message to be included in the debug information. If provided,
+ *                it is appended to the base debug information. Defaults to `null`, meaning no additional
+ *                message will be appended.
+ * @param outputFunction A function that takes a String and returns Unit (no return value). This function
+ *                       is used to output the generated debug information. It defaults to `::println`,
+ *                       meaning it will print to the standard output if no other function is provided.
+ *                       This parameter allows for custom handling of the debug output, such as logging
+ *                       to a file or displaying in a GUI element.
+ *
+ * Usage Example:
+ * ```
+ * printDebugInfo("Custom message") // Prints debug info with a custom message using standard output
+ * printDebugInfo(outputFunction = ::customPrintFunction) // Prints debug info using a custom print function
+ * printDebugInfo("Custom message", ::customPrintFunction) // Custom message and custom print function
+ * ```
+ */
+@Suppress("ThrowingExceptionsWithoutMessageOrCause")
+fun printDebugInfo(
+    message: String? = null,
+    // Default to using println if no function is provided
+    outputFunction: (String) -> Unit = ::println,
+) {
+    // Create a Throwable to access the stack trace
+    val throwable = Throwable()
+
+    // Get the stack trace element corresponding to the caller
+    val stackTraceElement = throwable.stackTrace[2]
+
+    // Extract file name, line number, and class name
+    val fileName = stackTraceElement.fileName
+    val lineNumber = stackTraceElement.lineNumber
+    val className = stackTraceElement.className
+
+    // Extract the package name from the class name
+    val packageName = className.substringBeforeLast('.')
+
+    // Create the base message
+    val baseMessage = "TESTING (Module: $packageName, $fileName: $lineNumber)"
+
+    // Use the output function to print the formatted message with or without the additional message
+    if (message != null) {
+        outputFunction("$baseMessage: $message")
+    } else {
+        outputFunction(baseMessage)
+    }
+}

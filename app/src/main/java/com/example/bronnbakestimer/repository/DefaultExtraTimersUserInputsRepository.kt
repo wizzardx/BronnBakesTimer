@@ -70,4 +70,11 @@ class DefaultExtraTimersUserInputsRepository : IExtraTimersUserInputsRepository 
         // Save updated repo data back to the repo
         repo.updateData(repoData)
     }
+
+    override fun clearExtraTimerErrors() {
+        for (timer in timerData.value) {
+            timer.inputs.timerDurationInputError = null
+            timer.inputs.timerNameInputError = null
+        }
+    }
 }

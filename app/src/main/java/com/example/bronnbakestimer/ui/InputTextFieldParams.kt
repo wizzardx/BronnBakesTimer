@@ -40,6 +40,6 @@ data class InputTextFieldParams
         val modifier: Modifier = Modifier,
         val enabled: Boolean,
         val keyboardType: KeyboardType,
-        val focusRequester: FocusRequester?,
-        val bringIntoViewRequester: BringIntoViewRequester?,
+        val focusRequester: FocusRequester,
+        val bringIntoViewRequester: BringIntoViewRequester,
     )

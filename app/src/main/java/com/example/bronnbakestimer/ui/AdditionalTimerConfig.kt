@@ -56,8 +56,8 @@ fun AdditionalTimerConfig(
                 modifier = modifier,
                 enabled = enabled,
                 keyboardType = KeyboardType.Text,
-                bringIntoViewRequester = null,
-                focusRequester = null,
+                bringIntoViewRequester = timerUserInputData.inputs.timerNameInputBringIntoViewRequester,
+                focusRequester = timerUserInputData.inputs.timerNameInputFocusRequester,
             ),
         )
 

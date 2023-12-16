@@ -1,9 +1,3 @@
-* Fix this error message: "Extra timer time cannot be greater than.." showing up in the main timer.
-    - Also fix it showing up in the main error area
-
-* Clear out main error area at the start of a "start" button press, and also when "reset" is clicked.
-
-* Clicking Reset should also clear out the other error display areas.
 
 * Make editing of numbers in text fields less annoying. See how I did it in the Marshalls Metronome app?
 

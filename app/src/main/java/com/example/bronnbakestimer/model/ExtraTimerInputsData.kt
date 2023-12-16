@@ -104,6 +104,46 @@ class ExtraTimerInputsData(
     val timerDurationInputFocusRequester = FocusRequester()
 
     /**
+     * An instance of `BringIntoViewRequester` used for bringing the timer name input field into the user's view in the
+     * UI.
+     *
+     * This object is particularly useful in scenarios where the timer name input field might be off-screen due to
+     * layout changes or user interactions. When invoked, it ensures that the timer name input field is scrolled into
+     * the visible area of the UI, improving the overall user experience by making it easily accessible for interaction.
+     */
+    @OptIn(ExperimentalFoundationApi::class)
+    val timerNameInputBringIntoViewRequester = BringIntoViewRequester()
+
+    /**
+     * An instance of `BringIntoViewRequester` used for bringing the timer name input field into the user's view in the
+     * UI.
+     *
+     * This object is particularly useful in scenarios where the timer name input field might be off-screen due to
+     * layout changes or user interactions. When invoked, it ensures that the timer name input field is scrolled into
+     * the visible area of the UI, improving the overall user experience by making it easily accessible for
+     * interaction.
+     */
+    val timerNameInputFocusRequester = FocusRequester()
+
+    /**
+     * A counter to track the number of times focus has been requested on the timer duration input field.
+     *
+     * This variable is primarily used for testing purposes to verify that the focus on timer duration input
+     * functionality is being invoked as expected. It increments each time the `focusOnTimerDurationInput` method is
+     * called, providing a straightforward way to monitor focus requests in tests.
+     */
+    var focusOnTimerDurationInputCount = 0
+
+    /**
+     * A counter to track the number of times focus has been requested on the timer name input field.
+     *
+     * Similar to `focusOnTimerDurationInputCount`, this variable serves as a tool for testing. It increments each
+     * time the `focusOnTimerNameInput` method is called, allowing for an easy way to validate the invocation of
+     *  focus requests on the timer name input during testing.
+     */
+    var focusOnTimerNameInputCount = 0
+
+    /**
      * Updates the input value for timer duration.
      *
      * This function allows you to change the value of the timer duration input.
@@ -141,12 +181,46 @@ class ExtraTimerInputsData(
         coroutineScope: CoroutineScope,
         skipUiLogic: Boolean,
     ) {
+        // Increase a count that we ca use during tests to confirm that we were scrolled to and focused:
+        focusOnTimerDurationInputCount++
+
         if (skipUiLogic) return
         // Logic won't go here during unit tests, because this is some Android UI integration
         // that's hard to test. So, we'll just skip it during unit tests.
         coroutineScope.launch {
             timerDurationInputBringIntoViewRequester.bringIntoView()
             timerDurationInputFocusRequester.requestFocus()
+        }
+    }
+
+    /**
+     * Requests focus and brings the timer name input into view in the UI.
+     *
+     * This function leverages `timerNameInputBringIntoViewRequester` and `timerNameInputFocusRequester` to ensure the
+     * timer name input field is visible and focused in the UI. The operation is executed within a given
+     * `CoroutineScope` to perform these actions asynchronously.
+     *
+     * The function includes a `skipUiLogic` flag, which allows bypassing these UI interactions in scenarios like
+     * unit testing where UI integration is not required. The `focusOnTimerNameInputCount` counter is incremented
+     * each time this method is invoked, aiding in test verification.
+     *
+     * @param coroutineScope The CoroutineScope within which the UI operations are executed.
+     * @param skipUiLogic A Boolean flag that, when true, bypasses the UI logic for efficiency.
+     */
+    @OptIn(ExperimentalFoundationApi::class)
+    fun focusOnTimerNameInput(
+        coroutineScope: CoroutineScope,
+        skipUiLogic: Boolean,
+    ) {
+        // Increase a count that we ca use during tests to confirm that we were scrolled to and focused:
+        focusOnTimerNameInputCount++
+
+        if (skipUiLogic) return
+        // Logic won't go here during unit tests, because this is some Android UI integration
+        // that's hard to test. So, we'll just skip it during unit tests.
+        coroutineScope.launch {
+            timerNameInputBringIntoViewRequester.bringIntoView()
+            timerNameInputFocusRequester.requestFocus()
         }
     }
 

@@ -6,7 +6,6 @@ import com.example.bronnbakestimer.util.userInputToSeconds
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
-import com.github.michaelbull.result.map
 
 /**
  * Implements the IInputValidator interface to provide input validation functionality for timer-related inputs.
@@ -40,62 +39,109 @@ class DefaultInputValidator : IInputValidator {
         params: ValidationParams,
         skipUiLogic: Boolean,
     ): Result<Unit, String> {
-        // Clear out errors in the UI
+        // Clear any previously set error messages for the timer inputs
         params.setTimerDurationInputError(null)
-        params.extraTimersUserInputsRepository.timerData.value.forEach {
-            it.inputs.timerDurationInputError = null
-        }
+        params.extraTimersUserInputsRepository.clearExtraTimerErrors()
 
-        // Initialize a variable for the result
-        var validationResult: Result<Unit, String> = Ok(Unit)
+        var focusedOnControl = false // Flag to track if any input control has been focused
+        var finalResult: Result<Unit, String> = Ok(Unit) // Initialize the final result as successful
 
-        // Get the main timer duration in seconds and check for errors
+        // Validate the main timer's duration input
         val maybeMainTimerSeconds = userInputToSeconds(params.timerDurationInput.value, checkRange = true)
         if (maybeMainTimerSeconds is Err) {
+            // Set an error for the main timer duration input
             params.setTimerDurationInputError(maybeMainTimerSeconds.error)
+
+            // Sanity check: By this point in the logic, no control should have been focused yet
+            assert(!focusedOnControl) { "A control should not have been focused yet." }
+
+            // Focus on the main timer duration input
             params.viewModel.focusOnTimerDurationInput(params.coroutineScope, skipUiLogic)
-            validationResult = maybeMainTimerSeconds.map { }
-        } else {
-            // Validate extra timers only if main timer validation passed
-            for (extraTimer in params.extraTimersUserInputsRepository.timerData.value) {
-                val validateResult = validateExtraTimerInputs(extraTimer, maybeMainTimerSeconds)
-                if (validateResult is Err) {
-                    extraTimer.inputs.focusOnTimerDurationInput(params.coroutineScope, skipUiLogic)
-                    validationResult = validateResult
-                    break // Exit the loop if an error is found
+            focusedOnControl = true // Mark that a control has been focused
+
+            finalResult = maybeMainTimerSeconds // Update the final result with the error
+        }
+
+        // Iterate through and validate each extra timer input
+        for (extraTimer in params.extraTimersUserInputsRepository.timerData.value) {
+            val result =
+                validateExtraTimerInputs(
+                    extraTimer,
+                    maybeMainTimerSeconds,
+                    { extraTimer.inputs.focusOnTimerDurationInput(params.coroutineScope, skipUiLogic) },
+                    { extraTimer.inputs.focusOnTimerNameInput(params.coroutineScope, skipUiLogic) },
+                    focusedOnControl,
+                )
+            if (result is Err) {
+                focusedOnControl = true // Update focus tracking if validation fails
+
+                // Update the final result with the first encountered error
+                if (finalResult is Ok) {
+                    finalResult = result
                 }
             }
         }
 
-        // Return the final validation result
-        return validationResult
+        return finalResult // Return the final aggregated validation result
     }
 
     private fun validateExtraTimerInputs(
         extraTimer: ExtraTimerUserInputData,
         maybeMainTimerSeconds: Result<Seconds, String>,
+        focusOnTimerDurationInput: () -> Unit,
+        focusOnTimerNameInput: () -> Unit,
+        alreadyFocusedOnControl: Boolean,
     ): Result<Unit, String> {
-        // Initialize a variable for holding the function's result
-        var validationResult: Result<Unit, String> = Ok(Unit)
+        // Initialize the final result as successful:
+        var finalResult: Result<Unit, String> = Ok(Unit)
 
-        // Parse the extra timer duration input as an integer
-        val maybeExtraTimerSeconds = userInputToSeconds(extraTimer.inputs.timerDurationInput.value, checkRange = true)
+        // Convert user input for timer duration into seconds and check for errors
+        val timerDurationResult = userInputToSeconds(extraTimer.inputs.timerDurationInput.value, checkRange = true)
 
-        // Handle parsing failure
-        if (maybeExtraTimerSeconds is Err) {
-            extraTimer.inputs.timerDurationInputError = maybeExtraTimerSeconds.error
-            validationResult = maybeExtraTimerSeconds
-        } else if (maybeMainTimerSeconds is Ok) {
-            // Check if the extra timer duration is greater than the main timer duration
-            val extraTimerSeconds = (maybeExtraTimerSeconds as Ok).value
-            if (extraTimerSeconds > maybeMainTimerSeconds.value) {
-                val msg = "Extra timer time cannot be greater than main timer time."
-                extraTimer.inputs.timerDurationInputError = msg
-                validationResult = Err(msg)
+        // Validate timer duration
+        if (timerDurationResult is Err) {
+            // Set error message for timer duration
+            extraTimer.inputs.timerDurationInputError = timerDurationResult.error
+
+            // Focus on timer duration input if no control has been focused yet
+            if (!alreadyFocusedOnControl) {
+                focusOnTimerDurationInput()
             }
+
+            // Update final result with the error
+            finalResult = Err(timerDurationResult.error)
+        } else if (maybeMainTimerSeconds is Ok &&
+            timerDurationResult is Ok &&
+            timerDurationResult.value > maybeMainTimerSeconds.value
+        ) {
+            // Check if extra timer's duration is greater than the main timer's duration
+            val errorMsg = "Extra timer time cannot be greater than main timer time."
+            extraTimer.inputs.timerDurationInputError = errorMsg
+
+            // Focus on timer duration input if no control has been focused yet
+            if (!alreadyFocusedOnControl) {
+                focusOnTimerDurationInput()
+            }
+
+            // Update final result with the error
+            finalResult = Err(errorMsg)
         }
 
-        // Return the validation result
-        return validationResult
+        // Validate timer name
+        if (extraTimer.inputs.timerNameInput.value.isBlank()) {
+            // Set error message for timer name
+            val errorMsg = "Extra timer name cannot be blank."
+            extraTimer.inputs.timerNameInputError = errorMsg
+
+            // Focus on timer name input if no control has been focused yet and no previous errors
+            if (!alreadyFocusedOnControl && finalResult is Ok) {
+                focusOnTimerNameInput()
+            }
+
+            // Update final result with the error
+            finalResult = Err(errorMsg)
+        }
+
+        return finalResult // Return the final validation result
     }
 }
