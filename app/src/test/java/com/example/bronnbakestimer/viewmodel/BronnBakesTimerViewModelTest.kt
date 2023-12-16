@@ -585,4 +585,19 @@ class BronnBakesTimerViewModelTest {
         // Assert: Error message should be cleared
         assertNull(errorRepository.errorMessage.value, "Error message should be cleared after pressing Start.")
     }
+
+    @Test
+    fun testResetButtonClearsBottomScreenError() = runTest {
+        // Arrange: Set an error message
+        errorRepository.updateData("Test error message")
+
+        // Pre-check: Verify that the error message is initially set
+        assertNotNull(errorRepository.errorMessage.value, "Error message should initially be set.")
+
+        // Act: Simulate pressing the Reset button
+        viewModel.onResetClick()
+
+        // Assert: Error message should be cleared
+        assertNull(errorRepository.errorMessage.value, "Error message should be cleared after pressing Reset.")
+    }
 }
