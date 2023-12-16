@@ -878,16 +878,17 @@ class BronnBakesTimerViewModelTest {
         }
 
     @Test
-    fun `testEmptyStringInputSetsDisplayedTimeToZero`() = runTest {
-        // Arrange: Set the timer duration input to an empty string
-        val emptyInput = ""
-        viewModel.updateTimerDurationInput(emptyInput)
+    fun `testEmptyStringInputSetsDisplayedTimeToZero`() =
+        runTest {
+            // Arrange: Set the timer duration input to an empty string
+            val emptyInput = ""
+            viewModel.updateTimerDurationInput(emptyInput)
 
-        // Act: Collect the latest value of totalTimeRemainingString
-        delay(100) // Small delay to wait for flow to emit
-        val displayedTime = viewModel.totalTimeRemainingString.value
+            // Act: Collect the latest value of totalTimeRemainingString
+            delay(100) // Small delay to wait for flow to emit
+            val displayedTime = viewModel.totalTimeRemainingString.value
 
-        // Assert: The displayed time should be "00:00" for an empty string input
-        assertEquals("00:00", displayedTime, "Displayed time should be '00:00' for empty input.")
-    }
+            // Assert: The displayed time should be "00:00" for an empty string input
+            assertEquals("00:00", displayedTime, "Displayed time should be '00:00' for empty input.")
+        }
 }

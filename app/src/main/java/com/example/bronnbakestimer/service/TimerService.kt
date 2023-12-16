@@ -12,10 +12,14 @@ import com.example.bronnbakestimer.repository.IMainTimerRepository
 import com.example.bronnbakestimer.util.CoroutineUtils
 import com.example.bronnbakestimer.util.PhoneVibrator
 import com.example.bronnbakestimer.util.logException
+import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.koin.android.ext.android.inject
 
 /**
@@ -40,6 +44,8 @@ import org.koin.android.ext.android.inject
  * where users need to set, monitor, reset, or restart cooking times.
  */
 class TimerService : Service() {
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
     // Injecting dependencies using Koin
     private val timerRepository: IMainTimerRepository by inject()
     private val mediaPlayerWrapper: IMediaPlayerWrapper by inject()
@@ -47,7 +53,7 @@ class TimerService : Service() {
     private val errorRepository: IErrorRepository by inject()
     private val errorLoggerProvider: IErrorLoggerProvider by inject()
     private val coroutineScopeProvider: CoroutineScopeProvider by inject()
-    private val notificationHelper: NotificationHelper by inject()
+    private val viewModel: BronnBakesTimerViewModel by inject()
 
     private val phoneVibrator: PhoneVibrator by lazy {
         PhoneVibrator(applicationContext)
@@ -57,7 +63,10 @@ class TimerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        notificationHelper.launchNotification(this)
+
+        val titleFlow = MutableStateFlow("BronnBakes Timer")
+        val contentFlow = viewModel.totalTimeRemainingString
+        NotificationHelper(this).launchNotification(this, titleFlow, contentFlow, serviceScope)
         startCountdown()
     }
 
@@ -98,6 +107,8 @@ class TimerService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        serviceScope.cancel() // Cancel the scope when service is destroyed
+
         // Release resources when the service is destroyed
         mediaPlayerWrapper.release()
         coroutineScopeProvider.coroutineScope.cancel()

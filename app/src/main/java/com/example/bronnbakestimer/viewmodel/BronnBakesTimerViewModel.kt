@@ -102,36 +102,58 @@ open class BronnBakesTimerViewModel(
     val timerDurationInputFocusRequester = FocusRequester()
 
     /**
-     * Represents the total time remaining as a state flow string. This property combines the timer data
-     * from the timer repository and the user-inputted timer duration. It formats and updates the total
-     * time remaining, expressed as a string, whenever the timer data or the input duration change.
-     * The time is calculated and formatted using the formatTotalTimeRemainingString function.
-     * Initially, the state is set to "Loading..." and will update as the timer data becomes available.
+     * A StateFlow representing the formatted string of the total remaining time for the main timer.
+     *
+     * This property combines the seconds remaining from the `mainTimerRepository` and the user-inputted
+     * timer duration from `timerDurationInput`. It updates in real-time as the underlying timer data or
+     * input duration change. The calculation and formatting of the remaining time are handled by the
+     * `formatTotalTimeRemainingString` function.
+     *
+     * Initially, the state of this property is set to "Loading..." and will update as the timer data becomes
+     * available and changes over time. This dynamic update mechanism ensures that the UI always displays
+     * the most current timer state. The formatted string is in a user-friendly format, showing the time
+     * remaining in minutes and seconds.
+     *
+     * Usage:
+     * This property is primarily used in the UI to display the current state of the main timer, providing
+     * a continuously updated view of how much time is left. It is a critical component for user interaction,
+     * allowing users to visually track the countdown process.
+     *
+     * Example:
+     * ```
+     * val viewModel = BronnBakesTimerViewModel(...)
+     * val timeRemainingString: StateFlow<String> = viewModel.totalTimeRemainingString
+     * ```
+     *
+     * Note:
+     * The property automatically handles exceptions such as illegal argument scenarios, providing a safe
+     * and consistent output for the UI. In error cases, it defaults to displaying "00:00" to avoid showing
+     * error messages directly in the UI timer area.
      */
-    // Define `totalTimeRemainingString` as a StateFlow.
-    val totalTimeRemainingString: StateFlow<String> = mainTimerRepository.secondsRemaining
-        // Combine with `timerDurationInput` to process time remaining.
-        .combine(timerDurationInput) { secondsRemaining, timerDurationInput ->
-            // Attempt to format the remaining time, handling any exceptions.
-            val maybeFormattedString: Result<String, String> = try {
-                formatTotalTimeRemainingString(secondsRemaining, timerDurationInput)
-            } catch (e: IllegalArgumentException) {
-                // Log exceptions and return an error message.
-                logException(e, errorRepository, errorLoggerProvider)
-                Err("Invalid number")
+    val totalTimeRemainingString: StateFlow<String> =
+        mainTimerRepository.secondsRemaining
+            // Combine with `timerDurationInput` to process time remaining.
+            .combine(timerDurationInput) { secondsRemaining, timerDurationInput ->
+                // Attempt to format the remaining time, handling any exceptions.
+                val maybeFormattedString: Result<String, String> =
+                    try {
+                        formatTotalTimeRemainingString(secondsRemaining, timerDurationInput)
+                    } catch (e: IllegalArgumentException) {
+                        // Log exceptions and return an error message.
+                        logException(e, errorRepository, errorLoggerProvider)
+                        Err("Invalid number")
+                    }
+                // Return formatted string or error message.
+                if (maybeFormattedString is Ok) {
+                    maybeFormattedString.value
+                } else {
+                    // Default display, rather than showing ugly error messages in the timer area.
+                    "00:00"
+                }
             }
-            // Return formatted string or error message.
-            if (maybeFormattedString is Ok) {
-                maybeFormattedString.value
-            } else {
-                // Default display, rather than showing ugly error messages in the timer area.
-                "00:00"
-            }
-        }
-        // Ensure distinct updates and initialize with a loading message.
-        .distinctUntilChanged()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, "Loading...")
-
+            // Ensure distinct updates and initialize with a loading message.
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.Eagerly, "Loading...")
 
     /**
      * A [StateFlow] representing whether configuration controls in the UI should be enabled.

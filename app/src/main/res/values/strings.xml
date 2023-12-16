@@ -3,7 +3,4 @@
 
     <string name="channel_name">BronnBakes Timer Service Channel</string>
     <string name="channel_description">Shows notifications for the BronnBakes Timer service</string>
-    <string name="notification_title">BronnBakes Timer App Ready</string>
-    <string name="notification_content">Running in the background to ensure functionality. Tap to open and manage your timers.</string>
-
 </resources>
