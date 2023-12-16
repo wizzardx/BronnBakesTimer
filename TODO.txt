@@ -1,6 +1,4 @@
 
-* Make the popup notification more informative/reactive/etc.
-
 * Try to get Release APK files working from download install (it seems to work fine from Android Studio on the devices).
 
 * Try setting these values in release mode in app/build.gradle.kts:
