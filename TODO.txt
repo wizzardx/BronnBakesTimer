@@ -1,6 +1,4 @@
 
-* Make reflection of numeric entry into UI display for main timer countdown, match the extra timer. The extra timer is less janky.
-
 * Make the popup notification more informative/reactive/etc.
 
 * Try to get Release APK files working from download install (it seems to work fine from Android Studio on the devices).

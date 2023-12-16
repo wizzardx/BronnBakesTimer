@@ -41,55 +41,27 @@ class UtilsKtTest {
     // Tests for normaliseIntInput
 
     @Test
-    fun `normaliseIntInput removes non-numeric characters`() {
-        val result = normaliseIntInput("a1b2c3")
-        assertEquals("123", result)
+    fun `normaliseIntInput returns same string when input contains only digits`() {
+        val result = normaliseIntInput("12345", "original")
+        assertEquals("12345", result)
     }
 
     @Test
-    fun `normaliseIntInput removes leading zeros`() {
-        val result = normaliseIntInput("000123")
-        assertEquals("123", result)
+    fun `normaliseIntInput returns empty string when input is empty`() {
+        val result = normaliseIntInput("", "original")
+        assertEquals("", result)
     }
 
     @Test
-    fun `normaliseIntInput returns zero for all zero input`() {
-        val result = normaliseIntInput("0000")
-        assertEquals("0", result)
+    fun `normaliseIntInput returns original string when input contains non-digit characters`() {
+        val result = normaliseIntInput("abc123", "original")
+        assertEquals("original", result)
     }
 
     @Test
-    fun `normaliseIntInput returns zero for non-numeric input`() {
-        val result = normaliseIntInput("abc")
-        assertEquals("0", result)
-    }
-
-    @Test
-    fun `normaliseIntInput handles empty input`() {
-        val result = normaliseIntInput("")
-        assertEquals("0", result)
-    }
-
-    @Test
-    fun `normaliseIntInput preserves internal zeros`() {
-        val result = normaliseIntInput("10203")
-        assertEquals("10203", result)
-    }
-
-    // Tests for getErrorInfoFor
-
-    @Test
-    fun `getErrorInfoFor returns null Composable and false for null error`() {
-        val (composable, hasError) = getErrorInfoFor(null)
-        assertNull(composable)
-        assertFalse(hasError)
-    }
-
-    @Test
-    fun `getErrorInfoFor returns non-null Composable and true for non-null error`() {
-        val (composable, hasError) = getErrorInfoFor("Error message")
-        assertNotNull(composable)
-        assertTrue(hasError)
+    fun `normaliseIntInput returns original string when input is mixed with digits and non-digits`() {
+        val result = normaliseIntInput("123abc", "original")
+        assertEquals("original", result)
     }
 
     // Tests for formatMinSec

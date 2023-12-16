@@ -108,24 +108,30 @@ open class BronnBakesTimerViewModel(
      * The time is calculated and formatted using the formatTotalTimeRemainingString function.
      * Initially, the state is set to "Loading..." and will update as the timer data becomes available.
      */
-    val totalTimeRemainingString: StateFlow<String> =
-        mainTimerRepository.secondsRemaining
-            .combine(timerDurationInput) { secondsRemaining, timerDurationInput ->
-                val maybeFormattedString: Result<String, String> =
-                    try {
-                        formatTotalTimeRemainingString(secondsRemaining, timerDurationInput)
-                    } catch (e: IllegalArgumentException) {
-                        logException(e, errorRepository, errorLoggerProvider)
-                        Err("Invalid number")
-                    }
-                if (maybeFormattedString is Ok) {
-                    maybeFormattedString.value
-                } else {
-                    "Error: ${(maybeFormattedString as Err).error}"
-                }
+    // Define `totalTimeRemainingString` as a StateFlow.
+    val totalTimeRemainingString: StateFlow<String> = mainTimerRepository.secondsRemaining
+        // Combine with `timerDurationInput` to process time remaining.
+        .combine(timerDurationInput) { secondsRemaining, timerDurationInput ->
+            // Attempt to format the remaining time, handling any exceptions.
+            val maybeFormattedString: Result<String, String> = try {
+                formatTotalTimeRemainingString(secondsRemaining, timerDurationInput)
+            } catch (e: IllegalArgumentException) {
+                // Log exceptions and return an error message.
+                logException(e, errorRepository, errorLoggerProvider)
+                Err("Invalid number")
             }
-            .distinctUntilChanged()
-            .stateIn(viewModelScope, SharingStarted.Eagerly, "Loading...")
+            // Return formatted string or error message.
+            if (maybeFormattedString is Ok) {
+                maybeFormattedString.value
+            } else {
+                // Default display, rather than showing ugly error messages in the timer area.
+                "00:00"
+            }
+        }
+        // Ensure distinct updates and initialize with a loading message.
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "Loading...")
+
 
     /**
      * A [StateFlow] representing whether configuration controls in the UI should be enabled.
