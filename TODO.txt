@@ -1,4 +1,5 @@
 
+* Make reflection of numeric entry into UI display for main timer countdown, match the extra timer. The extra timer is less janky.
 
 * Make the popup notification more informative/reactive/etc.
 
