@@ -10,7 +10,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -33,7 +32,7 @@ class DefaultTimerRepositoryTest {
 
     @Test
     fun `updateData updates state correctly with valid data`() {
-        val timerRepository = DefaultTimerRepository()
+        val timerRepository = DefaultMainTimerRepository()
         val validTimerData = TimerData(60_000, isPaused = false, isFinished = false)
 
         timerRepository.updateData(validTimerData)
@@ -43,7 +42,7 @@ class DefaultTimerRepositoryTest {
 
     @Test
     fun `updateData sets state to null correctly`() {
-        val timerRepository = DefaultTimerRepository()
+        val timerRepository = DefaultMainTimerRepository()
 
         timerRepository.updateData(null)
 
@@ -51,37 +50,39 @@ class DefaultTimerRepositoryTest {
     }
 
     @Test
-    fun `timerData reflects state changes correctly`() = runTest {
-        val timerRepository = DefaultTimerRepository()
-        val timerDataList = mutableListOf<TimerData?>()
+    fun `timerData reflects state changes correctly`() =
+        runTest {
+            val timerRepository = DefaultMainTimerRepository()
+            val timerDataList = mutableListOf<TimerData?>()
 
-        // Launch a coroutine to collect timer data
-        val job = launch {
-            timerRepository.timerData.collect {
-                timerDataList.add(it)
-            }
+            // Launch a coroutine to collect timer data
+            val job =
+                launch {
+                    timerRepository.timerData.collect {
+                        timerDataList.add(it)
+                    }
+                }
+
+            // Short delay to ensure collection coroutine is up and running
+            delay(100)
+
+            // Update state and collect changes
+            val timerData1 = TimerData(60_000, isPaused = false, isFinished = false)
+            timerRepository.updateData(timerData1)
+
+            // Short delay to allow the update to be collected
+            delay(100)
+
+            val timerData2 = TimerData(30_000, isPaused = true, isFinished = false)
+            timerRepository.updateData(timerData2)
+
+            // Short delay to allow the second update to be collected
+            delay(100)
+
+            // Cancel the job to finish the collection coroutine
+            job.cancel()
+
+            // Assert that the timer data list contains the expected values
+            assertEquals(listOf(null, timerData1, timerData2), timerDataList)
         }
-
-        // Short delay to ensure collection coroutine is up and running
-        delay(100)
-
-        // Update state and collect changes
-        val timerData1 = TimerData(60_000, isPaused = false, isFinished = false)
-        timerRepository.updateData(timerData1)
-
-        // Short delay to allow the update to be collected
-        delay(100)
-
-        val timerData2 = TimerData(30_000, isPaused = true, isFinished = false)
-        timerRepository.updateData(timerData2)
-
-        // Short delay to allow the second update to be collected
-        delay(100)
-
-        // Cancel the job to finish the collection coroutine
-        job.cancel()
-
-        // Assert that the timer data list contains the expected values
-        assertEquals(listOf(null, timerData1, timerData2), timerDataList)
-    }
 }

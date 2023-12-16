@@ -29,6 +29,7 @@ import org.koin.androidx.compose.koinViewModel
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
+@Suppress("FunctionName")
 fun ConfigInputFields(
     modifier: Modifier,
     viewModel: BronnBakesTimerViewModel = koinViewModel(),
@@ -51,6 +52,6 @@ fun ConfigInputFields(
             keyboardType = KeyboardType.Number,
             focusRequester = viewModel.timerDurationInputFocusRequester,
             bringIntoViewRequester = viewModel.timerDurationInputBringIntoViewRequester,
-        )
+        ),
     )
 }

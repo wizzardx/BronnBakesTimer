@@ -35,7 +35,7 @@ import kotlinx.coroutines.flow.StateFlow
  * timerRepository.updateData(TimerData(millisecondsRemaining = 60000))
  * ```
  */
-class DefaultTimerRepository : ITimerRepository {
+class DefaultMainTimerRepository : IMainTimerRepository {
     // MutableStateFlow for internal updates
     private val _timerData = MutableStateFlow<TimerData?>(null)
 

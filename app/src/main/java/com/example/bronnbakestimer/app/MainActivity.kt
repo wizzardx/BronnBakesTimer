@@ -12,9 +12,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import com.example.bronnbakestimer.service.TimerService
 import com.example.bronnbakestimer.provider.IErrorLoggerProvider
 import com.example.bronnbakestimer.repository.IErrorRepository
+import com.example.bronnbakestimer.service.TimerService
 import com.example.bronnbakestimer.ui.BronnBakesTimer
 import com.example.bronnbakestimer.ui.theme.BronnBakesTimerTheme
 import com.example.bronnbakestimer.util.logError
@@ -36,21 +36,22 @@ class MainActivity : ComponentActivity() {
     private val errorRepository: IErrorRepository = GlobalContext.get().get()
     private val errorLoggerProvider: IErrorLoggerProvider = GlobalContext.get().get()
 
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            // Permission is granted. Continue the action or workflow.
-            startYourService()
-        } else {
-            // Explain to the user that the feature is unavailable
-            logError(
-                "Notification Permissions not granted. The Timer countdown will not work.",
-                errorRepository,
-                errorLoggerProvider
-            )
+    private val requestPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                // Permission is granted. Continue the action or workflow.
+                startYourService()
+            } else {
+                // Explain to the user that the feature is unavailable
+                logError(
+                    "Notification Permissions not granted. The Timer countdown will not work.",
+                    errorRepository,
+                    errorLoggerProvider,
+                )
+            }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,7 +77,7 @@ class MainActivity : ComponentActivity() {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     // Set current Koin instance to Compose context
                     KoinAndroidContext {

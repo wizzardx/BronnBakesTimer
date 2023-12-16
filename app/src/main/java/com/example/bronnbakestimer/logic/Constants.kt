@@ -58,7 +58,9 @@ object Constants {
  * It includes [MINUTES] and [SECONDS] to specify the time unit.
  */
 enum class UserInputTimeUnit {
-    MINUTES, SECONDS;
+    MINUTES,
+    SECONDS,
+    ;
 
     /**
      * Retrieves the display name of the time unit.

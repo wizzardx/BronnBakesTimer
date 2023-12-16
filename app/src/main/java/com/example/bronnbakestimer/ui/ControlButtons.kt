@@ -10,7 +10,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.bronnbakestimer.repository.ITimerRepository
+import com.example.bronnbakestimer.repository.IMainTimerRepository
 import com.example.bronnbakestimer.util.getStartPauseResumeButtonText
 import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -27,13 +27,13 @@ import org.koin.compose.koinInject
  * @param timerRepository The repository for timer data, used to determine button state and behavior.
  *
  * @see BronnBakesTimerViewModel
- * @see ITimerRepository
+ * @see IMainTimerRepository
  */
 @Composable
 fun ControlButtons(
     modifier: Modifier,
     viewModel: BronnBakesTimerViewModel = koinViewModel(),
-    timerRepository: ITimerRepository = koinInject(),
+    timerRepository: IMainTimerRepository = koinInject(),
 ) {
     val timerData by timerRepository.timerData.collectAsState()
 

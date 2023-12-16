@@ -10,7 +10,6 @@ import kotlin.test.assertTrue
 
 @Suppress("FunctionMaxLength")
 class InputValidatorTest {
-
     private lateinit var validator: InputValidator
 
     @Before
@@ -35,7 +34,6 @@ class InputValidatorTest {
 }
 
 class InputValidator {
-
     fun validateInput(input: String): Result<Unit, String> {
         // Hypothetical validation logic: for example, consider valid if input length is more than 5
         return if (input.length > 5) {

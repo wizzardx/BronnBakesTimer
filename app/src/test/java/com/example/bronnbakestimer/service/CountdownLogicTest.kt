@@ -3,9 +3,9 @@ package com.example.bronnbakestimer.service
 import com.example.bronnbakestimer.provider.CoroutineScopeProviderWrapper
 import com.example.bronnbakestimer.provider.IMediaPlayerWrapper
 import com.example.bronnbakestimer.repository.DefaultExtraTimersCountdownRepository
-import com.example.bronnbakestimer.repository.DefaultTimerRepository
+import com.example.bronnbakestimer.repository.DefaultMainTimerRepository
 import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
-import com.example.bronnbakestimer.repository.ITimerRepository
+import com.example.bronnbakestimer.repository.IMainTimerRepository
 import com.example.bronnbakestimer.util.IPhoneVibrator
 import com.example.bronnbakestimer.util.TimerUserInputDataId
 import kotlinx.coroutines.CoroutineScope
@@ -60,6 +60,7 @@ class TestTimeController(
 
 class TestMediaPlayerWrapper : IMediaPlayerWrapper {
     var beepPlayed = false
+
     override fun playBeep() {
         beepPlayed = true
     }
@@ -72,11 +73,10 @@ class TestMediaPlayerWrapper : IMediaPlayerWrapper {
 @Suppress("FunctionMaxLength", "LongMethod")
 @ExperimentalCoroutinesApi
 class CountdownLogicTest {
-
     private lateinit var mediaPlayerWrapper: TestMediaPlayerWrapper
     private lateinit var countdownLogic: CountdownLogic
     private lateinit var timeController: TestTimeController
-    private lateinit var timerRepository: ITimerRepository
+    private lateinit var timerRepository: IMainTimerRepository
     private lateinit var testScope: CoroutineScope
     private lateinit var extraTimersCountdownRepository: IExtraTimersCountdownRepository
 
@@ -96,7 +96,7 @@ class CountdownLogicTest {
         timeController = TestTimeController(scheduler)
         timeController.setDelayLambda(delayLambda, scope)
 
-        timerRepository = DefaultTimerRepository()
+        timerRepository = DefaultMainTimerRepository()
         mediaPlayerWrapper = TestMediaPlayerWrapper()
         extraTimersCountdownRepository = DefaultExtraTimersCountdownRepository()
         val coroutineScopeProvider = CoroutineScopeProviderWrapper(testScope)
@@ -108,469 +108,496 @@ class CountdownLogicTest {
         }
 
         // Create the CountdownLogic instance
-        countdownLogic = CountdownLogic(
-            timerRepository,
-            mediaPlayerWrapper,
-            coroutineScopeProvider,
-            timeController,
-            extraTimersCountdownRepository,
-            phoneVibrator = TestPhoneVibrator()
-        )
+        countdownLogic =
+            CountdownLogic(
+                timerRepository,
+                mediaPlayerWrapper,
+                coroutineScopeProvider,
+                timeController,
+                extraTimersCountdownRepository,
+                phoneVibrator = TestPhoneVibrator(),
+            )
     }
 
     @Test
-    fun `tick should do nothing when timer data is not set`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
+    fun `tick should do nothing when timer data is not set`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
+
+            // Set the main timer data to null
+            timerRepository.updateData(null)
+
+            // Invoke the tick method
+            countdownLogic.tick(1000) // Tick for 1 second
+
+            // Verify that timer state remains null and no actions are performed
+            val timerState = timerRepository.timerData.value
+            assertNull(timerState, "Timer state should remain null")
+            assertFalse(mediaPlayerWrapper.beepPlayed, "No beep should be played")
         }
-
-        // Set the main timer data to null
-        timerRepository.updateData(null)
-
-        // Invoke the tick method
-        countdownLogic.tick(1000) // Tick for 1 second
-
-        // Verify that timer state remains null and no actions are performed
-        val timerState = timerRepository.timerData.value
-        assertNull(timerState, "Timer state should remain null")
-        assertFalse(mediaPlayerWrapper.beepPlayed, "No beep should be played")
-    }
 
     @Test
-    fun `tick should do nothing when timer is paused`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
+    fun `tick should do nothing when timer is paused`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
+
+            // Set the timer state to paused
+            val pausedTimerData =
+                TimerData(
+                    millisecondsRemaining = 5000,
+                    isPaused = true,
+                    isFinished = false,
+                )
+            timerRepository.updateData(pausedTimerData)
+
+            // Capture the initial state for comparison
+            val initialState = timerRepository.timerData.value
+
+            // Invoke the tick method
+            countdownLogic.tick(1000) // Tick for 1 second
+
+            // Verify that the timer state remains unchanged
+            val updatedState = timerRepository.timerData.value
+            assertEquals(initialState, updatedState, "Timer state should remain unchanged when paused")
+            assertFalse(mediaPlayerWrapper.beepPlayed, "No beep should be played when timer is paused")
         }
-
-        // Set the timer state to paused
-        val pausedTimerData = TimerData(
-            millisecondsRemaining = 5000,
-            isPaused = true,
-            isFinished = false,
-        )
-        timerRepository.updateData(pausedTimerData)
-
-        // Capture the initial state for comparison
-        val initialState = timerRepository.timerData.value
-
-        // Invoke the tick method
-        countdownLogic.tick(1000) // Tick for 1 second
-
-        // Verify that the timer state remains unchanged
-        val updatedState = timerRepository.timerData.value
-        assertEquals(initialState, updatedState, "Timer state should remain unchanged when paused")
-        assertFalse(mediaPlayerWrapper.beepPlayed, "No beep should be played when timer is paused")
-    }
 
     @Test
-    fun `tick should do nothing when timer is finished`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
+    fun `tick should do nothing when timer is finished`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
+
+            // Set the timer state to finished
+            val finishedTimerData =
+                TimerData(
+                    millisecondsRemaining = 0,
+                    isPaused = false,
+                    isFinished = true,
+                )
+            timerRepository.updateData(finishedTimerData)
+
+            // Capture the initial state for comparison
+            val initialState = timerRepository.timerData.value
+
+            // Invoke the tick method
+            countdownLogic.tick(1000) // Tick for 1 second
+
+            // Verify that the timer state remains unchanged
+            val updatedState = timerRepository.timerData.value
+            assertEquals(initialState, updatedState, "Timer state should remain unchanged when finished")
+            assertFalse(mediaPlayerWrapper.beepPlayed, "No beep should be played when timer is finished")
         }
-
-        // Set the timer state to finished
-        val finishedTimerData = TimerData(
-            millisecondsRemaining = 0,
-            isPaused = false,
-            isFinished = true,
-        )
-        timerRepository.updateData(finishedTimerData)
-
-        // Capture the initial state for comparison
-        val initialState = timerRepository.timerData.value
-
-        // Invoke the tick method
-        countdownLogic.tick(1000) // Tick for 1 second
-
-        // Verify that the timer state remains unchanged
-        val updatedState = timerRepository.timerData.value
-        assertEquals(initialState, updatedState, "Timer state should remain unchanged when finished")
-        assertFalse(mediaPlayerWrapper.beepPlayed, "No beep should be played when timer is finished")
-    }
 
     @Test
-    fun `tick should not beep again if already beeped`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
+    fun `tick should not beep again if already beeped`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
+
+            // Set the timer state with beep already triggered
+            val beepTriggeredTimerData =
+                TimerData(
+                    millisecondsRemaining = 500,
+                    isPaused = false,
+                    isFinished = false,
+                    beepTriggered = true, // Beep has already been triggered
+                )
+            timerRepository.updateData(beepTriggeredTimerData)
+
+            // Reset beep played indicator
+            mediaPlayerWrapper.beepPlayed = false
+
+            // Invoke the tick method
+            countdownLogic.tick(100) // Tick for a short duration
+
+            // Verify that no additional beep is played
+            assertFalse(mediaPlayerWrapper.beepPlayed, "No additional beep should be played if already beeped")
         }
-
-        // Set the timer state with beep already triggered
-        val beepTriggeredTimerData = TimerData(
-            millisecondsRemaining = 500,
-            isPaused = false,
-            isFinished = false,
-            beepTriggered = true // Beep has already been triggered
-        )
-        timerRepository.updateData(beepTriggeredTimerData)
-
-        // Reset beep played indicator
-        mediaPlayerWrapper.beepPlayed = false
-
-        // Invoke the tick method
-        countdownLogic.tick(100) // Tick for a short duration
-
-        // Verify that no additional beep is played
-        assertFalse(mediaPlayerWrapper.beepPlayed, "No additional beep should be played if already beeped")
-    }
 
     // Unit tests for execute():
 
     @Test
-    fun `execute should handle partial tick correctly`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
+    fun `execute should handle partial tick correctly`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
+
+            // Set initial timer state with millisecondsRemaining slightly more than the increment amount
+            val incrementAmount = 50 // Increment amount less than SmallDelay, as Int
+            val initialMilliseconds: Int = incrementAmount + 10 // Slightly more than incrementAmount, as Int
+            val timerData = TimerData(initialMilliseconds, isPaused = false, isFinished = false)
+            timerRepository.updateData(timerData)
+
+            // Set a custom time increment
+            timeController.setIncrementAmount(incrementAmount)
+
+            // Start execute method in a controlled manner
+            val job =
+                testScope.launch {
+                    timeController.setDelayLambda({ delay(it) }, this)
+                    countdownLogic.execute(this)
+                }
+
+            // Advance time by the increment amount to trigger the partial tick logic
+            timeController.advanceTimeBy(incrementAmount.toLong())
+
+            // Assert that the partial tick logic is executed
+            val expectedMillisRemaining = initialMilliseconds - incrementAmount
+            assertEquals(expectedMillisRemaining, timerRepository.timerData.value!!.millisecondsRemaining)
+
+            // Clean up
+            job.cancel()
         }
-
-        // Set initial timer state with millisecondsRemaining slightly more than the increment amount
-        val incrementAmount = 50 // Increment amount less than SmallDelay, as Int
-        val initialMilliseconds: Int = incrementAmount + 10 // Slightly more than incrementAmount, as Int
-        val timerData = TimerData(initialMilliseconds, isPaused = false, isFinished = false)
-        timerRepository.updateData(timerData)
-
-        // Set a custom time increment
-        timeController.setIncrementAmount(incrementAmount)
-
-        // Start execute method in a controlled manner
-        val job = testScope.launch {
-            timeController.setDelayLambda({ delay(it) }, this)
-            countdownLogic.execute(this)
-        }
-
-        // Advance time by the increment amount to trigger the partial tick logic
-        timeController.advanceTimeBy(incrementAmount.toLong())
-
-        // Assert that the partial tick logic is executed
-        val expectedMillisRemaining = initialMilliseconds - incrementAmount
-        assertEquals(expectedMillisRemaining, timerRepository.timerData.value!!.millisecondsRemaining)
-
-        // Clean up
-        job.cancel()
-    }
 
     @Test
-    fun `execute should manage countdown correctly`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
+    fun `execute should manage countdown correctly`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
+
+            // Define initial timer state
+            val initialMilliseconds = 5000
+            val timerData =
+                TimerData(
+                    millisecondsRemaining = initialMilliseconds,
+                    isPaused = false,
+                    isFinished = false,
+                )
+
+            timerRepository.updateData(timerData)
+
+            // Execute countdown logic
+            val job =
+                testScope.launch {
+                    timeController.setDelayLambda({ delay(it) }, this)
+                    countdownLogic.execute(this)
+                }
+
+            // Simulate time progression and verify state updates
+            val timeToAdvance = 1000L // 1 second
+            for (i in 1..5) {
+                timeController.advanceTimeBy(timeToAdvance)
+
+                // Allow our check here to be out by about 100ms, as a buffer:
+                val buffer = 100
+                val updatedState = timerRepository.timerData.value!!
+                var expectedValue = initialMilliseconds - i * timeToAdvance.toInt() + buffer
+
+                // When the timer gets just below 1000ms, then it ends early, because we need to
+                // end at the same time that the user starts seeing 00:00.
+                if (expectedValue < 1000) {
+                    expectedValue = 900
+                }
+
+                assertEquals(expectedValue, updatedState.millisecondsRemaining)
+                // On the 5th iteration, when we hit 900 ms, then the timer also finishes up abruptly.
+                if (i == 5) {
+                    assertTrue(updatedState.isFinished)
+                } else {
+                    assertFalse(updatedState.isFinished)
+                }
+
+                // THe beep plays at the same time as we we finish, which is when the UI starts showing 00:00
+                if (updatedState.millisecondsRemaining < 1000) {
+                    assertTrue(mediaPlayerWrapper.beepPlayed)
+                }
+            }
+
+            // Advance time another 100ms to really progress to the end of the timer:
+            timeController.advanceTimeBy(100)
+
+            println(timerRepository.timerData.value!!.millisecondsRemaining)
+
+            // Cleanup and final assertions
+            job.cancel()
+            val finalState = timerRepository.timerData.value!!
+            assertTrue(finalState.isFinished)
         }
 
-        // Define initial timer state
-        val initialMilliseconds = 5000
-        val timerData =
-            TimerData(
-                millisecondsRemaining = initialMilliseconds,
-                isPaused = false,
-                isFinished = false,
-            )
+    @Test
+    fun `execute should handle paused timer correctly`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
 
-        timerRepository.updateData(timerData)
+            // Define initial timer state as paused
+            val initialMilliseconds = 5000
+            val pausedTimerData =
+                TimerData(
+                    millisecondsRemaining = initialMilliseconds,
+                    isPaused = true,
+                    isFinished = false,
+                )
+            timerRepository.updateData(pausedTimerData)
 
-        // Execute countdown logic
-        val job = testScope.launch {
-            timeController.setDelayLambda({ delay(it) }, this)
-            countdownLogic.execute(this)
-        }
+            // Execute countdown logic
+            val job =
+                testScope.launch {
+                    timeController.setDelayLambda({ delay(it) }, this)
+                    countdownLogic.execute(this)
+                }
 
-        // Simulate time progression and verify state updates
-        val timeToAdvance = 1000L // 1 second
-        for (i in 1..5) {
+            // Simulate time progression
+            val timeToAdvance = 1000L // 1 second
             timeController.advanceTimeBy(timeToAdvance)
 
-            // Allow our check here to be out by about 100ms, as a buffer:
-            val buffer = 100
+            // Verify that timer state remains unchanged
             val updatedState = timerRepository.timerData.value!!
-            var expectedValue = initialMilliseconds - i * timeToAdvance.toInt() + buffer
+            assertTrue(updatedState.isPaused)
+            assertEquals(initialMilliseconds, updatedState.millisecondsRemaining)
+            assertFalse(updatedState.isFinished)
+            assertFalse(mediaPlayerWrapper.beepPlayed)
 
-            // When the timer gets just below 1000ms, then it ends early, because we need to
-            // end at the same time that the user starts seeing 00:00.
-            if (expectedValue < 1000) {
-                expectedValue = 900
-            }
-
-            assertEquals(expectedValue, updatedState.millisecondsRemaining)
-            // On the 5th iteration, when we hit 900 ms, then the timer also finishes up abruptly.
-            if (i == 5) {
-                assertTrue(updatedState.isFinished)
-            } else {
-                assertFalse(updatedState.isFinished)
-            }
-
-            // THe beep plays at the same time as we we finish, which is when the UI starts showing 00:00
-            if (updatedState.millisecondsRemaining < 1000) {
-                assertTrue(mediaPlayerWrapper.beepPlayed)
-            }
+            // Cleanup and final assertions
+            job.cancel()
         }
-
-        // Advance time another 100ms to really progress to the end of the timer:
-        timeController.advanceTimeBy(100)
-
-        println(timerRepository.timerData.value!!.millisecondsRemaining)
-
-        // Cleanup and final assertions
-        job.cancel()
-        val finalState = timerRepository.timerData.value!!
-        assertTrue(finalState.isFinished)
-    }
 
     @Test
-    fun `execute should handle paused timer correctly`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
+    fun `execute should handle finished timer correctly`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
+
+            // Define initial timer state as finished
+            val finishedTimerData =
+                TimerData(
+                    millisecondsRemaining = 0,
+                    isPaused = false,
+                    isFinished = true,
+                )
+            timerRepository.updateData(finishedTimerData)
+
+            // Execute countdown logic
+            val job =
+                testScope.launch {
+                    timeController.setDelayLambda({ delay(it) }, this)
+                    countdownLogic.execute(this)
+                }
+
+            // Simulate time progression
+            val timeToAdvance = 1000L // 1 second
+            timeController.advanceTimeBy(timeToAdvance)
+
+            // Verify that timer state remains as finished and no actions are performed
+            val updatedState = timerRepository.timerData.value!!
+            assertTrue(updatedState.isFinished)
+            assertEquals(0, updatedState.millisecondsRemaining)
+            assertFalse(mediaPlayerWrapper.beepPlayed)
+
+            // Cleanup and final assertions
+            job.cancel()
         }
-
-        // Define initial timer state as paused
-        val initialMilliseconds = 5000
-        val pausedTimerData =
-            TimerData(
-                millisecondsRemaining = initialMilliseconds,
-                isPaused = true,
-                isFinished = false,
-            )
-        timerRepository.updateData(pausedTimerData)
-
-        // Execute countdown logic
-        val job = testScope.launch {
-            timeController.setDelayLambda({ delay(it) }, this)
-            countdownLogic.execute(this)
-        }
-
-        // Simulate time progression
-        val timeToAdvance = 1000L // 1 second
-        timeController.advanceTimeBy(timeToAdvance)
-
-        // Verify that timer state remains unchanged
-        val updatedState = timerRepository.timerData.value!!
-        assertTrue(updatedState.isPaused)
-        assertEquals(initialMilliseconds, updatedState.millisecondsRemaining)
-        assertFalse(updatedState.isFinished)
-        assertFalse(mediaPlayerWrapper.beepPlayed)
-
-        // Cleanup and final assertions
-        job.cancel()
-    }
-
-    @Test
-    fun `execute should handle finished timer correctly`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
-        }
-
-        // Define initial timer state as finished
-        val finishedTimerData =
-            TimerData(
-                millisecondsRemaining = 0,
-                isPaused = false,
-                isFinished = true,
-            )
-        timerRepository.updateData(finishedTimerData)
-
-        // Execute countdown logic
-        val job = testScope.launch {
-            timeController.setDelayLambda({ delay(it) }, this)
-            countdownLogic.execute(this)
-        }
-
-        // Simulate time progression
-        val timeToAdvance = 1000L // 1 second
-        timeController.advanceTimeBy(timeToAdvance)
-
-        // Verify that timer state remains as finished and no actions are performed
-        val updatedState = timerRepository.timerData.value!!
-        assertTrue(updatedState.isFinished)
-        assertEquals(0, updatedState.millisecondsRemaining)
-        assertFalse(mediaPlayerWrapper.beepPlayed)
-
-        // Cleanup and final assertions
-        job.cancel()
-    }
 
     // Unit Tests for getTimerLambdasSequence()
 
     @Test
-    fun `tick should update extra timers correctly`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
-        }
+    fun `tick should update extra timers correctly`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
 
-        // Initialize the main timer in timerRepository
-        val mainTimerData = TimerData(10_000, isPaused = false, isFinished = false)
-        timerRepository.updateData(mainTimerData)
+            // Initialize the main timer in timerRepository
+            val mainTimerData = TimerData(10_000, isPaused = false, isFinished = false)
+            timerRepository.updateData(mainTimerData)
 
-        // Create and add ExtraTimerData instances to extraTimersRepository
-        val extraTimers = ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
-            put(
-                TimerUserInputDataId.randomId(),
-                SingleTimerCountdownData(
-                    TimerData(3000, isPaused = false, isFinished = false),
-                    TimerUserInputDataId.randomId()
-                )
-            )
-            put(
-                TimerUserInputDataId.randomId(),
-                SingleTimerCountdownData(
-                    TimerData(5000, isPaused = false, isFinished = false),
-                    TimerUserInputDataId.randomId()
-                )
-            )
-        }
-        extraTimersCountdownRepository.updateData(extraTimers)
+            // Create and add ExtraTimerData instances to extraTimersRepository
+            val extraTimers =
+                ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
+                    put(
+                        TimerUserInputDataId.randomId(),
+                        SingleTimerCountdownData(
+                            TimerData(3000, isPaused = false, isFinished = false),
+                            TimerUserInputDataId.randomId(),
+                        ),
+                    )
+                    put(
+                        TimerUserInputDataId.randomId(),
+                        SingleTimerCountdownData(
+                            TimerData(5000, isPaused = false, isFinished = false),
+                            TimerUserInputDataId.randomId(),
+                        ),
+                    )
+                }
+            extraTimersCountdownRepository.updateData(extraTimers)
 
-        // Simulate a scenario where the timers need to be updated
-        val tickDuration = 1000 // Tick for 1 second
-        countdownLogic.tick(tickDuration)
+            // Simulate a scenario where the timers need to be updated
+            val tickDuration = 1000 // Tick for 1 second
+            countdownLogic.tick(tickDuration)
 
-        // Check that the main timer is updated
-        val updatedMainTimer = timerRepository.timerData.value
-        assertNotNull(updatedMainTimer, "Main timer should be updated")
-        assertEquals(
-            10_000 - tickDuration,
-            updatedMainTimer.millisecondsRemaining,
-            "Main timer should decrement correctly"
-        )
-
-        // Check that the extra timers are updated
-        extraTimers.forEach { (_, timerData) ->
-            val updatedExtraTimer = timerData.data
-            assertNotNull(updatedExtraTimer, "Updated extra timer should not be null")
-            assertTrue(
-                updatedExtraTimer.millisecondsRemaining <= 3000 - tickDuration ||
-                    updatedExtraTimer.millisecondsRemaining <= 5000 - tickDuration,
-                "Extra timers should decrement correctly"
-            )
-        }
-    }
-
-    @Test
-    fun `getTimerLambdasSequence should handle multiple timers`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
-        }
-
-        // Define the main timer state
-        var mainTimerState = TimerData(
-            millisecondsRemaining = 5000,
-            isPaused = false,
-            isFinished = false,
-        )
-
-        // Create main timer get/set lambda
-        val mainTimerGetSetLambda = Pair(
-            { mainTimerState },
-            { newState: TimerData -> mainTimerState = newState }
-        )
-
-        // Define and initialize extra timers
-        val extraTimers = ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
-            put(
-                TimerUserInputDataId.randomId(),
-                SingleTimerCountdownData(
-                    TimerData(3000, isPaused = false, isFinished = false),
-                    TimerUserInputDataId.randomId()
-                )
-            )
-            put(
-                TimerUserInputDataId.randomId(),
-                SingleTimerCountdownData(
-                    TimerData(2000, isPaused = true, isFinished = false),
-                    TimerUserInputDataId.randomId()
-                )
-            )
-            put(
-                TimerUserInputDataId.randomId(),
-                SingleTimerCountdownData(
-                    TimerData(1000, isPaused = false, isFinished = true),
-                    TimerUserInputDataId.randomId()
-                )
-            )
-        }
-        extraTimersCountdownRepository.updateData(extraTimers)
-
-        // Retrieve the sequence of timer lambdas
-        val timerLambdaSequence = countdownLogic.getTimerLambdasSequence(mainTimerGetSetLambda, extraTimers)
-
-        // Verify the lambda sequence
-        val lambdaList = timerLambdaSequence.toList()
-        assertEquals(
-            extraTimers.size + 1,
-            lambdaList.size,
-            "The sequence should contain the main timer and all extra timers"
-        )
-
-        // First lambda should correspond to main timer
-        val (mainGet, _) = lambdaList[0]
-        assertEquals(mainTimerState, mainGet(), "Main timer lambda should return correct timer state")
-
-        // Remaining lambdas should correspond to extra timers
-        extraTimers.forEach { (id, timerData) ->
-            val lambdaPair = lambdaList.find { it.first() == timerData.data }
-            assertNotNull(lambdaPair, "Lambda for extra timer with ID $id should be present")
-            val (getLambda, setLambda) = lambdaPair
-            assertEquals(timerData.data, getLambda(), "Extra timer lambda should return correct timer state")
-
-            // Test updating the timer state
-            val updatedTimerData = TimerData(1234, isPaused = true, isFinished = false)
-            setLambda(updatedTimerData)
+            // Check that the main timer is updated
+            val updatedMainTimer = timerRepository.timerData.value
+            assertNotNull(updatedMainTimer, "Main timer should be updated")
             assertEquals(
-                updatedTimerData,
-                getLambda(),
-                "Extra timer set lambda should update the timer state correctly"
+                10_000 - tickDuration,
+                updatedMainTimer.millisecondsRemaining,
+                "Main timer should decrement correctly",
             )
+
+            // Check that the extra timers are updated
+            extraTimers.forEach { (_, timerData) ->
+                val updatedExtraTimer = timerData.data
+                assertNotNull(updatedExtraTimer, "Updated extra timer should not be null")
+                assertTrue(
+                    updatedExtraTimer.millisecondsRemaining <= 3000 - tickDuration ||
+                        updatedExtraTimer.millisecondsRemaining <= 5000 - tickDuration,
+                    "Extra timers should decrement correctly",
+                )
+            }
         }
-    }
 
     @Test
-    fun `getTimerLambdasSequence should work with no extra timers`() = runTest {
-        // Initialize test environment
-        initScope(this) {
-            delay(it)
+    fun `getTimerLambdasSequence should handle multiple timers`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
+
+            // Define the main timer state
+            var mainTimerState =
+                TimerData(
+                    millisecondsRemaining = 5000,
+                    isPaused = false,
+                    isFinished = false,
+                )
+
+            // Create main timer get/set lambda
+            val mainTimerGetSetLambda =
+                Pair(
+                    { mainTimerState },
+                    { newState: TimerData -> mainTimerState = newState },
+                )
+
+            // Define and initialize extra timers
+            val extraTimers =
+                ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
+                    put(
+                        TimerUserInputDataId.randomId(),
+                        SingleTimerCountdownData(
+                            TimerData(3000, isPaused = false, isFinished = false),
+                            TimerUserInputDataId.randomId(),
+                        ),
+                    )
+                    put(
+                        TimerUserInputDataId.randomId(),
+                        SingleTimerCountdownData(
+                            TimerData(2000, isPaused = true, isFinished = false),
+                            TimerUserInputDataId.randomId(),
+                        ),
+                    )
+                    put(
+                        TimerUserInputDataId.randomId(),
+                        SingleTimerCountdownData(
+                            TimerData(1000, isPaused = false, isFinished = true),
+                            TimerUserInputDataId.randomId(),
+                        ),
+                    )
+                }
+            extraTimersCountdownRepository.updateData(extraTimers)
+
+            // Retrieve the sequence of timer lambdas
+            val timerLambdaSequence = countdownLogic.getTimerLambdasSequence(mainTimerGetSetLambda, extraTimers)
+
+            // Verify the lambda sequence
+            val lambdaList = timerLambdaSequence.toList()
+            assertEquals(
+                extraTimers.size + 1,
+                lambdaList.size,
+                "The sequence should contain the main timer and all extra timers",
+            )
+
+            // First lambda should correspond to main timer
+            val (mainGet, _) = lambdaList[0]
+            assertEquals(mainTimerState, mainGet(), "Main timer lambda should return correct timer state")
+
+            // Remaining lambdas should correspond to extra timers
+            extraTimers.forEach { (id, timerData) ->
+                val lambdaPair = lambdaList.find { it.first() == timerData.data }
+                assertNotNull(lambdaPair, "Lambda for extra timer with ID $id should be present")
+                val (getLambda, setLambda) = lambdaPair
+                assertEquals(timerData.data, getLambda(), "Extra timer lambda should return correct timer state")
+
+                // Test updating the timer state
+                val updatedTimerData = TimerData(1234, isPaused = true, isFinished = false)
+                setLambda(updatedTimerData)
+                assertEquals(
+                    updatedTimerData,
+                    getLambda(),
+                    "Extra timer set lambda should update the timer state correctly",
+                )
+            }
         }
 
-        // Ensure no extra timers are present
-        extraTimersCountdownRepository.updateData(ConcurrentHashMap())
+    @Test
+    fun `getTimerLambdasSequence should work with no extra timers`() =
+        runTest {
+            // Initialize test environment
+            initScope(this) {
+                delay(it)
+            }
 
-        // Define main timer state
-        var mainTimerState = TimerData(
-            millisecondsRemaining = 5000,
-            isPaused = false,
-            isFinished = false,
-        )
+            // Ensure no extra timers are present
+            extraTimersCountdownRepository.updateData(ConcurrentHashMap())
 
-        // Create main timer get/set lambda
-        val mainTimerGetSetLambda = Pair(
-            { mainTimerState },
-            { newState: TimerData -> mainTimerState = newState }
-        )
+            // Define main timer state
+            var mainTimerState =
+                TimerData(
+                    millisecondsRemaining = 5000,
+                    isPaused = false,
+                    isFinished = false,
+                )
 
-        // Retrieve the sequence of timer lambdas
-        val timerLambdaSequence = countdownLogic.getTimerLambdasSequence(
-            mainTimerGetSetLambda,
-            ConcurrentHashMap()
-        )
+            // Create main timer get/set lambda
+            val mainTimerGetSetLambda =
+                Pair(
+                    { mainTimerState },
+                    { newState: TimerData -> mainTimerState = newState },
+                )
 
-        // Verify the lambda sequence
-        val lambdaList = timerLambdaSequence.toList()
-        assertEquals(1, lambdaList.size, "The sequence should only contain the main timer lambda")
+            // Retrieve the sequence of timer lambdas
+            val timerLambdaSequence =
+                countdownLogic.getTimerLambdasSequence(
+                    mainTimerGetSetLambda,
+                    ConcurrentHashMap(),
+                )
 
-        // Validate the main timer lambda
-        val (mainGet, mainSet) = lambdaList[0]
-        assertEquals(mainTimerState, mainGet(), "The main timer lambda should return the correct timer state")
+            // Verify the lambda sequence
+            val lambdaList = timerLambdaSequence.toList()
+            assertEquals(1, lambdaList.size, "The sequence should only contain the main timer lambda")
 
-        // Simulate a state change and ensure the set lambda updates the main timer state
-        val updatedState = TimerData(
-            millisecondsRemaining = 4000,
-            isPaused = true,
-            isFinished = false,
-        )
-        mainSet(updatedState)
-        assertEquals(updatedState, mainGet(), "The main timer set lambda should update the timer state correctly")
-    }
+            // Validate the main timer lambda
+            val (mainGet, mainSet) = lambdaList[0]
+            assertEquals(mainTimerState, mainGet(), "The main timer lambda should return the correct timer state")
+
+            // Simulate a state change and ensure the set lambda updates the main timer state
+            val updatedState =
+                TimerData(
+                    millisecondsRemaining = 4000,
+                    isPaused = true,
+                    isFinished = false,
+                )
+            mainSet(updatedState)
+            assertEquals(updatedState, mainGet(), "The main timer set lambda should update the timer state correctly")
+        }
 }

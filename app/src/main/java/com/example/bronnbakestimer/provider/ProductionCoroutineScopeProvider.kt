@@ -1,6 +1,5 @@
 package com.example.bronnbakestimer.provider
 
-import com.example.bronnbakestimer.provider.CoroutineScopeProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 

@@ -14,7 +14,6 @@ import kotlin.test.assertFailsWith
 
 @Suppress("FunctionMaxLength")
 class DefaultExtraTimersCountdownRepositoryTest {
-
     private lateinit var countdownRepository: DefaultExtraTimersCountdownRepository
 
     @Before
@@ -23,24 +22,27 @@ class DefaultExtraTimersCountdownRepositoryTest {
     }
 
     @Test
-    fun `extraTimerSecsFlow returns correct StateFlow for existing timer`() = runTest {
-        // Setup: Create a random TimerUserInputDataId
-        val timerId = TimerUserInputDataId.randomId()
-        val timerData = SingleTimerCountdownData(
-            data = TimerData(millisecondsRemaining = 120_000), // 2 minutes in milliseconds
-            useInputTimerId = timerId
-        )
-        val newData = ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
-            put(timerId, timerData)
+    fun `extraTimerSecsFlow returns correct StateFlow for existing timer`() =
+        runTest {
+            // Setup: Create a random TimerUserInputDataId
+            val timerId = TimerUserInputDataId.randomId()
+            val timerData =
+                SingleTimerCountdownData(
+                    data = TimerData(millisecondsRemaining = 120_000), // 2 minutes in milliseconds
+                    useInputTimerId = timerId,
+                )
+            val newData =
+                ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
+                    put(timerId, timerData)
+                }
+            countdownRepository.updateData(newData)
+
+            // Test: Retrieve the StateFlow for the timer
+            val secondsFlow = countdownRepository.extraTimerSecsFlow(timerId)
+
+            // Assert: Check if the StateFlow emits the correct Seconds value
+            assertEquals(Seconds(120), secondsFlow.first())
         }
-        countdownRepository.updateData(newData)
-
-        // Test: Retrieve the StateFlow for the timer
-        val secondsFlow = countdownRepository.extraTimerSecsFlow(timerId)
-
-        // Assert: Check if the StateFlow emits the correct Seconds value
-        assertEquals(Seconds(120), secondsFlow.first())
-    }
 
     @Test
     fun `extraTimerSecsFlow throws exception for non-existent timer`() {

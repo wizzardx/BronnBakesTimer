@@ -51,7 +51,6 @@ fun interface IPhoneVibrator {
  *                to access the system vibrator service.
  */
 class PhoneVibrator(private val context: Context) : IPhoneVibrator {
-
     /**
      * Triggers a one-time vibration for a predefined duration.
      *
@@ -65,13 +64,14 @@ class PhoneVibrator(private val context: Context) : IPhoneVibrator {
      */
     override fun vibrate() {
         CoroutineScope(Dispatchers.Default).launch {
-            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                vibratorManager.defaultVibrator
-            } else {
-                @Suppress("DEPRECATION")
-                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            }
+            val vibrator =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                    vibratorManager.defaultVibrator
+                } else {
+                    @Suppress("DEPRECATION")
+                    context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val effect =

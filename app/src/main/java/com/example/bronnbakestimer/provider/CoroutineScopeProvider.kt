@@ -13,7 +13,6 @@ import kotlin.coroutines.EmptyCoroutineContext
  * of coroutine execution and allow checking the activity status of the underlying coroutine scope.
  */
 interface CoroutineScopeProvider {
-
     /**
      * The coroutine scope associated with this provider.
      *
@@ -54,7 +53,7 @@ interface CoroutineScopeProvider {
     fun launch(
         context: CoroutineContext = EmptyCoroutineContext,
         start: CoroutineStart = CoroutineStart.DEFAULT,
-        block: suspend CoroutineScope.() -> Unit
+        block: suspend CoroutineScope.() -> Unit,
     ) {
         coroutineScope.launch(context, start, block)
     }

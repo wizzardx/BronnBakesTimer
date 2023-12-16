@@ -12,8 +12,8 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import com.example.bronnbakestimer.app.MainActivity
 import com.example.bronnbakestimer.R
+import com.example.bronnbakestimer.app.MainActivity
 
 /**
  * The `NotificationHelper` class is responsible for managing and launching notifications
@@ -30,7 +30,6 @@ import com.example.bronnbakestimer.R
  * a user-friendly interface for timer management.
  */
 class NotificationHelper(private val context: Context) {
-
     /**
      * Launches a foreground notification for the `TimerService`.
      *
@@ -48,9 +47,10 @@ class NotificationHelper(private val context: Context) {
             val name = context.getString(R.string.channel_name)
             val descriptionText = context.getString(R.string.channel_description)
             val importance = NotificationManager.IMPORTANCE_LOW
-            val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-            }
+            val channel =
+                NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {
+                    description = descriptionText
+                }
             notificationManager.createNotificationChannel(channel)
         }
     }
@@ -68,13 +68,16 @@ class NotificationHelper(private val context: Context) {
     }
 
     @SuppressLint("InlinedApi")
-    private fun launchForegroundNotification(service: Service, notification: Notification) {
+    private fun launchForegroundNotification(
+        service: Service,
+        notification: Notification,
+    ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ServiceCompat.startForeground(
                 service,
                 NOTIFICATION_ID,
                 notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK,
             )
         } else {
             service.startForeground(NOTIFICATION_ID, notification)

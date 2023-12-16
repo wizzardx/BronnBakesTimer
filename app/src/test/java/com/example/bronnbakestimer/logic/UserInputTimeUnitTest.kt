@@ -5,7 +5,6 @@ import kotlin.test.assertEquals
 
 @Suppress("FunctionMaxLength")
 class UserInputTimeUnitTest {
-
     @Test
     fun `getName for MINUTES returns Minutes`() {
         val unitType = UserInputTimeUnit.MINUTES

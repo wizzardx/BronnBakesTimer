@@ -23,7 +23,11 @@ import org.koin.compose.koinInject
  */
 
 @Composable
-fun AdditionalTimeCountdowns(modifier: Modifier, timerUserInputsRepo: IExtraTimersUserInputsRepository = koinInject()) {
+@Suppress("FunctionName")
+fun AdditionalTimeCountdowns(
+    modifier: Modifier,
+    timerUserInputsRepo: IExtraTimersUserInputsRepository = koinInject(),
+) {
     val timerUserInputData by timerUserInputsRepo.timerData.collectAsState()
 
     // A dividing line from the control above, but only if there's at least one additional timer:

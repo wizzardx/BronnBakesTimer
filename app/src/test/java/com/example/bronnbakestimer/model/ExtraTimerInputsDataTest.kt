@@ -1,12 +1,11 @@
 package com.example.bronnbakestimer.model
 
-import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
 import com.example.bronnbakestimer.di.testModule
+import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.mockito.Mockito.mock
@@ -16,9 +15,7 @@ import kotlin.test.assertNull
 
 @Suppress("FunctionMaxLength")
 class ExtraTimerInputsDataTest {
-
     private lateinit var extraTimerInputsData: ExtraTimerInputsData
-    private val extraTimersUserInputsRepository: IExtraTimersUserInputsRepository by lazy { GlobalContext.get().get() }
 
     @Before
     fun setup() {
@@ -78,14 +75,16 @@ class ExtraTimerInputsDataTest {
     @Test
     fun `updateData updates the repository correctly`() {
         // Create new data to be updated in the repository
-        val newData = listOf(
-            ExtraTimerUserInputData(
-                inputs = ExtraTimerInputsData().apply {
-                    updateTimerDurationInput("30")
-                    updateTimerNameInput("New Timer")
-                }
+        val newData =
+            listOf(
+                ExtraTimerUserInputData(
+                    inputs =
+                        ExtraTimerInputsData().apply {
+                            updateTimerDurationInput("30")
+                            updateTimerNameInput("New Timer")
+                        },
+                ),
             )
-        )
 
         // Mock the behavior of the repository
         val mockRepository = mock(IExtraTimersUserInputsRepository::class.java)

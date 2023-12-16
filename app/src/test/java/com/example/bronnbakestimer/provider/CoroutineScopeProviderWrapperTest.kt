@@ -18,7 +18,6 @@ import kotlin.test.assertTrue
 
 @Suppress("FunctionMaxLength")
 class CoroutineScopeProviderWrapperTest {
-
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var coroutineScopeProviderWrapper: CoroutineScopeProviderWrapper
 

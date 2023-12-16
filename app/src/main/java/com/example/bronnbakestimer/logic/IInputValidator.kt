@@ -20,43 +20,51 @@ import kotlinx.coroutines.flow.StateFlow
  * Implementations of this interface should provide specific validation logic for the inputs.
  */
 fun interface IInputValidator {
-
     /**
      * Validates all inputs related to timers and returns a ValidationResult.
      *
-     * This method is responsible for the comprehensive validation of user inputs associated with the main timer
-     * duration and any additional timer durations. The validation process includes assessing the validity of the main
-     * timer duration input, as well as verifying each extra timer duration input obtained from the
-     * extraTimersUserInputsRepository.
+     * This method performs comprehensive validation of user inputs associated with both the main timer
+     * duration and any additional timer durations. It utilizes the ValidationParams object to access
+     * necessary data and functions for the validation process. The method also takes a 'skipUiLogic' flag
+     * that allows bypassing certain UI-related logic when set to true.
      *
-     * During the validation process, the `setTimerDurationInputError` function is utilized to assign an error message
-     * to the main timer duration input in cases where the input is deemed invalid. Similarly, error messages are set
-     * for each invalid extra timer input.
+     * The validation process includes checking the validity of the main timer duration input and verifying
+     * each extra timer duration input obtained from the extraTimersUserInputsRepository. Error messages
+     * are set accordingly for each invalid input using the provided functions in ValidationParams.
      *
-     * The method operates within a CoroutineScope and can optionally bypass certain UI logic based on the skipUiLogic
-     * flag. This flexibility allows for more efficient processing in scenarios where UI interaction is not necessary.
+     * The method operates within the provided CoroutineScope and returns a Result object. If all inputs
+     * are validated successfully, it returns Result.Success<Unit>. If any input is invalid, it returns
+     * Result.Failure<String> with a reason for the invalidity.
      *
-     * The outcome of the validation is encapsulated in a Result object. If all inputs are validated successfully, a
-     * Result of type 'Valid' is returned. Conversely, if any of the inputs are invalid, a Result of type 'Invalid' is
-     * returned, including the reason for the invalidity.
-     *
-     * @param timerDurationInput A StateFlow representing the user's input for the main timer duration.
-     * @param setTimerDurationInputError A function that takes a string and sets it as the error message for the main
-     *                                   timer duration input. If the string is null, it clears the error message.
-     * @param extraTimersUserInputsRepository An IExtraTimersRepository instance for accessing extra timer data.
-     * @param viewModel A BronnBakesTimerViewModel instance for maintaining view model state.
-     * @param coroutineScope A CoroutineScope within which the validation logic is executed.
-     * @param skipUiLogic A Boolean flag that, when true, bypasses certain UI-related logic for more efficient
-     *                    processing.
-     * @return A Result encapsulating the validation outcome. It returns Result.Success<Unit> if all inputs are valid,
-     *         or Result.Failure<String> with a reason for the invalidity if any input is invalid.
+     * @param params The ValidationParams object containing necessary data and functions for validation.
+     * @param skipUiLogic A Boolean flag to optionally bypass certain UI logic for efficiency.
+     * @return A Result encapsulating the validation outcome. It either returns Result.Success<Unit> for
+     *         valid inputs or Result.Failure<String> with a reason for invalidity.
      */
     fun validateAllInputs(
-        timerDurationInput: StateFlow<String>,
-        setTimerDurationInputError: (String?) -> Unit,
-        extraTimersUserInputsRepository: IExtraTimersUserInputsRepository,
-        viewModel: BronnBakesTimerViewModel,
-        coroutineScope: CoroutineScope,
+        params: ValidationParams,
         skipUiLogic: Boolean,
     ): Result<Unit, String>
 }
+
+/**
+ * Data class encapsulating parameters required for validating timer inputs.
+ *
+ * This class groups together parameters that are commonly used in the validation of timer inputs,
+ * including the main timer duration and additional timer inputs. It simplifies method signatures
+ * by reducing the number of parameters passed, enhancing code readability and maintainability.
+ *
+ * @property timerDurationInput A StateFlow representing the user's input for the main timer duration.
+ * @property setTimerDurationInputError A function for setting the error message for the main timer duration input.
+ * @property extraTimersUserInputsRepository An instance of IExtraTimersUserInputsRepository for accessing extra timer
+ *                                           data.
+ * @property viewModel A BronnBakesTimerViewModel instance for maintaining view model state.
+ * @property coroutineScope A CoroutineScope within which the validation logic is executed.
+ */
+data class ValidationParams(
+    val timerDurationInput: StateFlow<String>,
+    val setTimerDurationInputError: (String?) -> Unit,
+    val extraTimersUserInputsRepository: IExtraTimersUserInputsRepository,
+    val viewModel: BronnBakesTimerViewModel,
+    val coroutineScope: CoroutineScope,
+)

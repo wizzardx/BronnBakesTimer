@@ -8,8 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
  * Interface defining the contract for a repository managing timer data.
  * It provides a flow of timer data and a method to update this data.
  */
-interface ITimerRepository {
-
+interface IMainTimerRepository {
     /**
      * A [StateFlow] of [TimerData] representing the current state of the timer.
      * It emits the latest timer data whenever there are any updates.
@@ -23,7 +22,7 @@ interface ITimerRepository {
      * This property emits the latest remaining time in seconds for the current timer. It is continuously
      * updated to reflect the countdown of the timer in real-time. The flow can emit `null` if the timer's
      * remaining time has not been initialized or if the timer is reset. This property is part of the
-     * [ITimerRepository] interface and is essential for any UI components or logic that require tracking
+     * [IMainTimerRepository] interface and is essential for any UI components or logic that require tracking
      * the timer's countdown.
      */
     val secondsRemaining: StateFlow<Seconds?>

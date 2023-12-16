@@ -10,5 +10,5 @@ import com.example.bronnbakestimer.util.TimerUserInputDataId
  */
 data class ExtraTimerUserInputData(
     val inputs: ExtraTimerInputsData = ExtraTimerInputsData(),
-    val id: TimerUserInputDataId = TimerUserInputDataId.randomId()
+    val id: TimerUserInputDataId = TimerUserInputDataId.randomId(),
 )

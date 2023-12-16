@@ -31,15 +31,15 @@ import androidx.compose.ui.text.input.KeyboardType
  *                                  in different UI contexts.
  */
 data class InputTextFieldParams
-@OptIn(ExperimentalFoundationApi::class)
-constructor(
-    val errorMessage: String?,
-    val value: String,
-    val onValueChange: (String) -> Unit,
-    val labelText: String,
-    val modifier: Modifier = Modifier,
-    val enabled: Boolean,
-    val keyboardType: KeyboardType,
-    val focusRequester: FocusRequester?,
-    val bringIntoViewRequester: BringIntoViewRequester?,
-)
+    @OptIn(ExperimentalFoundationApi::class)
+    constructor(
+        val errorMessage: String?,
+        val value: String,
+        val onValueChange: (String) -> Unit,
+        val labelText: String,
+        val modifier: Modifier = Modifier,
+        val enabled: Boolean,
+        val keyboardType: KeyboardType,
+        val focusRequester: FocusRequester?,
+        val bringIntoViewRequester: BringIntoViewRequester?,
+    )

@@ -1,5 +1,11 @@
+* Fix this error message: "Extra timer time cannot be greater than.." showing up in the main timer.
+    - Also fix it showing up in the main error area
 
-* Check all the other code warnings, lints, etc in the code.
+* Clear out main error area at the start of a "start" button press, and also when "reset" is clicked.
+
+* Clicking Reset should also clear out the other error display areas.
+
+* Use GPT-3.5 to review each of the source code files?
 
 * Make editing of numbers in text fields less annoying. See how I did it in the Marshalls Metronome app?
 
@@ -27,6 +33,8 @@
 * For default values for controls, use constants (or maybe android resources?)
 
 * Reformat all the code in the project (but keep the builtin detekt/etc checks happy)
+    - Here is one option to do that?
+        - ./gradlew ktlintFormat
 
 * Check everything carefully on my real phone, too, not just the emulator.
 

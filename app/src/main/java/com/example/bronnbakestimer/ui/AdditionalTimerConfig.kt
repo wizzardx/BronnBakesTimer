@@ -31,6 +31,7 @@ import org.koin.androidx.compose.koinViewModel
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
+@Suppress("FunctionName")
 fun AdditionalTimerConfig(
     modifier: Modifier,
     timerUserInputData: ExtraTimerUserInputData,
@@ -43,7 +44,7 @@ fun AdditionalTimerConfig(
     // A column to contain our controls to follow:
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
+        modifier = modifier,
     ) {
         // An input field for the Label for this additional timer:
         InputTextField(
@@ -57,7 +58,7 @@ fun AdditionalTimerConfig(
                 keyboardType = KeyboardType.Text,
                 bringIntoViewRequester = null,
                 focusRequester = null,
-            )
+            ),
         )
 
         // An input field for the duration entry for this additional timer:
@@ -73,7 +74,7 @@ fun AdditionalTimerConfig(
                 keyboardType = KeyboardType.Number,
                 focusRequester = timerUserInputData.inputs.timerDurationInputFocusRequester,
                 bringIntoViewRequester = timerUserInputData.inputs.timerDurationInputBringIntoViewRequester,
-            )
+            ),
         )
         // A button with the text "Remove" in it:
         Button(

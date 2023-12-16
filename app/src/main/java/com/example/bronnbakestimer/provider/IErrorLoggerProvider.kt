@@ -14,5 +14,9 @@ fun interface IErrorLoggerProvider {
      * @param message The error message to be logged.
      * @param throwable The Throwable associated with the error. If null then no exception to log
      */
-    fun logError(tag: String, message: String, throwable: Throwable?)
+    fun logError(
+        tag: String,
+        message: String,
+        throwable: Throwable?,
+    )
 }

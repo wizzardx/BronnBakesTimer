@@ -41,9 +41,8 @@ import kotlinx.coroutines.launch
  */
 class ExtraTimerInputsData(
     initialTimerDuration: String = "5",
-    initialTimerName: String = "check/flip/stir"
+    initialTimerName: String = "check/flip/stir",
 ) {
-
     init {
         require(initialTimerDuration.matches(TIMER_DURATION_REGEX.toRegex())) {
             "Timer duration must be a numeric value"
@@ -138,7 +137,10 @@ class ExtraTimerInputsData(
      * @param skipUiLogic A Boolean flag that, when true, bypasses the UI logic for efficiency.
      */
     @OptIn(ExperimentalFoundationApi::class)
-    fun focusOnTimerDurationInput(coroutineScope: CoroutineScope, skipUiLogic: Boolean) {
+    fun focusOnTimerDurationInput(
+        coroutineScope: CoroutineScope,
+        skipUiLogic: Boolean,
+    ) {
         if (skipUiLogic) return
         // Logic won't go here during unit tests, because this is some Android UI integration
         // that's hard to test. So, we'll just skip it during unit tests.

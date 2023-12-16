@@ -14,7 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.bronnbakestimer.model.ExtraTimerUserInputData
 import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
-import com.example.bronnbakestimer.repository.ITimerRepository
+import com.example.bronnbakestimer.repository.IMainTimerRepository
 import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -36,12 +36,13 @@ import org.koin.compose.koinInject
  */
 
 @Composable
+@Suppress("FunctionName")
 fun AdditionalTimeCountdown(
     modifier: Modifier,
     extraTimerUserInputData: ExtraTimerUserInputData,
     extraTimersCountdownRepo: IExtraTimersCountdownRepository = koinInject(),
     viewModel: BronnBakesTimerViewModel = koinViewModel(),
-    mainTimerRepo: ITimerRepository = koinInject(),
+    mainTimerRepo: IMainTimerRepository = koinInject(),
 ) {
     val mainTimerSecondsRemaining = mainTimerRepo.secondsRemaining.collectAsState().value
 
@@ -70,7 +71,7 @@ fun AdditionalTimeCountdown(
     // A column to contain our controls to follow:
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
+        modifier = modifier,
     ) {
         // A horizontally centered text field with the label for this additional timer:
         Text(

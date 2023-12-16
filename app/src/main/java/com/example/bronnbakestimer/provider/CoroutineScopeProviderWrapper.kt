@@ -23,7 +23,7 @@ class CoroutineScopeProviderWrapper(private val scope: CoroutineScope) : Corouti
     override fun launch(
         context: CoroutineContext,
         start: CoroutineStart,
-        block: suspend CoroutineScope.() -> Unit
+        block: suspend CoroutineScope.() -> Unit,
     ) {
         scope.launch(context, start) { block() }
     }

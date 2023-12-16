@@ -24,7 +24,6 @@ import kotlin.test.assertTrue
 
 @Suppress("FunctionMaxLength")
 class UtilsKtTest {
-
     private val errorRepository: IErrorRepository by lazy { GlobalContext.get().get() }
 
     @Before
@@ -141,22 +140,24 @@ class UtilsKtTest {
 
     @Test
     fun `getStartPauseResumeButtonText returns Resume when timerData isPaused is true`() {
-        val timerData = TimerData(
-            isPaused = true,
-            isFinished = false,
-            millisecondsRemaining = 0
-        )
+        val timerData =
+            TimerData(
+                isPaused = true,
+                isFinished = false,
+                millisecondsRemaining = 0,
+            )
         val result = getStartPauseResumeButtonText(timerData)
         assertEquals("Resume", result)
     }
 
     @Test
     fun `getStartPauseResumeButtonText returns Pause when timerData isPaused is false`() {
-        val timerData = TimerData(
-            isPaused = false,
-            isFinished = false,
-            millisecondsRemaining = 0
-        )
+        val timerData =
+            TimerData(
+                isPaused = false,
+                isFinished = false,
+                millisecondsRemaining = 0,
+            )
         val result = getStartPauseResumeButtonText(timerData)
         assertEquals("Pause", result)
     }
@@ -259,11 +260,12 @@ class UtilsKtTest {
     @Test
     fun `formatTotalTimeRemainingString uses timerData when not null`() {
         // Create a non-null TimerData instance with a specific millisecondsRemaining value
-        val timerData = TimerData(
-            isPaused = false,
-            isFinished = false,
-            millisecondsRemaining = 30_000 // 30 seconds remaining
-        )
+        val timerData =
+            TimerData(
+                isPaused = false,
+                isFinished = false,
+                millisecondsRemaining = 30_000, // 30 seconds remaining
+            )
 
         // Any value for timerDurationInput, as it should not be used
         val timerDurationInput = "10"
@@ -284,11 +286,12 @@ class UtilsKtTest {
 
     @Test
     fun `formatTotalTimeRemainingString returns correct format when timerData is not null`() {
-        val timerData = TimerData(
-            isPaused = false,
-            isFinished = false,
-            millisecondsRemaining = 60_000
-        )
+        val timerData =
+            TimerData(
+                isPaused = false,
+                isFinished = false,
+                millisecondsRemaining = 60_000,
+            )
         val result = formatTotalTimeRemainingString(timerData, "10")
         assertEquals("01:00", (result as Ok).value)
     }
@@ -338,7 +341,11 @@ class TestErrorLoggerProvider : IErrorLoggerProvider {
     var lastLogMessage: String? = null
     var lastThrowable: Throwable? = null
 
-    override fun logError(tag: String, message: String, throwable: Throwable?) {
+    override fun logError(
+        tag: String,
+        message: String,
+        throwable: Throwable?,
+    ) {
         lastLogTag = tag
         lastLogMessage = message
         lastThrowable = throwable

@@ -11,8 +11,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
+import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -28,6 +28,7 @@ import org.koin.compose.koinInject
  * @param viewModel The view model responsible for managing timer data and updates.
  */
 @Composable
+@Suppress("FunctionName")
 fun AdditionalTimerControls(
     modifier: Modifier,
     extraTimersUserInputsRepository: IExtraTimersUserInputsRepository = koinInject(),
@@ -39,8 +40,9 @@ fun AdditionalTimerControls(
     // A column to contain the sub-controls:
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-            .padding(top = 8.dp)
+        modifier =
+            modifier
+                .padding(top = 8.dp),
     ) {
         Divider()
 

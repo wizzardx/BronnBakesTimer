@@ -1,6 +1,5 @@
 package com.example.bronnbakestimer.service
 
-import com.example.bronnbakestimer.service.TimerData
 import com.example.bronnbakestimer.util.TimerUserInputDataId
 
 /**

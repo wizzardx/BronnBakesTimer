@@ -1,12 +1,11 @@
 package com.example.bronnbakestimer.util
 
-import com.example.bronnbakestimer.util.TimerUserInputDataId
 import org.junit.Test
 import java.util.UUID
 import kotlin.test.assertTrue
 
+@Suppress("FunctionMaxLength")
 class TimerUserInputDataIdTest {
-
     @Test
     fun `compareTo returns positive when first UUID is greater than second`() {
         val uuid1 = UUID.fromString("00000000-0000-0000-0000-000000000001")
@@ -14,7 +13,7 @@ class TimerUserInputDataIdTest {
         val timerId1 = TimerUserInputDataId(uuid1)
         val timerId2 = TimerUserInputDataId(uuid2)
 
-        assertTrue { timerId1.compareTo(timerId2) > 0 }
+        assertTrue { timerId1 > timerId2 }
     }
 
     @Test
@@ -24,7 +23,7 @@ class TimerUserInputDataIdTest {
         val timerId1 = TimerUserInputDataId(uuid1)
         val timerId2 = TimerUserInputDataId(uuid2)
 
-        assertTrue { timerId1.compareTo(timerId2) < 0 }
+        assertTrue { timerId1 < timerId2 }
     }
 
     @Test

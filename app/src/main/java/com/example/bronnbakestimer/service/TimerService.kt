@@ -8,7 +8,7 @@ import com.example.bronnbakestimer.provider.IErrorLoggerProvider
 import com.example.bronnbakestimer.provider.IMediaPlayerWrapper
 import com.example.bronnbakestimer.repository.IErrorRepository
 import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
-import com.example.bronnbakestimer.repository.ITimerRepository
+import com.example.bronnbakestimer.repository.IMainTimerRepository
 import com.example.bronnbakestimer.util.CoroutineUtils
 import com.example.bronnbakestimer.util.PhoneVibrator
 import com.example.bronnbakestimer.util.logException
@@ -41,7 +41,7 @@ import org.koin.android.ext.android.inject
  */
 class TimerService : Service() {
     // Injecting dependencies using Koin
-    private val timerRepository: ITimerRepository by inject()
+    private val timerRepository: IMainTimerRepository by inject()
     private val mediaPlayerWrapper: IMediaPlayerWrapper by inject()
     private val extraTimersCountdownRepository: IExtraTimersCountdownRepository by inject()
     private val errorRepository: IErrorRepository by inject()
@@ -61,19 +61,24 @@ class TimerService : Service() {
         startCountdown()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int = START_STICKY
 
     @Suppress("TooGenericExceptionCaught", "InstanceOfCheckForException")
     private fun startCountdown() {
         val timeController = RealTimeController()
-        val countdownLogic = CountdownLogic(
-            timerRepository,
-            mediaPlayerWrapper,
-            coroutineScopeProvider,
-            timeController,
-            extraTimersCountdownRepository,
-            phoneVibrator,
-        )
+        val countdownLogic =
+            CountdownLogic(
+                timerRepository,
+                mediaPlayerWrapper,
+                coroutineScopeProvider,
+                timeController,
+                extraTimersCountdownRepository,
+                phoneVibrator,
+            )
         val dispatcher = Dispatchers.Default
         coroutineScopeProvider.launch(dispatcher + CoroutineUtils.sharedExceptionHandler) {
             try {

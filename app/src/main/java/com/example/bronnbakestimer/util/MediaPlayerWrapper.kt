@@ -13,7 +13,7 @@ import org.koin.core.context.GlobalContext
  */
 class MediaPlayerWrapper(
     private val context: Context,
-    private val soundResId: Int
+    private val soundResId: Int,
 ) : IMediaPlayerWrapper {
     private val errorRepository: IErrorRepository = GlobalContext.get().get()
     private val errorLoggerProvider: IErrorLoggerProvider = GlobalContext.get().get()

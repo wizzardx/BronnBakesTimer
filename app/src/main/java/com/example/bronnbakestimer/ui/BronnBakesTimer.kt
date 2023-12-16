@@ -35,16 +35,21 @@ import org.koin.compose.koinInject
  * @see ConfigInputFields
  */
 @Composable
-fun BronnBakesTimer(modifier: Modifier = Modifier, errorRepository: IErrorRepository = koinInject()) {
+@Suppress("FunctionName")
+fun BronnBakesTimer(
+    modifier: Modifier = Modifier,
+    errorRepository: IErrorRepository = koinInject(),
+) {
     // Collect state for error message, so we can update our error label a bit later:
     val errorMessage by errorRepository.errorMessage.collectAsState()
 
     // Column of controls, centered:
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-            .padding(30.dp)
-            .verticalScroll(rememberScrollState())
+        modifier =
+            modifier
+                .padding(30.dp)
+                .verticalScroll(rememberScrollState()),
     ) {
         // Total time remaining
         TotalTimeRemainingView(modifier)
@@ -67,7 +72,7 @@ fun BronnBakesTimer(modifier: Modifier = Modifier, errorRepository: IErrorReposi
         // Error message at the bottom of the screen, if applicable:
         if (errorMessage != null) {
             Column(
-                modifier = modifier.padding(top = 8.dp)
+                modifier = modifier.padding(top = 8.dp),
             ) {
                 Text(
                     text = "ERROR: $errorMessage",

@@ -1,16 +1,12 @@
 package com.example.bronnbakestimer.logic
 
 import com.example.bronnbakestimer.model.ExtraTimerUserInputData
-import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
 import com.example.bronnbakestimer.util.Seconds
 import com.example.bronnbakestimer.util.userInputToSeconds
-import com.example.bronnbakestimer.viewmodel.BronnBakesTimerViewModel
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.map
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Implements the IInputValidator interface to provide input validation functionality for timer-related inputs.
@@ -40,18 +36,13 @@ import kotlinx.coroutines.flow.StateFlow
  * by the application.
  */
 class DefaultInputValidator : IInputValidator {
-
     override fun validateAllInputs(
-        timerDurationInput: StateFlow<String>,
-        setTimerDurationInputError: (String?) -> Unit,
-        extraTimersUserInputsRepository: IExtraTimersUserInputsRepository,
-        viewModel: BronnBakesTimerViewModel,
-        coroutineScope: CoroutineScope,
+        params: ValidationParams,
         skipUiLogic: Boolean,
     ): Result<Unit, String> {
         // Clear out errors in the UI
-        setTimerDurationInputError(null)
-        extraTimersUserInputsRepository.timerData.value.forEach {
+        params.setTimerDurationInputError(null)
+        params.extraTimersUserInputsRepository.timerData.value.forEach {
             it.inputs.timerDurationInputError = null
         }
 
@@ -59,17 +50,17 @@ class DefaultInputValidator : IInputValidator {
         var validationResult: Result<Unit, String> = Ok(Unit)
 
         // Get the main timer duration in seconds and check for errors
-        val maybeMainTimerSeconds = userInputToSeconds(timerDurationInput.value, checkRange = true)
+        val maybeMainTimerSeconds = userInputToSeconds(params.timerDurationInput.value, checkRange = true)
         if (maybeMainTimerSeconds is Err) {
-            setTimerDurationInputError(maybeMainTimerSeconds.error)
-            viewModel.focusOnTimerDurationInput(coroutineScope, skipUiLogic)
+            params.setTimerDurationInputError(maybeMainTimerSeconds.error)
+            params.viewModel.focusOnTimerDurationInput(params.coroutineScope, skipUiLogic)
             validationResult = maybeMainTimerSeconds.map { }
         } else {
             // Validate extra timers only if main timer validation passed
-            for (extraTimer in extraTimersUserInputsRepository.timerData.value) {
+            for (extraTimer in params.extraTimersUserInputsRepository.timerData.value) {
                 val validateResult = validateExtraTimerInputs(extraTimer, maybeMainTimerSeconds)
                 if (validateResult is Err) {
-                    extraTimer.inputs.focusOnTimerDurationInput(coroutineScope, skipUiLogic)
+                    extraTimer.inputs.focusOnTimerDurationInput(params.coroutineScope, skipUiLogic)
                     validationResult = validateResult
                     break // Exit the loop if an error is found
                 }
@@ -82,7 +73,7 @@ class DefaultInputValidator : IInputValidator {
 
     private fun validateExtraTimerInputs(
         extraTimer: ExtraTimerUserInputData,
-        maybeMainTimerSeconds: Result<Seconds, String>
+        maybeMainTimerSeconds: Result<Seconds, String>,
     ): Result<Unit, String> {
         // Initialize a variable for holding the function's result
         var validationResult: Result<Unit, String> = Ok(Unit)

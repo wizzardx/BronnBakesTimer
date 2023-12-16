@@ -15,7 +15,7 @@ data class TimerData(
     val millisecondsRemaining: Int = 0,
     val isPaused: Boolean = false,
     val isFinished: Boolean = false,
-    val beepTriggered: Boolean = false
+    val beepTriggered: Boolean = false,
 ) {
     init {
         require(millisecondsRemaining >= 0) {

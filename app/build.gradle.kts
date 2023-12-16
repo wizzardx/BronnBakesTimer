@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jlleitschuh.gradle.ktlint")
 }
 
 android {
@@ -28,7 +29,7 @@ android {
             // isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             signingConfig = signingConfigs.getByName("debug")
         }
@@ -102,6 +103,9 @@ dependencies {
 
     // Rust-like Result
     implementation("com.michael-bull.kotlin-result:kotlin-result:1.1.18")
+
+    // Lightweight logging framework for Kotlin
+    implementation("io.github.oshai:kotlin-logging:5.1.1")
 }
 
 tasks.withType<KotlinCompile>().configureEach {

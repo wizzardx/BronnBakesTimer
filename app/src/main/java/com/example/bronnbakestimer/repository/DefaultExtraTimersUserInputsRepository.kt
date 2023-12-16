@@ -59,10 +59,11 @@ class DefaultExtraTimersUserInputsRepository : IExtraTimersUserInputsRepository 
         val idsToAdd = newDataIds.filter { it !in repoDataIds }
         for (id in idsToAdd) {
             val timerData = TimerData()
-            val singleTimerCountdownData = SingleTimerCountdownData(
-                data = timerData,
-                useInputTimerId = id,
-            )
+            val singleTimerCountdownData =
+                SingleTimerCountdownData(
+                    data = timerData,
+                    useInputTimerId = id,
+                )
             repoData[id] = singleTimerCountdownData
         }
 

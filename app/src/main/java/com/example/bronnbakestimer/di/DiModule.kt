@@ -2,7 +2,6 @@ package com.example.bronnbakestimer.di
 
 import com.example.bronnbakestimer.R
 import com.example.bronnbakestimer.logic.DefaultInputValidator
-import com.example.bronnbakestimer.logic.DefaultTimerManager
 import com.example.bronnbakestimer.logic.IInputValidator
 import com.example.bronnbakestimer.provider.CoroutineScopeProvider
 import com.example.bronnbakestimer.provider.IErrorLoggerProvider
@@ -11,11 +10,12 @@ import com.example.bronnbakestimer.provider.ProductionCoroutineScopeProvider
 import com.example.bronnbakestimer.repository.DefaultErrorRepository
 import com.example.bronnbakestimer.repository.DefaultExtraTimersCountdownRepository
 import com.example.bronnbakestimer.repository.DefaultExtraTimersUserInputsRepository
-import com.example.bronnbakestimer.repository.DefaultTimerRepository
+import com.example.bronnbakestimer.repository.DefaultMainTimerRepository
 import com.example.bronnbakestimer.repository.IErrorRepository
 import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
 import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
-import com.example.bronnbakestimer.repository.ITimerRepository
+import com.example.bronnbakestimer.repository.IMainTimerRepository
+import com.example.bronnbakestimer.service.DefaultTimerManager
 import com.example.bronnbakestimer.service.ITimerManager
 import com.example.bronnbakestimer.service.NotificationHelper
 import com.example.bronnbakestimer.util.MediaPlayerWrapper
@@ -33,37 +33,38 @@ import org.koin.dsl.module
  * - Singleton instance of ErrorRepository for handling errors.
  * - Definition of the IBronnBakesTimerViewModel for the application's view model's Interface.
  */
-val appModule = module {
-    // Singleton instance of MediaPlayerWrapper
-    single<IMediaPlayerWrapper> { MediaPlayerWrapper(androidContext(), R.raw.buzzer) }
+val appModule =
+    module {
+        // Singleton instance of MediaPlayerWrapper
+        single<IMediaPlayerWrapper> { MediaPlayerWrapper(androidContext(), R.raw.buzzer) }
 
-    // Bind TimerRepository instance to ITimerRepository
-    single<ITimerRepository> { DefaultTimerRepository() }
+        // Bind TimerRepository instance to ITimerRepository
+        single<IMainTimerRepository> { DefaultMainTimerRepository() }
 
-    // Bind DefaultExtraTimersUserInputsRepository instance to IExtraTimersUserInputsRepository
-    single<IExtraTimersUserInputsRepository> { DefaultExtraTimersUserInputsRepository() }
+        // Bind DefaultExtraTimersUserInputsRepository instance to IExtraTimersUserInputsRepository
+        single<IExtraTimersUserInputsRepository> { DefaultExtraTimersUserInputsRepository() }
 
-    // Bind DefaultExtraTimersCountdownRepository instance to IExtraTimersCountdownRepository
-    single<IExtraTimersCountdownRepository> { DefaultExtraTimersCountdownRepository() }
+        // Bind DefaultExtraTimersCountdownRepository instance to IExtraTimersCountdownRepository
+        single<IExtraTimersCountdownRepository> { DefaultExtraTimersCountdownRepository() }
 
-    // Bind DefaultRepository instance to IErrorRepository
-    single<IErrorRepository> { DefaultErrorRepository() }
+        // Bind DefaultRepository instance to IErrorRepository
+        single<IErrorRepository> { DefaultErrorRepository() }
 
-    // Bind TimerManager instance to TimerManager
-    single<ITimerManager> { DefaultTimerManager() }
+        // Bind TimerManager instance to TimerManager
+        single<ITimerManager> { DefaultTimerManager(get(), get(), get()) }
 
-    // Bind InputValidator instance to InputValidator
-    single<IInputValidator> { DefaultInputValidator() }
+        // Bind InputValidator instance to InputValidator
+        single<IInputValidator> { DefaultInputValidator() }
 
-    // Bind ErrorLoggerProvider instance to runtimeErrorLoggerProvider
-    single<IErrorLoggerProvider> { runtimeErrorLoggerProvider }
+        // Bind ErrorLoggerProvider instance to runtimeErrorLoggerProvider
+        single<IErrorLoggerProvider> { runtimeErrorLoggerProvider }
 
-    // Define the ViewModel
-    viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get(), get()) }
+        // Define the ViewModel
+        viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get(), get()) }
 
-    // Provide CoroutineScope for TimerService
-    single<CoroutineScopeProvider> { ProductionCoroutineScopeProvider() }
+        // Provide CoroutineScope for TimerService
+        single<CoroutineScopeProvider> { ProductionCoroutineScopeProvider() }
 
-    // Provide NotificationHelper for TimerService
-    single<NotificationHelper> { NotificationHelper(androidContext()) }
-}
+        // Provide NotificationHelper for TimerService
+        single<NotificationHelper> { NotificationHelper(androidContext()) }
+    }

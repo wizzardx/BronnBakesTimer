@@ -5,7 +5,7 @@ import com.example.bronnbakestimer.logic.Constants
 import com.example.bronnbakestimer.provider.CoroutineScopeProvider
 import com.example.bronnbakestimer.provider.IMediaPlayerWrapper
 import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
-import com.example.bronnbakestimer.repository.ITimerRepository
+import com.example.bronnbakestimer.repository.IMainTimerRepository
 import com.example.bronnbakestimer.util.IPhoneVibrator
 import com.example.bronnbakestimer.util.TimerUserInputDataId
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +20,7 @@ import kotlin.math.min
  *
  */
 class CountdownLogic(
-    private val timerRepository: ITimerRepository,
+    private val timerRepository: IMainTimerRepository,
     private val mediaPlayerWrapper: IMediaPlayerWrapper,
     private val coroutineScopeProvider: CoroutineScopeProvider,
     private val timeController: BaseTimeController,
@@ -125,10 +125,11 @@ class CountdownLogic(
             phoneVibrator.vibrate()
 
             // Update state to reflect that we've triggered the beep, and that the timer countdown has completed:
-            state = state.copy(
-                beepTriggered = true,
-                isFinished = true,
-            )
+            state =
+                state.copy(
+                    beepTriggered = true,
+                    isFinished = true,
+                )
         }
 
         // Update the timer state:
@@ -156,22 +157,23 @@ class CountdownLogic(
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     fun getTimerLambdasSequence(
         mainTimerGetSetLambda: Pair<() -> TimerData, (TimerData) -> Unit>,
-        extraTimersData: ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>
-    ): Sequence<Pair<() -> TimerData, (TimerData) -> Unit>> = sequence {
-        yield(mainTimerGetSetLambda)
+        extraTimersData: ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>,
+    ): Sequence<Pair<() -> TimerData, (TimerData) -> Unit>> =
+        sequence {
+            yield(mainTimerGetSetLambda)
 
-        extraTimersData.forEach { (id, _) ->
-            val getter = {
-                extraTimersData[id]?.data ?: error("Timer data for id $id is missing")
+            extraTimersData.forEach { (id, _) ->
+                val getter = {
+                    extraTimersData[id]?.data ?: error("Timer data for id $id is missing")
+                }
+                val setter: (TimerData) -> Unit = { newTimerData ->
+                    extraTimersData.computeIfPresent(id) { _, existingTimerData ->
+                        existingTimerData.copy(data = newTimerData)
+                    } ?: error("Failed to update timer data for id $id")
+                }
+                yield(Pair(getter, setter))
             }
-            val setter: (TimerData) -> Unit = { newTimerData ->
-                extraTimersData.computeIfPresent(id) { _, existingTimerData ->
-                    existingTimerData.copy(data = newTimerData)
-                } ?: error("Failed to update timer data for id $id")
-            }
-            yield(Pair(getter, setter))
         }
-    }
 
     /**
      * Represents a single tick in the countdown logic. This function is responsible for decrementing
@@ -191,10 +193,11 @@ class CountdownLogic(
             return
         }
 
-        val mainTimerGetSetLambda = Pair(
-            { checkNotNull(mainTimerState) { "Main timer state is unexpectedly null" } },
-            { newState: TimerData -> mainTimerState = newState }
-        )
+        val mainTimerGetSetLambda =
+            Pair(
+                { checkNotNull(mainTimerState) { "Main timer state is unexpectedly null" } },
+                { newState: TimerData -> mainTimerState = newState },
+            )
         val extraTimersData = extraTimersCountdownRepository.timerData.value
         val timerLambdaSequence = getTimerLambdasSequence(mainTimerGetSetLambda, extraTimersData)
 
