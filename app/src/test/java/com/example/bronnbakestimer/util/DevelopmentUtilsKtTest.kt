@@ -33,7 +33,7 @@ class DevelopmentUtilsKtTest {
 
         printDebugInfo(outputFunction = ::testOutputFunction)
 
-        val expectedOutput = "TESTING (Module: com.example.bronnbakestimer.util, DevelopmentUtilsKtTest.kt: 35)"
+        val expectedOutput = "TESTING (Module: com.example.bronnbakestimer.util, DevelopmentUtilsKtTest.kt: 34)"
         assertEquals(expectedOutput, output.toString().trim())
     }
 }

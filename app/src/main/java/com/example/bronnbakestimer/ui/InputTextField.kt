@@ -27,13 +27,6 @@ import com.example.bronnbakestimer.util.getErrorInfoFor
 @Suppress("FunctionName")
 fun InputTextField(params: InputTextFieldParams) {
     val (supportingText, isError) = getErrorInfoFor(params.errorMessage)
-    var modifier = params.modifier.padding(top = 8.dp)
-    if (params.bringIntoViewRequester != null) {
-        modifier = modifier.bringIntoViewRequester(params.bringIntoViewRequester)
-    }
-    if (params.focusRequester != null) {
-        modifier = modifier.focusRequester(params.focusRequester)
-    }
 
     TextField(
         value = params.value,
@@ -41,7 +34,10 @@ fun InputTextField(params: InputTextFieldParams) {
         keyboardOptions = KeyboardOptions(keyboardType = params.keyboardType),
         singleLine = true,
         label = { Text(text = params.labelText) },
-        modifier = modifier,
+        modifier =
+            params.modifier.padding(top = 8.dp)
+                .bringIntoViewRequester(params.bringIntoViewRequester)
+                .focusRequester(params.focusRequester),
         enabled = params.enabled,
         supportingText = supportingText,
         isError = isError,
