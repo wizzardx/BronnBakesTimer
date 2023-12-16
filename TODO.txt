@@ -5,8 +5,6 @@
 
 * Clicking Reset should also clear out the other error display areas.
 
-* Use GPT-3.5 to review each of the source code files?
-
 * Make editing of numbers in text fields less annoying. See how I did it in the Marshalls Metronome app?
 
 * Make the popup notification more informative/reactive/etc.
@@ -20,21 +18,13 @@
 
 * In release mode, scrolling is still a bit janky on device. Try profiling (somehow) the code again. Try also getting ChatGPT4 advice on the code I think might be causing this.
 
-* At the moment, it seems like sometimes, the extra timers and the main timers refresh on the screen at different intervals, up to around 1/3rd of a second?
-
 * Check that 1 minute, 2 minutes, etc wall clock time actually matches what the phone is reporting in the countdown.
-
-* After pressing Start (after a Reset), it looks like extra timers displayed time flickers a couple of times between eg 05:00 and 04:59, before finally settling at 04:59, then proceeding normally to 04:48, 04:57, etc.
-
-(above issues seen when I have 2 extra timers on the screen).
-
-* For debugging, let there be 2 extra timers by default? Also, all (and main) populated with convenient values to test with.
-
-* For default values for controls, use constants (or maybe android resources?)
 
 * Reformat all the code in the project (but keep the builtin detekt/etc checks happy)
     - Here is one option to do that?
         - ./gradlew ktlintFormat
+
+* Use GPT-3.5 to review each of the source code files?
 
 * Check everything carefully on my real phone, too, not just the emulator.
 
