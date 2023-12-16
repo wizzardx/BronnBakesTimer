@@ -1,21 +1,15 @@
 
-* Try to get Release APK files working from download install (it seems to work fine from Android Studio on the devices).
-
-* Try setting these values in release mode in app/build.gradle.kts:
-    - isMinifyEnabled = true
-    - isShrinkResources = true
-    - And check for other things to do in release mode?
-
-* In release mode, scrolling is still a bit janky on device. Try profiling (somehow) the code again. Try also getting ChatGPT4 advice on the code I think might be causing this.
+* Check why rotating the screen can immediately make the timer countdown logic permanently stop.
+    - The only way to get it working again on the phone seems to be to uninstall and reinstall the app, just restarting it doesn't seem to help ffs.
 
 * Check that 1 minute, 2 minutes, etc wall clock time actually matches what the phone is reporting in the countdown.
 
-* Reformat all the code in the project (but keep the builtin detekt/etc checks happy)
-    - Here is one option to do that?
-        - ./gradlew ktlintFormat
+    - It loooks like there is still a slight lag - eg if I background my app, do other things, and then come back to my app, while the android timer is running.
+
+    - Let's do a sanity check, where I get the phone's time (in milliseconds, since I'm already getting nanos) since the start of the
+      clock countdown, and then crash or something when the gap gets larger than eg 200ms?
 
 * Use GPT-3.5 to review each of the source code files?
 
-* Check everything carefully on my real phone, too, not just the emulator.
-
 * Update version from 1.2-dev to 1.2 just before releasing, after I have tested everything...
+    - Make sure I'm using the Release build variant.
