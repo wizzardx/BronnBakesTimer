@@ -90,7 +90,11 @@ fun ExtraTimerDurationTextField(
         InputTextFieldParams(
             errorMessage = timerUserInputData.inputs.timerDurationInputError,
             value = currentTimerDurationInput,
-            onValueChange = { timerUserInputData.inputs.updateTimerDurationInput(normaliseIntInput(it)) },
+            onValueChange = { newValue ->
+                val value = currentTimerDurationInput
+                val normalisedValue = normaliseIntInput(newValue, value)
+                timerUserInputData.inputs.updateTimerDurationInput(normalisedValue)
+            },
             labelText = labelText,
             modifier = modifier.padding(bottom = 8.dp),
             enabled = enabled,

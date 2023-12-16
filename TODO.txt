@@ -1,5 +1,4 @@
 
-* Make editing of numbers in text fields less annoying. See how I did it in the Marshalls Metronome app?
 
 * Make the popup notification more informative/reactive/etc.
 

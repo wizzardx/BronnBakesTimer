@@ -45,7 +45,11 @@ fun ConfigInputFields(
         InputTextFieldParams(
             errorMessage = viewModel.timerDurationInputError,
             value = currentTimerDurationInput,
-            onValueChange = { viewModel.updateTimerDurationInput(normaliseIntInput(it)) },
+            onValueChange = { newValue ->
+                val value = currentTimerDurationInput
+                val normalisedValue = normaliseIntInput(newValue, value)
+                viewModel.updateTimerDurationInput(normalisedValue)
+            },
             labelText = labelText,
             modifier = modifier,
             enabled = configControlsEnabled,
