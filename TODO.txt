@@ -1,6 +1,4 @@
 
-* Re-check unit test coverage
-
 * Use GPT-4 to review each of the source code files.
 
 * After doing code fixes reviewed by GPT-4, recheck the code coverage.

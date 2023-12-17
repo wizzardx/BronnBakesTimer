@@ -136,13 +136,7 @@ open class BronnBakesTimerViewModel(
             .combine(timerDurationInput) { secondsRemaining, timerDurationInput ->
                 // Attempt to format the remaining time, handling any exceptions.
                 val maybeFormattedString: Result<String, String> =
-                    try {
-                        formatTotalTimeRemainingString(secondsRemaining, timerDurationInput)
-                    } catch (e: IllegalArgumentException) {
-                        // Log exceptions and return an error message.
-                        logException(e, errorRepository, errorLoggerProvider)
-                        Err("Invalid number")
-                    }
+                    formatTotalTimeRemainingString(secondsRemaining, timerDurationInput)
                 // Return formatted string or error message.
                 if (maybeFormattedString is Ok) {
                     maybeFormattedString.value

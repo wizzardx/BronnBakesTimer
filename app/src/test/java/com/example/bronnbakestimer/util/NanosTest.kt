@@ -1,6 +1,7 @@
 package com.example.bronnbakestimer.util
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -91,5 +92,21 @@ class NanosTest {
         val first = Nanos(1000)
         val second = Nanos(1000)
         assertEquals(first, min(first, second))
+    }
+
+    @Test
+    fun `div should correctly divide a Nanos instance by an integer`() {
+        val nanos = Nanos(10_000_000) // 10 million nanoseconds
+        val divisor = 2
+        val expected = Nanos(5_000_000) // Expected result after division
+        assertEquals(expected, nanos / divisor)
+    }
+
+    @Test
+    fun `div should throw ArithmeticException when dividing by zero`() {
+        val nanos = Nanos(1_000_000) // 1 million nanoseconds
+        assertThrows(ArithmeticException::class.java) {
+            nanos / 0
+        }
     }
 }
