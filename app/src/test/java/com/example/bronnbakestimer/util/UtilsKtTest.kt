@@ -114,7 +114,7 @@ class UtilsKtTest {
             TimerData(
                 isPaused = true,
                 isFinished = false,
-                millisecondsRemaining = 0,
+                nanosRemaining = Nanos(0),
             )
         val result = getStartPauseResumeButtonText(timerData)
         assertEquals("Resume", result)
@@ -126,7 +126,7 @@ class UtilsKtTest {
             TimerData(
                 isPaused = false,
                 isFinished = false,
-                millisecondsRemaining = 0,
+                nanosRemaining = Nanos(0),
             )
         val result = getStartPauseResumeButtonText(timerData)
         assertEquals("Pause", result)
@@ -235,7 +235,7 @@ class UtilsKtTest {
                 isPaused = false,
                 isFinished = false,
                 // 30 seconds remaining:
-                millisecondsRemaining = 30_000,
+                nanosRemaining = Nanos.fromMillis(30_000),
             )
 
         // Any value for timerDurationInput, as it should not be used
@@ -261,7 +261,7 @@ class UtilsKtTest {
             TimerData(
                 isPaused = false,
                 isFinished = false,
-                millisecondsRemaining = 60_000,
+                nanosRemaining = Nanos.fromMillis(60_000),
             )
         val result = formatTotalTimeRemainingString(timerData, "10")
         assertEquals("01:00", (result as Ok).value)

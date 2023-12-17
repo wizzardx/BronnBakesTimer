@@ -49,7 +49,7 @@ fun formatTotalTimeRemainingString(
         if (timerData == null) {
             userInputToSeconds(timerDurationInput, checkRange = false)
         } else {
-            Ok(Seconds(timerData.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND))
+            Ok(timerData.nanosRemaining.toSeconds())
         }
     if (maybeSecondsRemaining is Err) {
         return Err(maybeSecondsRemaining.error)

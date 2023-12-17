@@ -1,10 +1,11 @@
 package com.example.bronnbakestimer.service
 
+import com.example.bronnbakestimer.util.Nanos
+
 /**
  * Represents the state of a countdown timer.
  *
- * @property millisecondsRemaining The number of milliseconds remaining in the countdown. Should be
- *                                 a non-negative value.
+ * @property nanosRemaining The number of nanoseconds remaining in the countdown.
  * @property isPaused A flag indicating whether the timer is currently paused. True if paused, false otherwise.
  * @property isFinished A flag indicating whether the timer has finished its countdown. True if the countdown has
  *                      reached zero, false otherwise.
@@ -12,16 +13,8 @@ package com.example.bronnbakestimer.service
  *                         the countdown. True if beep is triggered, false otherwise.
  */
 data class TimerData(
-    val millisecondsRemaining: Int = 0,
+    val nanosRemaining: Nanos = Nanos(0),
     val isPaused: Boolean = false,
     val isFinished: Boolean = false,
     val beepTriggered: Boolean = false,
-) {
-    init {
-        require(millisecondsRemaining >= 0) {
-            "millisecondsRemaining must be a non-negative value"
-        }
-
-        // Additional validations can be added here if needed
-    }
-}
+)

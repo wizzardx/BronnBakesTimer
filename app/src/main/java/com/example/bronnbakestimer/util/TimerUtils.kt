@@ -59,23 +59,23 @@ fun userInputToSeconds(
 }
 
 /**
- * Converts user input representing time duration to milliseconds.
+ * Converts user input representing time duration to nanoseconds.
  *
  * This function takes a string input, interprets it as a time duration based on user input format,
- * and converts it into milliseconds. The input is first passed to the `userInputToSeconds` function
+ * and converts it into nanoseconds. The input is first passed to the `userInputToSeconds` function
  * to convert it into seconds. If this conversion is successful, the result is then multiplied by
- * the number of milliseconds in a second to obtain the equivalent duration in milliseconds.
- * The function returns a `Result` type, encapsulating either the calculated milliseconds (Ok)
+ * the number of nanoseconds in a second to obtain the equivalent duration in nanoseconds.
+ * The function returns a `Result` type, encapsulating either the calculated nanoseconds (Ok)
  * or an error message (Err) in case of invalid input.
  *
- * The function is useful for scenarios where time duration needs to be represented in milliseconds
+ * The function is useful for scenarios where time duration needs to be represented in nanoseconds
  * for further processing, such as setting timers or performing time calculations.
  *
  * @param input The user input as a string, representing the time duration.
- * @return A `Result<Int, String>` encapsulating either the successful conversion result in milliseconds (Ok)
+ * @return A `Result<Int, String>` encapsulating either the successful conversion result in nanoseconds (Ok)
  *         or an error message (Err).
  */
-fun userInputToMillis(input: String): Result<Int, String> {
+fun userInputToNanos(input: String): Result<Nanos, String> {
     // Validate input: It should be a valid integer.
     val maybeSeconds = userInputToSeconds(input, checkRange = true)
     if (maybeSeconds is Err) {
@@ -84,8 +84,8 @@ fun userInputToMillis(input: String): Result<Int, String> {
 
     // Calculate milliseconds based on the seconds value.
     val secondsValue = (maybeSeconds as Ok).value.value
-    val milliseconds = secondsValue * Constants.MILLISECONDS_PER_SECOND
+    val nanos = Nanos(secondsValue.toLong() * Constants.NANOSECONDS_PER_SECOND)
 
     // Return the result.
-    return Ok(milliseconds)
+    return Ok(nanos)
 }

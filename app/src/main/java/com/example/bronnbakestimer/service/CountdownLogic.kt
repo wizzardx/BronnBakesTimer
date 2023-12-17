@@ -7,11 +7,11 @@ import com.example.bronnbakestimer.provider.IMediaPlayerWrapper
 import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
 import com.example.bronnbakestimer.repository.IMainTimerRepository
 import com.example.bronnbakestimer.util.IPhoneVibrator
+import com.example.bronnbakestimer.util.Nanos
 import com.example.bronnbakestimer.util.TimerUserInputDataId
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.TimeUnit
-import kotlin.math.min
 
 /**
  * Class responsible for managing the countdown logic for a timer.
@@ -28,7 +28,7 @@ class CountdownLogic(
     private val phoneVibrator: IPhoneVibrator,
 ) {
     private var tickCount = 0
-    private var totalElapsedTime = 0L
+    private var totalElapsedTimeNanos = Nanos(0L)
 
     /**
      * Executes the countdown logic for the timer. This method encapsulates the entire logic for managing
@@ -36,77 +36,45 @@ class CountdownLogic(
      * alerts when necessary. It loops until the coroutine scope is active.
      */
     suspend fun execute(scope: CoroutineScope) {
-        var lastTickTimeNano = timeController.nanoTime()
+        val targetFrequency = Constants.TICKS_PER_SECOND // target ticks per second
+        val targetIntervalNs = Nanos(Constants.NANOSECONDS_PER_SECOND / targetFrequency)
 
-        val smallDelayMillis = Constants.SMALL_DELAY
-        var accumulatedTimeMillis = 0
+        var lastTickTime = Nanos(timeController.nanoTime())
 
         while (coroutineScopeProvider.isActive) {
-            val currentTimeNano = timeController.nanoTime()
-            val elapsedTimeNano = currentTimeNano - lastTickTimeNano
+            val currentTime = Nanos(timeController.nanoTime())
+            val elapsedSinceLastTick = currentTime - lastTickTime
 
-            // Convert nanoseconds to milliseconds and accumulate
-            accumulatedTimeMillis += TimeUnit.NANOSECONDS.toMillis(elapsedTimeNano).toInt()
-
-            // Call tick for each whole and partial tick
-
-            // All the whole ticks:
-            while (accumulatedTimeMillis >= smallDelayMillis) {
-                tick(smallDelayMillis)
-                accumulatedTimeMillis -= smallDelayMillis
+            if (elapsedSinceLastTick >= targetIntervalNs) {
+                tick(elapsedSinceLastTick)
+                lastTickTime = currentTime
             }
 
-            // Do any partial tick over here:
-            val remainingTime = accumulatedTimeMillis
-            if (remainingTime > 0) {
-                val timeForTick = min(remainingTime, smallDelayMillis)
-                tick(timeForTick)
-                accumulatedTimeMillis -= timeForTick
-            }
-
-            // Update lastTickTime after processing
-            val nTime = timeController.nanoTime()
-
-            lastTickTimeNano = nTime
-
-            // Calculate time taken for this iteration including the tick processing time
-            val iterationTimeMillis = TimeUnit.NANOSECONDS.toMillis(nTime - currentTimeNano)
-
-            // Calculate the delay needed to maintain the loop frequency
-            val delayTimeMillis = smallDelayMillis - iterationTimeMillis
-
-            // Sanity check for delayTime
-            check(delayTimeMillis <= smallDelayMillis) { "Delay time is out of range: $delayTimeMillis" }
-
-            // Delay for the remaining time of this iteration. Also handle the case that
-            // delayTimeMillis can sometimes be a very large negative value if for some
-            // reason (eg testing) the logic thinks that the most recent loop iteration
-            // took a very long time. In that case can just skip this delay.
-
-            if (delayTimeMillis > 0) {
-                timeController.delay(delayTimeMillis, scope)
-            }
+            // Calculate the time to the next tick
+            val timeToNextTick = targetIntervalNs - (Nanos(timeController.nanoTime()) - lastTickTime)
+            val delayTime = maxOf(0, timeToNextTick.toMillisLong())
+            timeController.delay(delayTime, scope)
         }
     }
 
     private fun tickLogic(
-        elapsedTime: Int,
+        elapsedTimeNanos: Nanos,
         getValue: () -> TimerData,
         setValue: (TimerData) -> Unit,
     ) {
         var state = getValue()
-        val millisecondsRemaining: Int = state.millisecondsRemaining
+        val nanosRemaining: Nanos = state.nanosRemaining
 
-        val newMillisecondsRemaining = (millisecondsRemaining - elapsedTime).coerceAtLeast(0)
+        val newNanosRemaining = (nanosRemaining - elapsedTimeNanos).coerceAtLeast(Nanos(0))
 
-        state = state.copy(millisecondsRemaining = newMillisecondsRemaining)
+        state = state.copy(nanosRemaining = newNanosRemaining)
 
         // Set flags based on the current timings.
 
         // The timer ends when the user sees 00:00 (which might still be 999 ms), rather than
         // when the ms reaches 0. We don't want the user to see 00:00 for 999ms before triggering
         // beeps, vibrates, other feedback, etc
-        val timerEnded = newMillisecondsRemaining < Constants.MILLISECONDS_PER_SECOND
+        val timerEnded = newNanosRemaining < Nanos(Constants.NANOSECONDS_PER_SECOND.toLong())
         val timerJustEnded = timerEnded && !state.isFinished
 
         if (
@@ -184,9 +152,9 @@ class CountdownLogic(
      * milliseconds remaining, triggers the beep sound at appropriate times, and updates the timer
      * state through the repository.
      */
-    fun tick(elapsedTime: Int) {
+    fun tick(elapsedTimeNanos: Nanos) {
         tickCount += 1
-        totalElapsedTime += elapsedTime
+        totalElapsedTimeNanos += elapsedTimeNanos
 
         var mainTimerState = timerRepository.timerData.value
         if (mainTimerState == null || mainTimerState.isPaused || mainTimerState.isFinished) {
@@ -202,7 +170,7 @@ class CountdownLogic(
         val timerLambdaSequence = getTimerLambdasSequence(mainTimerGetSetLambda, extraTimersData)
 
         timerLambdaSequence.forEach { (getValue, setValue) ->
-            tickLogic(elapsedTime, getValue, setValue)
+            tickLogic(elapsedTimeNanos, getValue, setValue)
         }
 
         // Update the main timer repository if there were changes

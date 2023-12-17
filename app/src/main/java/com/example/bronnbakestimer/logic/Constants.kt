@@ -17,9 +17,19 @@ object Constants {
     const val MILLISECONDS_PER_SECOND: Int = 1000
 
     /**
+     * There are 1,000,000 milliseconds in every second.
+     */
+    const val NANOSECONDS_PER_MILLISECOND: Int = 1_000_000
+
+    /**
+     * There are 1,000,000,000 (one billion) nanoseconds in every second.
+     */
+    const val NANOSECONDS_PER_SECOND: Int = 1_000_000_000
+
+    /**
      * In our logic we delay (in milliseconds) for short periods of time and then perform timer-related logic.
      */
-    const val SMALL_DELAY: Int = 100
+    const val SMALL_DELAY_MILLIS: Int = 100
 
     /**
      * For the sake of simplicity, we limit the user to inputting numbers (timer duration) between 1 and 500.
@@ -51,6 +61,23 @@ object Constants {
      * Value: 500 milliseconds (0.5 seconds)
      */
     const val HALF_SECOND_MILLIS: Long = 500
+
+    /**
+     * Number of updates per second for the timer's internal data.
+     *
+     * This constant defines the frequency at which the timer's internal data is refreshed or updated.
+     * Setting this value to 10 means that the timer will undergo 10 updates or 'ticks' per second.
+     * This frequency is crucial for ensuring that the timer's display and internal state remain
+     * synchronized and provide a smooth user experience. A higher value would result in more frequent
+     * updates, potentially making the display smoother, but at the cost of higher computational load.
+     * Conversely, a lower value would reduce the load but might make the timer's display less responsive
+     * or smooth. The chosen value of 10 strikes a balance, offering a reasonable update rate without
+     * overburdening the system.
+     *
+     * Value: 10 updates per second
+     */
+
+    const val TICKS_PER_SECOND = 10
 }
 
 /**

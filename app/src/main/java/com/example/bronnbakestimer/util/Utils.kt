@@ -49,3 +49,22 @@ value class Seconds(val value: Int) : Comparable<Seconds> {
  *                invalid input.
  */
 class InvalidTimerDurationException(message: String) : Exception(message)
+
+/**
+ * Safely converts a Long to an Int.
+ *
+ * This extension method checks if the Long value is within the bounds
+ * of the Int range (from [Int.MIN_VALUE] to [Int.MAX_VALUE]). If the
+ * value fits within these bounds, it is safely converted to Int and
+ * returned. If the value is outside the bounds of an Int, the method
+ * handles the overflow by returning a specified default value or throwing
+ * an exception.
+ *
+ * @return The converted Int value if within the safe range, or a handled
+ *         overflow value/exception otherwise.
+ */
+fun Long.toIntSafe(): Int {
+    val inRange = this in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong()
+    require(inRange) { "Long value $this is out of Int range" }
+    return this.toInt()
+}

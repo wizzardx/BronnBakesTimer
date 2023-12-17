@@ -1,6 +1,7 @@
 package com.example.bronnbakestimer.repository
 
 import com.example.bronnbakestimer.service.TimerData
+import com.example.bronnbakestimer.util.Nanos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -33,7 +34,12 @@ class DefaultTimerRepositoryTest {
     @Test
     fun `updateData updates state correctly with valid data`() {
         val timerRepository = DefaultMainTimerRepository()
-        val validTimerData = TimerData(60_000, isPaused = false, isFinished = false)
+        val validTimerData =
+            TimerData(
+                Nanos.fromSeconds(60),
+                isPaused = false,
+                isFinished = false,
+            )
 
         timerRepository.updateData(validTimerData)
 
@@ -67,13 +73,13 @@ class DefaultTimerRepositoryTest {
             delay(100)
 
             // Update state and collect changes
-            val timerData1 = TimerData(60_000, isPaused = false, isFinished = false)
+            val timerData1 = TimerData(Nanos.fromSeconds(60), isPaused = false, isFinished = false)
             timerRepository.updateData(timerData1)
 
             // Short delay to allow the update to be collected
             delay(100)
 
-            val timerData2 = TimerData(30_000, isPaused = true, isFinished = false)
+            val timerData2 = TimerData(Nanos.fromSeconds(30), isPaused = true, isFinished = false)
             timerRepository.updateData(timerData2)
 
             // Short delay to allow the second update to be collected

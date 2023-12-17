@@ -1,11 +1,4 @@
 
-* Check that 1 minute, 2 minutes, etc wall clock time actually matches what the phone is reporting in the countdown.
-
-    - It loooks like there is still a slight lag - eg if I background my app, do other things, and then come back to my app, while the android timer is running.
-
-    - Let's do a sanity check, where I get the phone's time (in milliseconds, since I'm already getting nanos) since the start of the
-      clock countdown, and then crash or something when the gap gets larger than eg 200ms?
-
 * Re-check unit test coverage
 
 * Use GPT-4 to review each of the source code files.

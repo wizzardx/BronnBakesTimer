@@ -19,6 +19,7 @@ import com.example.bronnbakestimer.service.DefaultTimerManager
 import com.example.bronnbakestimer.service.ITimerManager
 import com.example.bronnbakestimer.service.SingleTimerCountdownData
 import com.example.bronnbakestimer.service.TimerData
+import com.example.bronnbakestimer.util.Nanos
 import com.example.bronnbakestimer.util.Seconds
 import com.example.bronnbakestimer.util.TimerUserInputDataId
 import com.example.bronnbakestimer.util.testErrorLoggerProvider
@@ -120,7 +121,7 @@ class BronnBakesTimerViewModelTest {
     fun `configControlsEnabled is false when timer is active`() =
         runTest {
             // Arrange: Simulate an active timer
-            val activeTimerData = TimerData(10_000, isPaused = false, isFinished = false)
+            val activeTimerData = TimerData(Nanos.fromSeconds(10), isPaused = false, isFinished = false)
             mainTimerRepository.updateData(activeTimerData)
 
             // Act: Collect the latest value of configControlsEnabled
@@ -162,7 +163,7 @@ class BronnBakesTimerViewModelTest {
     fun testOnButtonClick_PauseAndResumeTimers() =
         runTest {
             // Start the timer first
-            mainTimerRepository.updateData(TimerData(10_000, isPaused = false, isFinished = false))
+            mainTimerRepository.updateData(TimerData(Nanos.fromSeconds(10), isPaused = false, isFinished = false))
 
             // Simulate pausing timers
             viewModel.onButtonClick()
@@ -342,7 +343,7 @@ class BronnBakesTimerViewModelTest {
             // Verify that the timers started correctly
             val timerData = mainTimerRepository.timerData.value
             assertNotNull(timerData)
-            assertEquals(10 * 60 * 1000, timerData.millisecondsRemaining) // 10 minutes in milliseconds
+            assertEquals(10 * 60 * 1000, timerData.nanosRemaining.toMillisLong()) // 10 minutes in milliseconds
         }
 
     @Test
@@ -363,7 +364,7 @@ class BronnBakesTimerViewModelTest {
     fun testTimerResetFunctionality() =
         runTest {
             // Setup and start timers
-            val timerData = TimerData(10_000, isPaused = false, isFinished = false)
+            val timerData = TimerData(Nanos.fromSeconds(10), isPaused = false, isFinished = false)
             mainTimerRepository.updateData(timerData)
 
             // Call onResetClick to reset timers
@@ -423,7 +424,7 @@ class BronnBakesTimerViewModelTest {
                 SingleTimerCountdownData(
                     data =
                         TimerData(
-                            millisecondsRemaining = 60_000,
+                            nanosRemaining = Nanos.fromSeconds(60),
                             isPaused = false,
                             isFinished = false,
                         ),
@@ -480,7 +481,7 @@ class BronnBakesTimerViewModelTest {
             assertTrue(countdownData.containsKey(newExtraTimerId), "New extra timer should be added.")
             val timerData = countdownData[newExtraTimerId]
             assertNotNull(timerData)
-            assertEquals(3 * 60 * 1000, timerData.data.millisecondsRemaining) // 3 minutes in milliseconds
+            assertEquals(3 * 60 * 1000, timerData.data.nanosRemaining.toMillisLong()) // 3 minutes in milliseconds
         }
 
     @Test
@@ -499,8 +500,8 @@ class BronnBakesTimerViewModelTest {
                 )
             val existingTimerCountdownData =
                 SingleTimerCountdownData(
-                    // 3 minutes in milliseconds:
-                    data = TimerData(millisecondsRemaining = 3 * 60 * 1000),
+                    // 3 minutes:
+                    data = TimerData(nanosRemaining = Nanos.fromMinutes(3)),
                     useInputTimerId = existingExtraTimerId,
                 )
 
@@ -525,7 +526,7 @@ class BronnBakesTimerViewModelTest {
             assertNotNull(updatedTimerData)
             assertEquals(
                 4 * 60 * 1000,
-                updatedTimerData.data.millisecondsRemaining,
+                updatedTimerData.data.nanosRemaining.toMillisLong(),
             ) // Updated to 4 minutes in milliseconds
         }
 

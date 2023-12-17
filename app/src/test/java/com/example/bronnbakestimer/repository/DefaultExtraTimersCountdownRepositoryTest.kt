@@ -2,6 +2,7 @@ package com.example.bronnbakestimer.repository
 
 import com.example.bronnbakestimer.service.SingleTimerCountdownData
 import com.example.bronnbakestimer.service.TimerData
+import com.example.bronnbakestimer.util.Nanos
 import com.example.bronnbakestimer.util.Seconds
 import com.example.bronnbakestimer.util.TimerUserInputDataId
 import kotlinx.coroutines.flow.first
@@ -28,8 +29,8 @@ class DefaultExtraTimersCountdownRepositoryTest {
             val timerId = TimerUserInputDataId.randomId()
             val timerData =
                 SingleTimerCountdownData(
-                    // 2 minutes in milliseconds:
-                    data = TimerData(millisecondsRemaining = 120_000),
+                    // 2 minutes:
+                    data = TimerData(Nanos.fromMinutes(2)),
                     useInputTimerId = timerId,
                 )
             val newData =

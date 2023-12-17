@@ -5,8 +5,9 @@ import com.example.bronnbakestimer.repository.IExtraTimersCountdownRepository
 import com.example.bronnbakestimer.repository.IExtraTimersUserInputsRepository
 import com.example.bronnbakestimer.repository.IMainTimerRepository
 import com.example.bronnbakestimer.util.InvalidTimerDurationException
+import com.example.bronnbakestimer.util.Nanos
 import com.example.bronnbakestimer.util.TimerUserInputDataId
-import com.example.bronnbakestimer.util.userInputToMillis
+import com.example.bronnbakestimer.util.userInputToNanos
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import kotlinx.coroutines.flow.StateFlow
@@ -94,7 +95,7 @@ class DefaultTimerManager(
         // Update the main timer in the repository.
         mainTimerRepository.updateData(
             TimerData(
-                millisecondsRemaining = currentMainTimerMillis,
+                nanosRemaining = currentMainTimerMillis,
                 isPaused = false,
                 isFinished = false,
             ),
@@ -110,12 +111,12 @@ class DefaultTimerManager(
         extraTimersCountdownRepository.updateData(timerCountdownData)
     }
 
-    private fun validateConvertMainTimerInput(timerDurationInput: StateFlow<String>): Int {
-        val maybeCurrentMainTimerMillis = userInputToMillis(timerDurationInput.value)
-        if (maybeCurrentMainTimerMillis is Err) {
-            throw InvalidTimerDurationException("Invalid timer duration input: ${maybeCurrentMainTimerMillis.error}")
+    private fun validateConvertMainTimerInput(timerDurationInput: StateFlow<String>): Nanos {
+        val maybeCurrentMainTimerNanos = userInputToNanos(timerDurationInput.value)
+        if (maybeCurrentMainTimerNanos is Err) {
+            throw InvalidTimerDurationException("Invalid timer duration input: ${maybeCurrentMainTimerNanos.error}")
         }
-        return (maybeCurrentMainTimerMillis as Ok).value
+        return (maybeCurrentMainTimerNanos as Ok).value
     }
 
     override fun processExtraTimers(
@@ -153,7 +154,7 @@ class DefaultTimerManager(
     // @param countdownData The ConcurrentHashMap holding the countdown data.
     private fun updateCreateTimerCountdownData(
         timer: ExtraTimerUserInputData,
-        millis: Int,
+        nanos: Nanos,
         countdownData: ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>,
     ) {
         val timerCountdownDataEntry = countdownData[timer.id]
@@ -162,7 +163,7 @@ class DefaultTimerManager(
                 SingleTimerCountdownData(
                     data =
                         TimerData(
-                            millisecondsRemaining = millis,
+                            nanosRemaining = nanos,
                             isPaused = false,
                             isFinished = false,
                         ),
@@ -173,23 +174,23 @@ class DefaultTimerManager(
                 timerCountdownDataEntry.copy(
                     data =
                         timerCountdownDataEntry.data.copy(
-                            millisecondsRemaining = millis,
+                            nanosRemaining = nanos,
                         ),
                 )
         }
     }
 
-    // Validates and converts an extra timer's input to milliseconds.
+    // Validates and converts an extra timer's input to nanoseconds.
     // If the input is invalid, throws an InvalidTimerDurationException.
     //
     // @param timer The extra timer data to validate.
-    // @return The duration in milliseconds if valid, or null if invalid.
-    private fun validateConvertExtraTimerInput(timer: ExtraTimerUserInputData): Int {
-        val maybeCurrentExtraTimerMillis = userInputToMillis(timer.inputs.timerDurationInput.value)
-        if (maybeCurrentExtraTimerMillis is Err) {
-            throw InvalidTimerDurationException("Invalid timer duration input: ${maybeCurrentExtraTimerMillis.error}")
+    // @return The duration in nanoseconds if valid, or null if invalid.
+    private fun validateConvertExtraTimerInput(timer: ExtraTimerUserInputData): Nanos {
+        val maybeCurrentExtraTimerNanos = userInputToNanos(timer.inputs.timerDurationInput.value)
+        if (maybeCurrentExtraTimerNanos is Err) {
+            throw InvalidTimerDurationException("Invalid timer duration input: ${maybeCurrentExtraTimerNanos.error}")
         }
-        return (maybeCurrentExtraTimerMillis as Ok).value
+        return (maybeCurrentExtraTimerNanos as Ok).value
     }
 
     // Retains only the valid extra timers in the countdown data.

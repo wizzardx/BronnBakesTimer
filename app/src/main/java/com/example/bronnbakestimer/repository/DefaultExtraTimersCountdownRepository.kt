@@ -1,8 +1,8 @@
 package com.example.bronnbakestimer.repository
 
-import com.example.bronnbakestimer.logic.Constants
 import com.example.bronnbakestimer.service.SingleTimerCountdownData
 import com.example.bronnbakestimer.service.TimerData
+import com.example.bronnbakestimer.util.Nanos
 import com.example.bronnbakestimer.util.Seconds
 import com.example.bronnbakestimer.util.TimerUserInputDataId
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,8 +52,8 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
     override fun updateData(newData: ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>) {
         // Validate that milliseconds remaining in all timers are non-negative
         for (timer in newData) {
-            val msRemaining = timer.value.data.millisecondsRemaining
-            require(msRemaining >= 0) { "Time remaining cannot be negative" }
+            val nsRemaining = timer.value.data.nanosRemaining
+            require(nsRemaining >= Nanos(0)) { "Time remaining cannot be negative" }
         }
 
         // Update the main timer data
@@ -62,11 +62,11 @@ class DefaultExtraTimersCountdownRepository : IExtraTimersCountdownRepository {
         // Process each timer in the new data
         for ((timerId, timerData) in newData) {
             // Convert milliseconds remaining to seconds
-            val secondsRemaining = timerData.data.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND
+            val secondsRemaining: Seconds = timerData.data.nanosRemaining.toSeconds()
 
             // Update or initialize the seconds remaining StateFlow
-            this.secondsRemaining.getOrPut(timerId) { MutableStateFlow(Seconds(secondsRemaining)) }
-                .value = Seconds(secondsRemaining)
+            this.secondsRemaining.getOrPut(timerId) { MutableStateFlow(secondsRemaining) }
+                .value = secondsRemaining
 
             // Update or initialize the timer completed StateFlow
             internalTimerCompleted.getOrPut(timerId) { MutableStateFlow(timerData.data.isFinished) }

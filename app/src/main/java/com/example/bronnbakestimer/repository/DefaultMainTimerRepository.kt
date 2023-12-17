@@ -1,7 +1,7 @@
 package com.example.bronnbakestimer.repository
 
-import com.example.bronnbakestimer.logic.Constants
 import com.example.bronnbakestimer.service.TimerData
+import com.example.bronnbakestimer.util.Nanos
 import com.example.bronnbakestimer.util.Seconds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,8 +60,8 @@ class DefaultMainTimerRepository : IMainTimerRepository {
      */
     override fun updateData(newData: TimerData?) {
         // Ensure the millisecondsRemaining in TimerData is non-negative
-        val msRemaining = newData?.millisecondsRemaining ?: 0
-        require(msRemaining >= 0) {
+        val nsRemaining = newData?.nanosRemaining ?: Nanos(0)
+        require(nsRemaining >= Nanos(0L)) {
             "Time remaining cannot be negative"
         }
 
@@ -82,8 +82,7 @@ class DefaultMainTimerRepository : IMainTimerRepository {
     }
 
     // Function to calculate updated seconds remaining
-    private fun calcUpdatedSecsRemain(newData: TimerData?): Seconds? =
-        newData?.let { Seconds(it.millisecondsRemaining / Constants.MILLISECONDS_PER_SECOND) }
+    private fun calcUpdatedSecsRemain(newData: TimerData?): Seconds? = newData?.nanosRemaining?.toSeconds()
 
     // Function to determine if the timer is completed
     private fun isTimerCompleted(newData: TimerData?): Boolean? = newData?.isFinished
