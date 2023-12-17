@@ -29,7 +29,7 @@ import org.koin.core.context.GlobalContext
  * the app, including starting the Koin dependency injection framework, setting up app-wide modules,
  * requesting permissions, and managing the lifecycle of the app.
  *
- * @see MyApplication
+ * @see BronnBakesTimerApp
  * @see TimerService
  */
 class MainActivity : ComponentActivity() {

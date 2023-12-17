@@ -18,12 +18,12 @@ import org.koin.core.context.startKoin
  * @see androidContext
  * @see appModule
  */
-class MyApplication : Application() {
+class BronnBakesTimerApp : Application() {
     override fun onCreate() {
         super.onCreate()
         startKoin {
             androidLogger()
-            androidContext(this@MyApplication)
+            androidContext(this@BronnBakesTimerApp)
             modules(appModule)
         }
     }
