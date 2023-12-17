@@ -58,54 +58,60 @@ class DefaultExtraTimersCountdownRepositoryTest {
     }
 
     @Test
-    fun `extraTimerIsCompletedFlow returns correct StateFlow for existing timer`() = runTest {
-        // Setup: Create a random TimerUserInputDataId and SingleTimerCountdownData
-        val timerId = TimerUserInputDataId.randomId()
-        val timerData = SingleTimerCountdownData(
-            // Set up TimerData with completed status
-            data = TimerData(Nanos.fromMinutes(0), isFinished = true), // 0 minutes, indicating completion
-            useInputTimerId = timerId
-        )
-        val newData = ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
-            put(timerId, timerData)
+    fun `extraTimerIsCompletedFlow returns correct StateFlow for existing timer`() =
+        runTest {
+            // Setup: Create a random TimerUserInputDataId and SingleTimerCountdownData
+            val timerId = TimerUserInputDataId.randomId()
+            val timerData =
+                SingleTimerCountdownData(
+                    // Set up TimerData with completed status
+                    // 0 minutes, indicating completion
+                    data = TimerData(Nanos.fromMinutes(0), isFinished = true),
+                    useInputTimerId = timerId,
+                )
+            val newData =
+                ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
+                    put(timerId, timerData)
+                }
+            countdownRepository.updateData(newData)
+
+            // Test: Retrieve the StateFlow for the timer's completion status
+            val completionFlow = countdownRepository.extraTimerIsCompletedFlow(timerId)
+
+            // Assert: Check if the StateFlow emits the correct Boolean value (true for completed)
+            assertEquals(true, completionFlow.first())
         }
-        countdownRepository.updateData(newData)
-
-        // Test: Retrieve the StateFlow for the timer's completion status
-        val completionFlow = countdownRepository.extraTimerIsCompletedFlow(timerId)
-
-        // Assert: Check if the StateFlow emits the correct Boolean value (true for completed)
-        assertEquals(true, completionFlow.first())
-    }
 
     @Test
-    fun `clearDataInAllTimers resets all timers to default state`() = runTest {
-        // Setup: Create and add multiple timers with different states
-        val timerIds = List(3) { TimerUserInputDataId.randomId() }
-        val newData = ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
-            timerIds.forEachIndexed { index, timerId ->
-                val timerData = SingleTimerCountdownData(
-                    data = TimerData(Nanos.fromSeconds(120 + index * 60), isFinished = index % 2 == 0),
-                    useInputTimerId = timerId
-                )
-                put(timerId, timerData)
+    fun `clearDataInAllTimers resets all timers to default state`() =
+        runTest {
+            // Setup: Create and add multiple timers with different states
+            val timerIds = List(3) { TimerUserInputDataId.randomId() }
+            val newData =
+                ConcurrentHashMap<TimerUserInputDataId, SingleTimerCountdownData>().apply {
+                    timerIds.forEachIndexed { index, timerId ->
+                        val timerData =
+                            SingleTimerCountdownData(
+                                data = TimerData(Nanos.fromSeconds(120 + index * 60), isFinished = index % 2 == 0),
+                                useInputTimerId = timerId,
+                            )
+                        put(timerId, timerData)
+                    }
+                }
+            countdownRepository.updateData(newData)
+
+            // Act: Clear data in all timers
+            countdownRepository.clearDataInAllTimers()
+
+            // Assert: Check if all timers are reset to default state
+            for (timerId in timerIds) {
+                val timerDataFlow = countdownRepository.timerData.first()[timerId]
+                val secondsRemainingFlow = countdownRepository.extraTimerSecsFlow(timerId).first()
+                val timerCompletedFlow = countdownRepository.extraTimerIsCompletedFlow(timerId).first()
+
+                assertEquals(TimerData(), timerDataFlow?.data, "Timer data should be reset to default")
+                assertEquals(Seconds(0), secondsRemainingFlow, "Seconds remaining should be reset to 0")
+                assertEquals(false, timerCompletedFlow, "Timer completion status should be reset to false")
             }
         }
-        countdownRepository.updateData(newData)
-
-        // Act: Clear data in all timers
-        countdownRepository.clearDataInAllTimers()
-
-        // Assert: Check if all timers are reset to default state
-        for (timerId in timerIds) {
-            val timerDataFlow = countdownRepository.timerData.first()[timerId]
-            val secondsRemainingFlow = countdownRepository.extraTimerSecsFlow(timerId).first()
-            val timerCompletedFlow = countdownRepository.extraTimerIsCompletedFlow(timerId).first()
-
-            assertEquals(TimerData(), timerDataFlow?.data, "Timer data should be reset to default")
-            assertEquals(Seconds(0), secondsRemainingFlow, "Seconds remaining should be reset to 0")
-            assertEquals(false, timerCompletedFlow, "Timer completion status should be reset to false")
-        }
-    }
-
 }

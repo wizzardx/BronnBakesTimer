@@ -75,7 +75,10 @@ class PhoneVibrator(private val context: Context) : IPhoneVibrator {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val effect =
-                    VibrationEffect.createOneShot(Constants.HALF_SECOND_MILLIS.toLong(), VibrationEffect.DEFAULT_AMPLITUDE)
+                    VibrationEffect.createOneShot(
+                        Constants.HALF_SECOND_MILLIS.toLong(),
+                        VibrationEffect.DEFAULT_AMPLITUDE,
+                    )
                 vibrator.vibrate(effect)
             } else {
                 @Suppress("DEPRECATION")
