@@ -6,7 +6,11 @@
     - Let's do a sanity check, where I get the phone's time (in milliseconds, since I'm already getting nanos) since the start of the
       clock countdown, and then crash or something when the gap gets larger than eg 200ms?
 
-* Use GPT-4 to review each of the source code files?
+* Re-check unit test coverage
+
+* Use GPT-4 to review each of the source code files.
+
+* After doing code fixes reviewed by GPT-4, recheck the code coverage.
 
 * Update version from 1.2-dev to 1.2 just before releasing, after I have tested everything...
     - Make sure I'm using the Release build variant.
