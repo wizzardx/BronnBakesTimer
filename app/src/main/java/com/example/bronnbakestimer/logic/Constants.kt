@@ -60,7 +60,7 @@ object Constants {
      *
      * Value: 500 milliseconds (0.5 seconds)
      */
-    const val HALF_SECOND_MILLIS: Long = 500
+    const val HALF_SECOND_MILLIS: Int = 500
 
     /**
      * Number of updates per second for the timer's internal data.
