@@ -53,7 +53,7 @@ class DefaultInputValidator : IInputValidator {
             params.setTimerDurationInputError(maybeMainTimerSeconds.error)
 
             // Sanity check: By this point in the logic, no control should have been focused yet
-            assert(!focusedOnControl) { "A control should not have been focused yet." }
+            check(!focusedOnControl) { "A control should not have been focused yet." }
 
             // Focus on the main timer duration input
             params.viewModel.focusOnTimerDurationInput(params.coroutineScope, skipUiLogic)
