@@ -21,6 +21,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.koin.android.ext.android.inject
+import org.koin.core.context.GlobalContext
 
 /**
  * `TimerService` is a foreground service in the "BronnBakes Timer" app, designed to manage a
@@ -52,7 +53,7 @@ class TimerService : Service() {
     private val extraTimersCountdownRepository: IExtraTimersCountdownRepository by inject()
     private val errorRepository: IErrorRepository by inject()
     private val errorLoggerProvider: IErrorLoggerProvider by inject()
-    private val coroutineScopeProvider: CoroutineScopeProvider by inject()
+    private var coroutineScopeProvider: CoroutineScopeProvider? = null
     private val viewModel: BronnBakesTimerViewModel by inject()
 
     private val phoneVibrator: PhoneVibrator by lazy {
@@ -69,6 +70,7 @@ class TimerService : Service() {
             val titleFlow = MutableStateFlow("BronnBakes Timer")
             val contentFlow = viewModel.totalTimeRemainingString
             NotificationHelper(this).launchNotification(this, titleFlow, contentFlow, serviceScope)
+            coroutineScopeProvider = GlobalContext.get().get()
             startCountdown()
         } catch (e: Exception) {
             // Log any exceptions that occur during the button click processing
@@ -86,30 +88,37 @@ class TimerService : Service() {
     private fun startCountdown() {
         try {
             val timeController = RealTimeController()
+
+            // coroutineScopeProvider should be non-null here
+            check(coroutineScopeProvider != null) {
+                "coroutineScopeProvider should be non-null here"
+            }
+
             val countdownLogic =
                 CountdownLogic(
                     timerRepository,
                     mediaPlayerWrapper,
-                    coroutineScopeProvider,
+                    coroutineScopeProvider as CoroutineScopeProvider,
                     timeController,
                     extraTimersCountdownRepository,
                     phoneVibrator,
                 )
             val dispatcher = Dispatchers.Default
-            coroutineScopeProvider.launch(dispatcher + CoroutineUtils.sharedExceptionHandler) {
-                try {
-                    timeController.setDelayLambda({ delay(it) }, this)
-                    countdownLogic.execute(this)
-                } catch (e: Exception) {
-                    if (e is CancellationException) {
-                        // Re-throw JobCancellationException to allow the coroutine to handle cancellation normally
-                        throw e
-                    } else {
-                        // Handle other exceptions
-                        logException(e, errorRepository, errorLoggerProvider)
+            (coroutineScopeProvider as CoroutineScopeProvider)
+                .launch(dispatcher + CoroutineUtils.sharedExceptionHandler) {
+                    try {
+                        timeController.setDelayLambda({ delay(it) }, this)
+                        countdownLogic.execute(this)
+                    } catch (e: Exception) {
+                        if (e is CancellationException) {
+                            // Re-throw JobCancellationException to allow the coroutine to handle cancellation normally
+                            throw e
+                        } else {
+                            // Handle other exceptions
+                            logException(e, errorRepository, errorLoggerProvider)
+                        }
                     }
                 }
-            }
         } catch (e: Exception) {
             // Log any exceptions that occur during the button click processing
             logException(e, errorRepository, errorLoggerProvider)
@@ -124,7 +133,12 @@ class TimerService : Service() {
 
             // Release resources when the service is destroyed
             mediaPlayerWrapper.release()
-            coroutineScopeProvider.coroutineScope.cancel()
+
+            // Cancel the coroutine scope
+            if (coroutineScopeProvider != null) {
+                (coroutineScopeProvider as CoroutineScopeProvider).coroutineScope.cancel()
+                coroutineScopeProvider = null
+            }
 
             // Use the newer stopForeground method
             // STOP_FOREGROUND_REMOVE = 1 or STOP_FOREGROUND_DETACH = 2

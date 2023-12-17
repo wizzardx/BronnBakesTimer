@@ -55,13 +55,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Note: This might be run multiple times during the app's lifecycle. eg, if the screen is
+        //       rotated. However, this (automatically) does not start the service a second time
+        //       while it is not already running. However, the lifecycle events of the existing
+        //       service code (onCreate, onStartCommand, onDestroy, etc) will be called again.
         initializeActivity()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        // Stop the TimerService when the activity is destroyed
-        stopService(Intent(this, TimerService::class.java))
     }
 
     /**

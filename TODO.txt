@@ -1,8 +1,4 @@
 
-* Check why rotating the screen can immediately make the timer countdown logic permanently stop.
-    - The only way to get it working again on the phone seems to be to uninstall and reinstall the app, just restarting it doesn't seem to help ffs.
-    - I need to do a git bisect operation to track it down lol.
-
 * Check that 1 minute, 2 minutes, etc wall clock time actually matches what the phone is reporting in the countdown.
 
     - It loooks like there is still a slight lag - eg if I background my app, do other things, and then come back to my app, while the android timer is running.

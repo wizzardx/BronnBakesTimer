@@ -63,7 +63,7 @@ val appModule =
         viewModel { BronnBakesTimerViewModel(get(), get(), get(), get(), get(), get(), get()) }
 
         // Provide CoroutineScope for TimerService
-        single<CoroutineScopeProvider> { ProductionCoroutineScopeProvider() }
+        factory<CoroutineScopeProvider> { ProductionCoroutineScopeProvider() }
 
         // Provide NotificationHelper for TimerService
         single<NotificationHelper> { NotificationHelper(androidContext()) }

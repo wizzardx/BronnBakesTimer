@@ -41,5 +41,5 @@ val testModule =
         single<IErrorLoggerProvider> { testErrorLoggerProvider }
 
         // Provide a Test CoroutineScope using TestScope
-        single<CoroutineScopeProvider> { TestCoroutineScopeProvider() }
+        factory<CoroutineScopeProvider> { TestCoroutineScopeProvider() }
     }
